@@ -61,8 +61,7 @@ include_directories(include ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 # Add tests
 add_executable(ImportJsModuleTest tests/qjs/import-js-module.test.cpp)
-target_link_libraries(ImportJsModuleTest
-    gtest
-    gtest_main
-    quickjs
-)
+target_link_libraries(ImportJsModuleTest gtest gtest_main quickjs)
+
+add_executable(ExposeCppClassTest tests/qjs/expose-cpp-class.test.cpp)
+target_link_libraries(ExposeCppClassTest gtest gtest_main quickjs)
