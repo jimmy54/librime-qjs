@@ -31,42 +31,54 @@ include_directories(include ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/quickjs)
 add_library(quickjs STATIC ${QUICKJS_SOURCES})
 target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/quickjs)
 
-aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src SRC)
 
 set(CMAKE_CURRENT_LIST_DIR ${CMAKE_SOURCE_DIR}/CMakeFiles/list)
 set(CMAKE_CURRENT_BINARY_DIR ${CMAKE_SOURCE_DIR}/build)
 
-set(SOURCES ${SRC})
+include_directories(include ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
-# create a dynamic library
-message(STATUS "Plugin ${plugin_name} src: ${SOURCES}")
-add_library(librime-qjs-objs OBJECT ${SOURCES})
+# Download and unpack Google Test
+include(FetchContent)
+FetchContent_Declare(
+    googletest
+    URL "https://github.com/google/googletest/archive/refs/tags/v${GTEST_VERSION}.tar.gz"
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+)
+# For Windows: Prevent overriding the parent project's compiler/linker settings
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googletest)
 
-# Link QuickJS to librime-qjs
-target_link_libraries(librime-qjs-objs PRIVATE quickjs)
 
-# rime plugin
-set(plugin_name "rime-qjs" PARENT_SCOPE)
-set(plugin_objs $<TARGET_OBJECTS:librime-qjs-objs> PARENT_SCOPE)
-set(plugin_deps ${rime_library} ${rime_gears_library} PARENT_SCOPE)
-set(plugin_modules "qjs" PARENT_SCOPE)
+if(DEFINED PARENT_SCOPE)
+    aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src SRC)
+    set(SOURCES ${SRC})
 
-# # Download and unpack Google Test
-# include(FetchContent)
-# FetchContent_Declare(
-#   googletest
-#   URL "https://github.com/google/googletest/archive/refs/tags/v${GTEST_VERSION}.tar.gz"
-#   DOWNLOAD_EXTRACT_TIMESTAMP TRUE
-# )
-# # For Windows: Prevent overriding the parent project's compiler/linker settings
-# set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-# FetchContent_MakeAvailable(googletest)
+    # create a dynamic library
+    add_library(librime-qjs-objs OBJECT ${SOURCES})
 
-# include_directories(include ${CMAKE_CURRENT_SOURCE_DIR}/src)
+    # Link QuickJS to librime-qjs
+    target_link_libraries(librime-qjs-objs PRIVATE quickjs)
 
-# # Add tests
-# add_executable(ImportJsModuleTest tests/qjs/import-js-module.test.cpp)
-# target_link_libraries(ImportJsModuleTest gtest gtest_main quickjs)
+    set(plugin_name "rime-qjs" PARENT_SCOPE)
+    set(plugin_objs $<TARGET_OBJECTS:librime-qjs-objs> PARENT_SCOPE)
+    set(plugin_deps ${rime_library} ${rime_gears_library} PARENT_SCOPE)
+    set(plugin_modules "qjs" PARENT_SCOPE)
 
-# add_executable(ExposeCppClassTest tests/qjs/expose-cpp-class.test.cpp)
-# target_link_libraries(ExposeCppClassTest gtest gtest_main quickjs)
+    message(STATUS "skip quickjs tests when building ${plugin_name} as a plugin")
+else()
+    # Only include quickjs tests if we're building standalone (no parent scope)
+    enable_testing()
+
+    add_executable(ImportJsModuleTest tests/qjs/import-js-module.test.cpp)
+    target_link_libraries(ImportJsModuleTest gtest gtest_main quickjs)
+    add_test(NAME ImportJsModuleTest COMMAND ImportJsModuleTest)
+
+    add_executable(ExposeCppClassTest tests/qjs/expose-cpp-class.test.cpp)
+    target_link_libraries(ExposeCppClassTest gtest gtest_main quickjs)
+    add_test(NAME ExposeCppClassTest COMMAND ExposeCppClassTest)
+
+    add_executable(ReportJsErrorTest tests/qjs/report-js-error.test.cpp)
+    target_link_libraries(ReportJsErrorTest gtest gtest_main quickjs)
+    add_test(NAME ReportJsErrorTest COMMAND ReportJsErrorTest)
+
+endif()

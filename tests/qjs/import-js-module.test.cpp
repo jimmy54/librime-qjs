@@ -4,48 +4,14 @@
 #include <iostream>
 #include <gtest/gtest.h>
 
-// Module loader implementation
-JSModuleDef* js_module_loader(JSContext* ctx,
-                             const char* module_name,
-                             void* opaque) {
-    // Construct the full path relative to tests/qjs directory
-    std::string base_path = "tests/qjs/";
-    std::string full_path = base_path + module_name;
+#include "./js-module-loader.h"
 
-    std::ifstream module_file(full_path);
-    if (!module_file.is_open()) {
-        JS_ThrowReferenceError(ctx, "Could not open module file: %s", full_path.c_str());
-        return nullptr;
-    }
-
-    std::string code((std::istreambuf_iterator<char>(module_file)),
-                    std::istreambuf_iterator<char>());
-
-    JSValue val = JS_Eval(ctx, code.c_str(), code.size(), module_name,
-                        JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_COMPILE_ONLY);
-
-    if (JS_IsException(val)) {
-        JS_FreeValue(ctx, val);
-        return nullptr;
-    }
-
-    return reinterpret_cast<JSModuleDef*>(JS_VALUE_GET_PTR(val));
-}
-
-TEST(MainJSTest, TestMyClassGreet) {
+TEST(QuickJSTest, TestImportJsModule) {
     JSRuntime* rt = JS_NewRuntime();
     JSContext* ctx = JS_NewContext(rt);
     JS_SetModuleLoaderFunc(rt, nullptr, js_module_loader, nullptr);
 
-    // Read and evaluate main.js
-    std::ifstream main_file("tests/qjs/main.js");
-    ASSERT_TRUE(main_file.is_open()) << "Could not open main.js";
-
-    std::string main_code((std::istreambuf_iterator<char>(main_file)),
-                        std::istreambuf_iterator<char>());
-    // GTEST_LOG_(INFO) << "main_code: " << main_code;
-
-    JSValue module = JS_Eval(ctx, main_code.c_str(), main_code.size(), "main.js", JS_EVAL_TYPE_MODULE);
+    JSValue module = loadMjsFile(ctx, "main.js");
     JS_FreeValue(ctx, module);
 
     // Get the global object and MyClass

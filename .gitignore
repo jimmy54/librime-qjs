@@ -1,14 +1,15 @@
 Makefile
-cmake_install.cmake
+*.cmake
 CMakeCache.txt
 CMakeFiles/
 build/
 
 lib
 _deps
+Testing
 
-tests/qjs/qjs
-tests/qjs/qjsc
+tests/qjs/js/qjs
+tests/qjs/js/qjsc
 
 thirdparty
 

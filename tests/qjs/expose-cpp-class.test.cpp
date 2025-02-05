@@ -133,7 +133,7 @@ void register_myclass(JSContext* ctx) {
     JS_FreeValue(ctx, constructor);
 }
 
-TEST(MyClassTest, ExposeToQuickJS) {
+TEST(QuickJSTest, TestExposeClassToQuickJS) {
     JSRuntime* rt = JS_NewRuntime();
     JSContext* ctx = JS_NewContext(rt);
     register_myclass(ctx);
