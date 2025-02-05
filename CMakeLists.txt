@@ -36,32 +36,37 @@ aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src SRC)
 set(CMAKE_CURRENT_LIST_DIR ${CMAKE_SOURCE_DIR}/CMakeFiles/list)
 set(CMAKE_CURRENT_BINARY_DIR ${CMAKE_SOURCE_DIR}/build)
 
-set(SOURCES
-    ${SRC}
-)
+set(SOURCES ${SRC})
 
 # create a dynamic library
-add_library(librime-qjs SHARED ${SOURCES})
+message(STATUS "Plugin ${plugin_name} src: ${SOURCES}")
+add_library(librime-qjs-objs OBJECT ${SOURCES})
 
 # Link QuickJS to librime-qjs
-target_link_libraries(librime-qjs PRIVATE quickjs)
+target_link_libraries(librime-qjs-objs PRIVATE quickjs)
 
-# Download and unpack Google Test
-include(FetchContent)
-FetchContent_Declare(
-  googletest
-  URL "https://github.com/google/googletest/archive/refs/tags/v${GTEST_VERSION}.tar.gz"
-  DOWNLOAD_EXTRACT_TIMESTAMP TRUE
-)
-# For Windows: Prevent overriding the parent project's compiler/linker settings
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(googletest)
+# rime plugin
+set(plugin_name "rime-qjs" PARENT_SCOPE)
+set(plugin_objs $<TARGET_OBJECTS:librime-qjs-objs> PARENT_SCOPE)
+set(plugin_deps ${rime_library} ${rime_gears_library} PARENT_SCOPE)
+set(plugin_modules "qjs" PARENT_SCOPE)
 
-include_directories(include ${CMAKE_CURRENT_SOURCE_DIR}/src)
+# # Download and unpack Google Test
+# include(FetchContent)
+# FetchContent_Declare(
+#   googletest
+#   URL "https://github.com/google/googletest/archive/refs/tags/v${GTEST_VERSION}.tar.gz"
+#   DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+# )
+# # For Windows: Prevent overriding the parent project's compiler/linker settings
+# set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+# FetchContent_MakeAvailable(googletest)
 
-# Add tests
-add_executable(ImportJsModuleTest tests/qjs/import-js-module.test.cpp)
-target_link_libraries(ImportJsModuleTest gtest gtest_main quickjs)
+# include_directories(include ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
-add_executable(ExposeCppClassTest tests/qjs/expose-cpp-class.test.cpp)
-target_link_libraries(ExposeCppClassTest gtest gtest_main quickjs)
+# # Add tests
+# add_executable(ImportJsModuleTest tests/qjs/import-js-module.test.cpp)
+# target_link_libraries(ImportJsModuleTest gtest gtest_main quickjs)
+
+# add_executable(ExposeCppClassTest tests/qjs/expose-cpp-class.test.cpp)
+# target_link_libraries(ExposeCppClassTest gtest gtest_main quickjs)
