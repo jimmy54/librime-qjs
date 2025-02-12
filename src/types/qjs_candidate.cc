@@ -5,7 +5,10 @@ namespace rime {
   static JSClassID js_candidate_class_id;
 
   static void js_candidate_finalizer(JSRuntime* rt, JSValue val) {
-    // do not delete the candidate object here, since it is held by the shared pointer by other components
+    void* ptr = JS_GetOpaque(val, js_candidate_class_id);
+    if (ptr) {
+      delete static_cast<std::shared_ptr<Candidate>*>(ptr);
+    }
   }
 
   static JSClassDef js_candidate_class = {
@@ -51,7 +54,8 @@ namespace rime {
     }
 
     // Set the opaque pointer
-    if (JS_SetOpaque(obj, candidate.get()) < 0) {
+    auto* ptr = new std::shared_ptr<Candidate>(candidate);
+    if (JS_SetOpaque(obj, ptr) < 0) {
       JS_FreeValue(ctx, obj);
       return JS_EXCEPTION;
     }
@@ -59,9 +63,10 @@ namespace rime {
     return obj;
   }
 
-  Candidate* QjsCandidate::Unwrap(JSContext* ctx, JSValue value) {
+  an<Candidate> QjsCandidate::Unwrap(JSContext* ctx, JSValue value) {
     void* ptr = JS_GetOpaque(value, js_candidate_class_id);
-    return static_cast<Candidate*>(ptr);
+    an<Candidate>* sharedPtr = static_cast<std::shared_ptr<Candidate>*>(ptr);
+    return sharedPtr ? *sharedPtr : nullptr;
   }
 
   JSValue QjsCandidate::get_text(JSContext* ctx, JSValueConst this_val) {
@@ -69,9 +74,6 @@ namespace rime {
     if (!candidate) {
       LOG(ERROR) << "[qjs] get_text: Candidate is null";
       return JS_UNDEFINED;
-    }
-    else {
-      LOG(INFO) << "[qjs] get_text: " << candidate->text();
     }
     return JS_NewString(ctx, candidate->text().c_str());
   }
@@ -117,7 +119,7 @@ namespace rime {
     if (!candidate) return JS_UNDEFINED;
     const char* text = JS_ToCString(ctx, val);
     if (text) {
-      auto simpleCandidate = dynamic_cast<SimpleCandidate*>(candidate);
+      auto simpleCandidate = dynamic_cast<SimpleCandidate*>(candidate.get());
       if (simpleCandidate) {
         simpleCandidate->set_text(text);
       }
@@ -131,7 +133,7 @@ namespace rime {
     if (!candidate) return JS_UNDEFINED;
     const char* comment = JS_ToCString(ctx, val);
     if (comment) {
-      auto simpleCandidate = dynamic_cast<SimpleCandidate*>(candidate);
+      auto simpleCandidate = dynamic_cast<SimpleCandidate*>(candidate.get());
       if (simpleCandidate) {
         simpleCandidate->set_comment(comment);
       }
@@ -186,7 +188,7 @@ namespace rime {
     if (!candidate) return JS_UNDEFINED;
     const char* preedit = JS_ToCString(ctx, val);
     if (preedit) {
-      auto simpleCandidate = dynamic_cast<SimpleCandidate*>(candidate);
+      auto simpleCandidate = dynamic_cast<SimpleCandidate*>(candidate.get());
       if (simpleCandidate) {
         simpleCandidate->set_preedit(preedit);
       }

@@ -3,7 +3,6 @@
 
 #include <rime/translation.h>
 
-
 namespace rime {
 
 QuickJSTranslation::QuickJSTranslation(an<Translation> translation,
@@ -18,7 +17,6 @@ QuickJSTranslation::QuickJSTranslation(an<Translation> translation,
 }
 
 bool QuickJSTranslation::FilterByJS(const string& jsCode, const string& jsFunctionName) {
-  std::map<Candidate*, an<Candidate>> mapCandidates;
   JSValueRAII jsArray(JS_NewArray(ctx_));
 
   size_t idx = 0;
@@ -29,7 +27,6 @@ bool QuickJSTranslation::FilterByJS(const string& jsCode, const string& jsFuncti
     }
 
     translation_->Next();
-    mapCandidates.insert({candidate.get(), candidate});
 
     JSValueRAII jsObjectRAII(QjsCandidate::Wrap(ctx_, candidate));
     // Use dup() to create a new reference for the array
@@ -60,18 +57,10 @@ bool QuickJSTranslation::FilterByJS(const string& jsCode, const string& jsFuncti
 
   for (uint32_t i = 0; i < length; i++) {
     JSValueRAII item(JS_GetPropertyUint32(ctx_, resultArray, i));
-    if (!JS_IsException(item)) {
-      if (Candidate* candidate = QjsCandidate::Unwrap(ctx_, item)) {
-        if (auto it = mapCandidates.find(candidate); it != mapCandidates.end()) {
-          cache_.push_back(it->second);
-        } else {
-          LOG(ERROR) << "[qjs] Candidate not found in map, ptr=" << candidate;
-        }
-      } else {
-        LOG(ERROR) << "[qjs] Failed to unwrap candidate";
-      }
+    if (an<Candidate> candidate = QjsCandidate::Unwrap(ctx_, item)) {
+      cache_.push_back(candidate);
     } else {
-      LOG(ERROR) << "[qjs] Exception while getting array item " << i;
+      LOG(ERROR) << "[qjs] Failed to unwrap candidate at index " << i;
     }
   }
 

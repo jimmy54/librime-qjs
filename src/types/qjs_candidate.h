@@ -12,7 +12,7 @@ public:
   const char* GetClassName() const override { return "Candidate"; }
 
   static JSValue Wrap(JSContext* ctx, an<Candidate> candidate);
-  static Candidate* Unwrap(JSContext* ctx, JSValue value);
+  static an<Candidate> Unwrap(JSContext* ctx, JSValue value);
 
 private:
   // Instance methods
