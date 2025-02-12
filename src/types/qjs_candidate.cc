@@ -1,12 +1,50 @@
+#include <rime/gear/translator_commons.h>
 #include "qjs_candidate.h"
+#include <memory>
+
+namespace {
+  JSValue js_new_string_from_std(JSContext* ctx, const std::string& str) {
+    return JS_NewString(ctx, str.c_str());
+  }
+}
+
+#define DEFINE_CANDIDATE_GETTER(name, type, converter)                     \
+  [[nodiscard]]                                                           \
+  JSValue QjsCandidate::get_##name(JSContext* ctx, JSValueConst this_val) { \
+    if (auto candidate = Unwrap(ctx, this_val)) {                         \
+      return converter(ctx, candidate->name());                           \
+    }                                                                     \
+    return JS_UNDEFINED;                                                  \
+  }
+
+#define DEFINE_CANDIDATE_STRING_SETTER(name, assignment)                   \
+  JSValue QjsCandidate::set_##name(JSContext* ctx, JSValueConst this_val, JSValue val) { \
+    if (auto candidate = Unwrap(ctx, this_val)) {                         \
+      if (const char* str = JS_ToCString(ctx, val)) {                     \
+        assignment                                                        \
+        JS_FreeCString(ctx, str);                                        \
+      }                                                                   \
+    }                                                                     \
+    return JS_UNDEFINED;                                                  \
+  }
+
+#define DEFINE_CANDIDATE_NUMERIC_SETTER(name, type, converter)            \
+  JSValue QjsCandidate::set_##name(JSContext* ctx, JSValueConst this_val, JSValue val) { \
+    if (auto candidate = Unwrap(ctx, this_val)) {                         \
+      type value;                                                         \
+      if (converter(ctx, &value, val) == 0) {                            \
+        candidate->set_##name(value);                                     \
+      }                                                                   \
+    }                                                                     \
+    return JS_UNDEFINED;                                                  \
+  }
 
 namespace rime {
 
   static JSClassID js_candidate_class_id;
 
   static void js_candidate_finalizer(JSRuntime* rt, JSValue val) {
-    void* ptr = JS_GetOpaque(val, js_candidate_class_id);
-    if (ptr) {
+    if (auto ptr = JS_GetOpaque(val, js_candidate_class_id)) {
       delete static_cast<std::shared_ptr<Candidate>*>(ptr);
     }
   }
@@ -44,18 +82,17 @@ namespace rime {
     JS_FreeValue(ctx, proto);
   }
 
+  [[nodiscard]]
   JSValue QjsCandidate::Wrap(JSContext* ctx, an<Candidate> candidate) {
     if (!candidate) return JS_NULL;
 
-    // Create new object with the class ID
-    JSValue obj = JS_NewObjectClass(ctx, js_candidate_class_id);
+    auto obj = JS_NewObjectClass(ctx, js_candidate_class_id);
     if (JS_IsException(obj)) {
       return obj;
     }
 
-    // Set the opaque pointer
-    auto* ptr = new std::shared_ptr<Candidate>(candidate);
-    if (JS_SetOpaque(obj, ptr) < 0) {
+    auto ptr = std::make_unique<std::shared_ptr<Candidate>>(candidate);
+    if (JS_SetOpaque(obj, ptr.release()) < 0) {
       JS_FreeValue(ctx, obj);
       return JS_EXCEPTION;
     }
@@ -63,137 +100,56 @@ namespace rime {
     return obj;
   }
 
+  [[nodiscard]]
   an<Candidate> QjsCandidate::Unwrap(JSContext* ctx, JSValue value) {
-    void* ptr = JS_GetOpaque(value, js_candidate_class_id);
-    an<Candidate>* sharedPtr = static_cast<std::shared_ptr<Candidate>*>(ptr);
-    return sharedPtr ? *sharedPtr : nullptr;
-  }
-
-  JSValue QjsCandidate::get_text(JSContext* ctx, JSValueConst this_val) {
-    auto candidate = Unwrap(ctx, this_val);
-    if (!candidate) {
-      LOG(ERROR) << "[qjs] get_text: Candidate is null";
-      return JS_UNDEFINED;
-    }
-    return JS_NewString(ctx, candidate->text().c_str());
-  }
-
-  JSValue QjsCandidate::get_comment(JSContext* ctx, JSValueConst this_val) {
-    auto candidate = Unwrap(ctx, this_val);
-    if (!candidate) return JS_UNDEFINED;
-    return JS_NewString(ctx, candidate->comment().c_str());
-  }
-
-  JSValue QjsCandidate::get_type(JSContext* ctx, JSValueConst this_val) {
-    auto candidate = Unwrap(ctx, this_val);
-    if (!candidate) return JS_UNDEFINED;
-    return JS_NewString(ctx, candidate->type().c_str());
-  }
-
-  JSValue QjsCandidate::get_start(JSContext* ctx, JSValueConst this_val) {
-    auto candidate = Unwrap(ctx, this_val);
-    if (!candidate) return JS_UNDEFINED;
-    return JS_NewInt64(ctx, candidate->start());
-  }
-
-  JSValue QjsCandidate::get_end(JSContext* ctx, JSValueConst this_val) {
-    auto candidate = Unwrap(ctx, this_val);
-    if (!candidate) return JS_UNDEFINED;
-    return JS_NewInt64(ctx, candidate->end());
-  }
-
-  JSValue QjsCandidate::get_quality(JSContext* ctx, JSValueConst this_val) {
-    auto candidate = Unwrap(ctx, this_val);
-    if (!candidate) return JS_UNDEFINED;
-    return JS_NewInt32(ctx, candidate->quality());
-  }
-
-  JSValue QjsCandidate::get_preedit(JSContext* ctx, JSValueConst this_val) {
-    auto candidate = Unwrap(ctx, this_val);
-    if (!candidate) return JS_UNDEFINED;
-    return JS_NewString(ctx, candidate->preedit().c_str());
-  }
-
-  JSValue QjsCandidate::set_text(JSContext* ctx, JSValueConst this_val, JSValue val) {
-    auto candidate = Unwrap(ctx, this_val);
-    if (!candidate) return JS_UNDEFINED;
-    const char* text = JS_ToCString(ctx, val);
-    if (text) {
-      auto simpleCandidate = dynamic_cast<SimpleCandidate*>(candidate.get());
-      if (simpleCandidate) {
-        simpleCandidate->set_text(text);
+    if (auto ptr = JS_GetOpaque(value, js_candidate_class_id)) {
+      if (auto sharedPtr = static_cast<std::shared_ptr<Candidate>*>(ptr)) {
+        return *sharedPtr;
       }
-      JS_FreeCString(ctx, text);
     }
-    return JS_UNDEFINED;
+    return nullptr;
   }
 
-  JSValue QjsCandidate::set_comment(JSContext* ctx, JSValueConst this_val, JSValue val) {
-    auto candidate = Unwrap(ctx, this_val);
-    if (!candidate) return JS_UNDEFINED;
-    const char* comment = JS_ToCString(ctx, val);
-    if (comment) {
-      auto simpleCandidate = dynamic_cast<SimpleCandidate*>(candidate.get());
-      if (simpleCandidate) {
-        simpleCandidate->set_comment(comment);
-      }
-      JS_FreeCString(ctx, comment);
-    }
-    return JS_UNDEFINED;
-  }
+  DEFINE_CANDIDATE_GETTER(text, const string&, js_new_string_from_std)
+  DEFINE_CANDIDATE_GETTER(comment, const string&, js_new_string_from_std)
+  DEFINE_CANDIDATE_GETTER(type, const string&, js_new_string_from_std)
+  DEFINE_CANDIDATE_GETTER(start, size_t, JS_NewInt64)
+  DEFINE_CANDIDATE_GETTER(end, size_t, JS_NewInt64)
+  DEFINE_CANDIDATE_GETTER(quality, int, JS_NewInt32)
+  DEFINE_CANDIDATE_GETTER(preedit, const string&, js_new_string_from_std)
 
-  JSValue QjsCandidate::set_type(JSContext* ctx, JSValueConst this_val, JSValue val) {
-    auto candidate = Unwrap(ctx, this_val);
-    if (!candidate) return JS_UNDEFINED;
-    const char* type = JS_ToCString(ctx, val);
-    if (type) {
-      candidate->set_type(type);
-      JS_FreeCString(ctx, type);
+  DEFINE_CANDIDATE_STRING_SETTER(text,
+    if (auto simpleCandidate = dynamic_cast<SimpleCandidate*>(candidate.get())) {
+      simpleCandidate->set_text(str);
     }
-    return JS_UNDEFINED;
-  }
+  )
 
-  JSValue QjsCandidate::set_start(JSContext* ctx, JSValueConst this_val, JSValue val) {
-    auto candidate = Unwrap(ctx, this_val);
-    if (!candidate) return JS_UNDEFINED;
-    int64_t start;
-    if (JS_ToInt64(ctx, &start, val) == 0) {
-      candidate->set_start(start);
+  DEFINE_CANDIDATE_STRING_SETTER(comment,
+    if (auto simpleCandidate = dynamic_cast<SimpleCandidate*>(candidate.get())) {
+      simpleCandidate->set_comment(str);
+    } else if (auto phrase = dynamic_cast<Phrase*>(candidate.get())) {
+      phrase->set_comment(str);
     }
-    return JS_UNDEFINED;
-  }
+  )
 
-  JSValue QjsCandidate::set_end(JSContext* ctx, JSValueConst this_val, JSValue val) {
-    auto candidate = Unwrap(ctx, this_val);
-    if (!candidate) return JS_UNDEFINED;
-    int64_t end;
-    if (JS_ToInt64(ctx, &end, val) == 0) {
-      candidate->set_end(end);
-    }
-    return JS_UNDEFINED;
-  }
+  DEFINE_CANDIDATE_STRING_SETTER(type,
+    candidate->set_type(str);
+  )
 
-  JSValue QjsCandidate::set_quality(JSContext* ctx, JSValueConst this_val, JSValue val) {
-    auto candidate = Unwrap(ctx, this_val);
-    if (!candidate) return JS_UNDEFINED;
-    int32_t quality;
-    if (JS_ToInt32(ctx, &quality, val) == 0) {
-      candidate->set_quality(quality);
-    }
-    return JS_UNDEFINED;
-  }
+  DEFINE_CANDIDATE_NUMERIC_SETTER(start, int64_t, JS_ToInt64)
+  DEFINE_CANDIDATE_NUMERIC_SETTER(end, int64_t, JS_ToInt64)
+  DEFINE_CANDIDATE_NUMERIC_SETTER(quality, int32_t, JS_ToInt32)
 
-  JSValue QjsCandidate::set_preedit(JSContext* ctx, JSValueConst this_val, JSValue val) {
-    auto candidate = Unwrap(ctx, this_val);
-    if (!candidate) return JS_UNDEFINED;
-    const char* preedit = JS_ToCString(ctx, val);
-    if (preedit) {
-      auto simpleCandidate = dynamic_cast<SimpleCandidate*>(candidate.get());
-      if (simpleCandidate) {
-        simpleCandidate->set_preedit(preedit);
-      }
-      JS_FreeCString(ctx, preedit);
+  DEFINE_CANDIDATE_STRING_SETTER(preedit,
+    if (auto simpleCandidate = dynamic_cast<SimpleCandidate*>(candidate.get())) {
+      simpleCandidate->set_preedit(str);
+    } else if (auto phrase = dynamic_cast<Phrase*>(candidate.get())) {
+      phrase->set_preedit(str);
     }
-    return JS_UNDEFINED;
-  }
+  )
+
 } // namespace rime
+
+#undef DEFINE_CANDIDATE_GETTER
+#undef DEFINE_CANDIDATE_STRING_SETTER
+#undef DEFINE_CANDIDATE_NUMERIC_SETTER
