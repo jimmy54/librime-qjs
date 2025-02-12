@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include "qjs_translation.h"
 #include "qjs_candidate.h"
+#include "qjs_helpers.h"
 #include <rime/candidate.h>
 #include <rime/translation.h>
 
@@ -40,7 +41,9 @@ protected:
     void SetUp() override {
         rt_ = JS_NewRuntime();
         ctx_ = JS_NewContext(rt_);
+
         QjsCandidate().Register(ctx_);
+        registerLogToJsConsole(ctx_);
     }
 
     void TearDown() override {
@@ -70,6 +73,7 @@ TEST_F(QuickJSTranslationTest, FilterCandidates) {
     auto translation = CreateMockTranslation();
     const char* jsCode = R"(
         function filterCandidates(candidates) {
+            console.log(`filterCandidates: ${candidates.length}`)
             return candidates.filter((it, idx) => it.text === "text2");
         }
     )";
