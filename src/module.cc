@@ -18,7 +18,8 @@ static void rime_qjs_initialize() {
   init_qjs_types(ctx);
   registerLogToJsConsole(ctx);
 
-  r.Register("qjs_filter", new QuickJSComponent<QuickJSFilter>(rt, ctx));
+  string jsDirectory = string(rime_get_api()->get_user_data_dir()) + "/js";
+  r.Register("qjs_filter", new QuickJSComponent<QuickJSFilter>(ctx, jsDirectory));
 }
 
 static void rime_qjs_finalize() {}

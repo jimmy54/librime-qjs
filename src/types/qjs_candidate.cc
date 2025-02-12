@@ -94,7 +94,7 @@ namespace rime {
     auto ptr = std::make_unique<std::shared_ptr<Candidate>>(candidate);
     if (JS_SetOpaque(obj, ptr.release()) < 0) {
       JS_FreeValue(ctx, obj);
-      return JS_EXCEPTION;
+      return JS_ThrowInternalError(ctx, "Failed to set opaque pointer for Candidate object");
     }
 
     return obj;

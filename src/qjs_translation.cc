@@ -16,9 +16,28 @@ QuickJSTranslation::QuickJSTranslation(an<Translation> translation,
   set_exhausted(cache_.empty());
 }
 
-bool QuickJSTranslation::FilterByJS(const string& jsCode, const string& jsFunctionName) {
-  JSValueRAII jsArray(JS_NewArray(ctx_));
+QuickJSTranslation::QuickJSTranslation(an<Translation> translation,
+                                     JSContext* ctx,
+                                     const string& jsFunctionName)
+    : PrefetchTranslation(translation), ctx_(ctx) {
+  JSValueRAII::context_ = ctx_;  // Set the static context
+  FilterByJS(jsFunctionName);
+  replenished_ = true;
+  set_exhausted(cache_.empty());
+}
 
+bool QuickJSTranslation::FilterByJS(const string& jsCode, const string& jsFunctionName) {
+  JSValueRAII result(JS_Eval(ctx_, jsCode.data(), jsCode.size(), "<input>", JS_EVAL_TYPE_GLOBAL));
+  if (JS_IsException(result)) {
+    LOG(ERROR) << "[qjs] Exception during script evaluation";
+    return false;
+  }
+
+  return FilterByJS(jsFunctionName);
+}
+
+bool QuickJSTranslation::FilterByJS(const string& jsFunctionName) {
+  JSValueRAII jsArray(JS_NewArray(ctx_));
   size_t idx = 0;
   while (!translation_->exhausted()) {
     an<Candidate> candidate = translation_->Peek();
@@ -36,18 +55,10 @@ bool QuickJSTranslation::FilterByJS(const string& jsCode, const string& jsFuncti
     return true;
   }
 
-  JSValueRAII result(JS_Eval(ctx_, jsCode.data(), jsCode.size(), "<input>", JS_EVAL_TYPE_GLOBAL));
-  if (JS_IsException(result)) {
-    LOG(ERROR) << "[qjs] Exception during script evaluation";
-    return false;
-  }
-
   JSValueRAII global(JS_GetGlobalObject(ctx_));
   JSValueRAII filter_func(JS_GetPropertyStr(ctx_, global, jsFunctionName.data()));
-  JSValue resultArray = JS_Call(ctx_, filter_func, global, 1, (JSValueConst[]){jsArray});
-
+  JSValueRAII resultArray(JS_Call(ctx_, filter_func, global, 1, (JSValueConst[]){jsArray}));
   if (JS_IsException(resultArray)) {
-    LOG(ERROR) << "[qjs] Exception during filter function call";
     return false;
   }
 

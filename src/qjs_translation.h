@@ -13,6 +13,7 @@ namespace rime {
 class QuickJSTranslation : public PrefetchTranslation {
  public:
   QuickJSTranslation(an<Translation> translation, JSContext* ctx, const string& jsCode, const string& jsFunctionName);
+  QuickJSTranslation(an<Translation> translation, JSContext* ctx, const string& jsFunctionName);
   ~QuickJSTranslation() override;
 
  protected:
@@ -20,6 +21,7 @@ class QuickJSTranslation : public PrefetchTranslation {
 
  private:
   bool FilterByJS(const string& jsCode, const string& jsFunctionName);
+  bool FilterByJS(const string& jsFunctionName);
 
   bool replenished_ = false;
   JSContext* ctx_;

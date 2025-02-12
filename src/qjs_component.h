@@ -11,17 +11,17 @@ namespace rime {
 template<typename T>
 class QuickJSComponent : public T::Component {
 public:
-  QuickJSComponent(JSRuntime* rt, JSContext* ctx) : rt_(rt), ctx_(ctx) {}
+  QuickJSComponent(JSContext* ctx, const string& jsDirectory) : ctx_(ctx), jsDirectory_(jsDirectory) {}
 
   T* Create(const Ticket& a) {
     // Create a new ticket with the same namespace for both schema and config
     Ticket t(a.engine, a.name_space, a.name_space);
-    return new T(t, rt_, ctx_);
+    return new T(t, ctx_, jsDirectory_);
   }
 
 private:
-  JSRuntime* rt_;    // QuickJS runtime
   JSContext* ctx_;   // QuickJS context
+  const string jsDirectory_;
 };
 
 } // namespace rime

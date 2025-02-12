@@ -9,7 +9,7 @@ namespace rime {
 
 class QuickJSFilter : public Filter, TagMatching {
 public:
-  explicit QuickJSFilter(const Ticket& ticket, JSRuntime* rt, JSContext* ctx);
+  explicit QuickJSFilter(const Ticket& ticket, JSContext* ctx, const string& jsDirectory);
   virtual ~QuickJSFilter();
 
   virtual an<Translation> Apply(an<Translation> translation,
@@ -18,8 +18,11 @@ public:
   virtual bool AppliesToSegment(Segment* segment);
 
 private:
-  JSRuntime* rt_;    // QuickJS runtime
   JSContext* ctx_;   // QuickJS context
+  string jsFunctionName_;
+  bool isLoaded_ = false;
+
+  bool LoadScript(const string& scriptPath);
 };
 
 } // namespace rime
