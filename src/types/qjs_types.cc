@@ -1,4 +1,5 @@
 #include "qjs_types.h"
+#include "jsvalue_raii.h"
 // #include "qjs_segment.h"
 #include "qjs_candidate.h"
 // #include "qjs_translation.h"
@@ -32,7 +33,11 @@
 
 namespace rime {
 
+JSContext* JSValueRAII::context_ = nullptr;
+
 void init_qjs_types(JSContext* ctx) {
+  JSValueRAII::context_ = ctx;
+
   // Register all types
   // QjsSegment().Register(ctx);
   QjsCandidate().Register(ctx);

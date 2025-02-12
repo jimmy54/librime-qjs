@@ -9,6 +9,9 @@ project(LibrimeQjs VERSION 1.0)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+# Add _GNU_SOURCE definition for Boost.Stacktrace
+add_definitions(-D_GNU_SOURCE)
+
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build)
@@ -71,6 +74,27 @@ foreach(test_file ${QJS_TEST_FILES})
     add_executable(${test_name} ${test_file})
     set_target_properties(${test_name} PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${TEST_OUTPUT_DIR})
-    target_link_libraries(${test_name} gtest gtest_main quickjs)
+    target_link_libraries(${test_name} gtest gtest_main quickjs glog)
+    add_test(NAME ${test_name} COMMAND ${test_name})
+endforeach()
+
+# Find all quickjs test files automatically
+file(GLOB QJS_GEAR_TEST_FILES "tests/*.test.cpp")
+
+# Create test targets
+foreach(test_file ${QJS_GEAR_TEST_FILES})
+    get_filename_component(test_name ${test_file} NAME_WE)
+    set(test_name "${test_name}-test")
+    add_executable(${test_name} ${test_file})
+    set_target_properties(${test_name} PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY ${TEST_OUTPUT_DIR})
+    target_link_libraries(${test_name}
+        gtest
+        gtest_main
+        ${rime_library}
+        ${rime_gears_library}
+        quickjs
+        librime-qjs-objs
+    )
     add_test(NAME ${test_name} COMMAND ${test_name})
 endforeach()

@@ -5,105 +5,32 @@
 #include <memory>
 #include <gtest/gtest.h>
 
-class VectorIterator {
-public:
-    explicit VectorIterator(const std::vector<int>& vec) : vec_{vec} {}
+#include "jsvalue_raii.h"
+#include "qjs_iterator.h"
 
-    [[nodiscard]] bool hasNext() const {
+using namespace rime;
+
+class VectorIterator: public AbstractIterator {
+public:
+    explicit VectorIterator(JSContext* context, std::vector<int>& vec) : context_{context}, vec_{vec} {}
+
+    bool next() {
         return current_ < vec_.size();
     }
 
-    [[nodiscard]] int next() {
-        return hasNext() ? vec_[current_++] : -1;
+    JSValue peek() {
+        int value = next() ? vec_[current_++] : -1;
+        return JS_NewInt32(context_, value);
     }
 
 private:
-    const std::vector<int>& vec_;
+    JSContext* context_{nullptr};
+    std::vector<int>& vec_;
     size_t current_{0};
 };
 
-class JSIteratorWrapper {
-public:
-    explicit JSIteratorWrapper(JSContext* ctx) : ctx_{ctx} {
-        auto rt = JS_GetRuntime(ctx);
-        JS_NewClassID(rt, &class_id_);
-        JS_NewClass(rt, class_id_, &class_def_);
-        registerClass();
-    }
-
-    ~JSIteratorWrapper() {
-        if (!JS_IsUndefined(proto_)) {
-            JS_FreeValue(ctx_, proto_);
-        }
-    }
-
-    [[nodiscard]] JSValue createIterator(const std::vector<int>& vec) const {
-        auto obj = JS_NewObjectClass(ctx_, class_id_);
-        if (JS_IsException(obj)) {
-            return obj;
-        }
-
-        auto iter = std::make_unique<VectorIterator>(vec);
-        if (JS_SetOpaque(obj, iter.release()) == -1) {
-            return JS_EXCEPTION;
-        }
-        return obj;
-    }
-
-private:
-    static JSClassID class_id_;
-    JSContext* ctx_;
-    JSValue proto_{JS_UNDEFINED};
-
-    static void finalizer(JSRuntime* rt, JSValue val) {
-        if (auto iter = static_cast<VectorIterator*>(JS_GetOpaque(val, class_id_))) {
-            delete iter;
-        }
-    }
-
-    static JSValue hasNext(JSContext* ctx, JSValueConst this_val, int, JSValueConst*) {
-        auto iter = static_cast<VectorIterator*>(JS_GetOpaque(this_val, class_id_));
-        return iter ? JS_NewBool(ctx, iter->hasNext()) : JS_ThrowTypeError(ctx, "Invalid iterator");
-    }
-
-    static JSValue next(JSContext* ctx, JSValueConst this_val, int, JSValueConst*) {
-        auto iter = static_cast<VectorIterator*>(JS_GetOpaque(this_val, class_id_));
-        return iter ? JS_NewInt32(ctx, iter->next()) : JS_ThrowTypeError(ctx, "Invalid iterator");
-    }
-
-    static constexpr JSClassDef class_def_{
-        "VectorIterator",
-        .finalizer = finalizer
-    };
-
-    static constexpr JSCFunctionListEntry proto_funcs_[] = {
-        JS_CFUNC_DEF("hasNext", 0, hasNext),
-        JS_CFUNC_DEF("next", 0, next)
-    };
-
-    void registerClass() {
-        proto_ = JS_NewObject(ctx_);
-        JS_SetPropertyFunctionList(ctx_, proto_, proto_funcs_,
-                                 sizeof(proto_funcs_) / sizeof(proto_funcs_[0]));
-        JS_SetClassProto(ctx_, class_id_, proto_);
-    }
-};
-
-JSClassID JSIteratorWrapper::class_id_;
-
-
-class JSValueRAII {
-public:
-    explicit JSValueRAII(JSValue val) : val_(val) {}
-    ~JSValueRAII() { JS_FreeValue(context_, val_); }
-    operator JSValue() const { return val_; }
-    JSValue get() const { return val_; }
-    JSValue* getPtr() { return &val_; }
-
-    static JSContext* context_;
-private:
-    JSValue val_;
-};
+template<>
+JSClassID JSIteratorWrapper<VectorIterator>::class_id_ = 0;  // Initialize with 0
 
 // Add after JSValueRAII class definition and before QuickJSTest class
 JSContext* JSValueRAII::context_ = nullptr;
@@ -117,7 +44,7 @@ protected:
         ASSERT_TRUE(context_);
 
         JSValueRAII::context_ = context_;
-        wrapper_ = std::make_unique<JSIteratorWrapper>(context_);
+        wrapper_ = std::make_unique<JSIteratorWrapper<VectorIterator>>(context_);
     }
 
     void TearDown() override {
@@ -130,19 +57,21 @@ protected:
 
     JSRuntime* runtime_{nullptr};
     JSContext* context_{nullptr};
-    std::unique_ptr<JSIteratorWrapper> wrapper_;
+    std::unique_ptr<JSIteratorWrapper<VectorIterator>> wrapper_;
 };
 
 // Update the test to remove context_ parameter from JSValueRAII construction
 TEST_F(QuickJSTest, TestVectorIterator) {
     std::vector<int> numbers{1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-    JSValueRAII iterator(wrapper_->createIterator(numbers));
+    auto* vecIterator = new VectorIterator(context_, numbers);
+    JSValueRAII iterator(wrapper_->createIterator(vecIterator));
+    // vecIterator is now managed by the shared_ptr, don't delete it manually
     ASSERT_FALSE(JS_IsException(iterator));
 
     constexpr std::string_view script = R"(
         function* filterEvenNumbers(iter) {
-            while (iter.hasNext()) {
-                const num = iter.next();
+            while (iter.next()) {
+                const num = iter.peek();
                 if (num % 2 === 0) {
                     yield num;
                 }
@@ -161,11 +90,11 @@ TEST_F(QuickJSTest, TestVectorIterator) {
     JSValueRAII generator(JS_Call(context_, filter_func, JS_UNDEFINED, 1, iterator.getPtr()));
     ASSERT_FALSE(JS_IsException(generator));
 
+    JSValueRAII next_method(JS_GetPropertyStr(context_, generator, "next"));
+
     std::vector<int> filtered_numbers;
     while (true) {
-        JSValueRAII next_method(JS_GetPropertyStr(context_, generator, "next"));
         JSValueRAII next_result(JS_Call(context_, next_method, generator, 0, nullptr));
-
         if (JS_IsException(next_result)) {
             break;
         }

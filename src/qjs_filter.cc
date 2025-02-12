@@ -1,49 +1,19 @@
 #include "qjs_filter.h"
-// #include "../types/qjs_translation.h"
-// #include "qjs_candidate.h"
+#include "qjs_translation.h"
+
 #include <rime/translation.h>
 #include <rime/gear/filter_commons.h>
-// #include <vector>
-// #include <sstream>
 
 namespace rime {
-
-class QuickJSTranslation : public Translation {
- public:
-  QuickJSTranslation(an<Translation> translation, JSContext* ctx);
-  ~QuickJSTranslation();
-
-  bool Next();
-  an<Candidate> Peek();
-
- private:
-  JSContext* ctx_;
-  an<Translation> translation_;
-};
-
-QuickJSTranslation::QuickJSTranslation(an<Translation> translation,
-                                                   JSContext* ctx)
-    : translation_(translation), ctx_(ctx) {
-  LOG(INFO) << "[qjs] QuickJSTranslation::QuickJSTranslation";
-}
-
-QuickJSTranslation::~QuickJSTranslation() {
-  LOG(INFO) << "[qjs] QuickJSTranslation::~QuickJSTranslation";
-}
-bool QuickJSTranslation::Next() {
-  LOG(INFO) << "[qjs] QuickJSTranslation::Next";
-  return translation_->Next();
-}
-an<Candidate> QuickJSTranslation::Peek() {
-  LOG(INFO) << "[qjs] QuickJSTranslation::Peek";
-  return translation_->Peek();
-}
 
 QuickJSFilter::QuickJSFilter(const Ticket& ticket,
                              JSRuntime* rt,
                              JSContext* ctx)
     : Filter(ticket), TagMatching(ticket), rt_(rt), ctx_(ctx) {
-  LOG(INFO) << "[qjs] QuickJSFilter::QuickJSFilter";
+  // LOG(INFO) << "[qjs] QuickJSFilter::QuickJSFilter"
+  //           << " name_space=" << ticket.name_space
+  //           << " klass=" << ticket.klass;
+  // qjs_filter@abc => klass = qjs_filter, name_space = abc
   if (ticket.name_space == "filter") {
     name_space_ = "filter";
   }
