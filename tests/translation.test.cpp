@@ -62,13 +62,18 @@ protected:
 
 TEST_F(QuickJSTranslationTest, Initialize) {
     auto translation = CreateMockTranslation();
-    auto qjs_translation = New<QuickJSTranslation>(translation, ctx_);
+    auto qjs_translation = New<QuickJSTranslation>(translation, ctx_, "", "");
     ASSERT_TRUE(qjs_translation != nullptr);
 }
 
 TEST_F(QuickJSTranslationTest, FilterCandidates) {
     auto translation = CreateMockTranslation();
-    auto qjs_translation = New<QuickJSTranslation>(translation, ctx_);
+    const char* jsCode = R"(
+        function filterCandidates(candidates) {
+            return candidates.filter((it, idx) => it.text === "text2");
+        }
+    )";
+    auto qjs_translation = New<QuickJSTranslation>(translation, ctx_, jsCode, "filterCandidates");
     auto candidate = qjs_translation->Peek();
 
     ASSERT_TRUE(candidate != nullptr);
@@ -82,7 +87,7 @@ TEST_F(QuickJSTranslationTest, FilterCandidates) {
 
 TEST_F(QuickJSTranslationTest, EmptyTranslation) {
     auto translation = New<FakeTranslation>();
-    auto qjs_translation = New<QuickJSTranslation>(translation, ctx_);
+    auto qjs_translation = New<QuickJSTranslation>(translation, ctx_, "", "");
     EXPECT_TRUE(qjs_translation->exhausted());
     EXPECT_FALSE(qjs_translation->Next());
     EXPECT_EQ(qjs_translation->Peek(), nullptr);

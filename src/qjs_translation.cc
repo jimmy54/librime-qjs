@@ -7,15 +7,17 @@
 namespace rime {
 
 QuickJSTranslation::QuickJSTranslation(an<Translation> translation,
-                                     JSContext* ctx)
+                                     JSContext* ctx,
+                                     const string& jsCode,
+                                     const string& jsFunctionName)
     : PrefetchTranslation(translation), ctx_(ctx) {
   JSValueRAII::context_ = ctx_;  // Set the static context
-  FilterByJS();
+  FilterByJS(jsCode, jsFunctionName);
   replenished_ = true;
   set_exhausted(cache_.empty());
 }
 
-bool QuickJSTranslation::FilterByJS() {
+bool QuickJSTranslation::FilterByJS(const string& jsCode, const string& jsFunctionName) {
   std::map<Candidate*, an<Candidate>> mapCandidates;
   JSValueRAII jsArray(JS_NewArray(ctx_));
 
@@ -31,29 +33,20 @@ bool QuickJSTranslation::FilterByJS() {
 
     JSValueRAII jsObjectRAII(QjsCandidate::Wrap(ctx_, candidate));
     // Use dup() to create a new reference for the array
-    JS_SetPropertyUint32(ctx_, jsArray, idx, jsObjectRAII.dup());
-
-    idx++;
+    JS_SetPropertyUint32(ctx_, jsArray, idx++, jsObjectRAII.dup());
   }
   if (idx == 0) {
     return true;
   }
 
-  constexpr std::string_view script = R"(
-        function filterCandidates(candidates) {
-            return candidates
-              .filter((it, idx) => idx % 2 === 1)
-        }
-    )";
-
-  JSValueRAII result(JS_Eval(ctx_, script.data(), script.size(), "<input>", JS_EVAL_TYPE_GLOBAL));
+  JSValueRAII result(JS_Eval(ctx_, jsCode.data(), jsCode.size(), "<input>", JS_EVAL_TYPE_GLOBAL));
   if (JS_IsException(result)) {
     LOG(ERROR) << "[qjs] Exception during script evaluation";
     return false;
   }
 
   JSValueRAII global(JS_GetGlobalObject(ctx_));
-  JSValueRAII filter_func(JS_GetPropertyStr(ctx_, global, "filterCandidates"));
+  JSValueRAII filter_func(JS_GetPropertyStr(ctx_, global, jsFunctionName.data()));
   JSValue resultArray = JS_Call(ctx_, filter_func, global, 1, (JSValueConst[]){jsArray});
 
   if (JS_IsException(resultArray)) {

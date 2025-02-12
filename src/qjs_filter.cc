@@ -30,7 +30,7 @@ bool QuickJSFilter::AppliesToSegment(Segment* segment) {
 an<Translation> QuickJSFilter::Apply(an<Translation> translation,
                                      CandidateList* candidates) {
   LOG(INFO) << "[qjs] QuickJSFilter::Apply";
-  return New<QuickJSTranslation>(translation, ctx_);
+  return New<QuickJSTranslation>(translation, ctx_, "", "");
 }
 
 }  // namespace rime
