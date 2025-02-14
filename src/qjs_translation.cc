@@ -6,38 +6,17 @@
 namespace rime {
 
 QuickJSTranslation::QuickJSTranslation(an<Translation> translation,
-                                     JSContext* ctx,
-                                     const string& jsCode,
-                                     const string& jsFunctionName)
-    : PrefetchTranslation(translation), ctx_(ctx) {
-  JSValueRAII::context_ = ctx_;  // Set the static context
-  FilterByJS(jsCode, jsFunctionName);
+                                     JSContext* ctx, const JSValueRAII& filterFunc)
+    : PrefetchTranslation(translation) {
+  JSValueRAII::context_ = ctx;  // Set the static context
+
+  DoFilter(ctx, filterFunc);
   replenished_ = true;
   set_exhausted(cache_.empty());
 }
 
-QuickJSTranslation::QuickJSTranslation(an<Translation> translation,
-                                     JSContext* ctx,
-                                     const string& jsFunctionName)
-    : PrefetchTranslation(translation), ctx_(ctx) {
-  JSValueRAII::context_ = ctx_;  // Set the static context
-  FilterByJS(jsFunctionName);
-  replenished_ = true;
-  set_exhausted(cache_.empty());
-}
-
-bool QuickJSTranslation::FilterByJS(const string& jsCode, const string& jsFunctionName) {
-  JSValueRAII result(JS_Eval(ctx_, jsCode.data(), jsCode.size(), "<input>", JS_EVAL_TYPE_GLOBAL));
-  if (JS_IsException(result)) {
-    LOG(ERROR) << "[qjs] Exception during script evaluation";
-    return false;
-  }
-
-  return FilterByJS(jsFunctionName);
-}
-
-bool QuickJSTranslation::FilterByJS(const string& jsFunctionName) {
-  JSValueRAII jsArray(JS_NewArray(ctx_));
+bool QuickJSTranslation::DoFilter(JSContext* ctx, const JSValueRAII& filterFunc) {
+  JSValueRAII jsArray(JS_NewArray(ctx));
   size_t idx = 0;
   while (!translation_->exhausted()) {
     an<Candidate> candidate = translation_->Peek();
@@ -47,28 +26,26 @@ bool QuickJSTranslation::FilterByJS(const string& jsFunctionName) {
 
     translation_->Next();
 
-    JSValueRAII jsObjectRAII(QjsCandidate::Wrap(ctx_, candidate));
+    JSValueRAII jsObjectRAII(QjsCandidate::Wrap(ctx, candidate));
     // Use dup() to create a new reference for the array
-    JS_SetPropertyUint32(ctx_, jsArray, idx++, jsObjectRAII.dup());
+    JS_SetPropertyUint32(ctx, jsArray, idx++, jsObjectRAII.dup());
   }
   if (idx == 0) {
     return true;
   }
 
-  JSValueRAII global(JS_GetGlobalObject(ctx_));
-  JSValueRAII filter_func(JS_GetPropertyStr(ctx_, global, jsFunctionName.data()));
-  JSValueRAII resultArray(JS_Call(ctx_, filter_func, global, 1, (JSValueConst[]){jsArray}));
+  JSValueRAII resultArray(JS_Call(ctx, filterFunc, JS_UNDEFINED, 1, (JSValueConst[]){jsArray}));
   if (JS_IsException(resultArray)) {
     return false;
   }
 
-  JSValueRAII lengthVal(JS_GetPropertyStr(ctx_, resultArray, "length"));
+  JSValueRAII lengthVal(JS_GetPropertyStr(ctx, resultArray, "length"));
   uint32_t length;
-  JS_ToUint32(ctx_, &length, lengthVal);
+  JS_ToUint32(ctx, &length, lengthVal);
 
   for (uint32_t i = 0; i < length; i++) {
-    JSValueRAII item(JS_GetPropertyUint32(ctx_, resultArray, i));
-    if (an<Candidate> candidate = QjsCandidate::Unwrap(ctx_, item)) {
+    JSValueRAII item(JS_GetPropertyUint32(ctx, resultArray, i));
+    if (an<Candidate> candidate = QjsCandidate::Unwrap(ctx, item)) {
       cache_.push_back(candidate);
     } else {
       LOG(ERROR) << "[qjs] Failed to unwrap candidate at index " << i;

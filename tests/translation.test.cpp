@@ -37,7 +37,7 @@ protected:
 
 TEST_F(QuickJSTranslationTest, Initialize) {
     auto translation = CreateMockTranslation();
-    auto qjs_translation = New<QuickJSTranslation>(translation, ctx_, "", "");
+    auto qjs_translation = New<QuickJSTranslation>(translation, ctx_, JSValueRAII(JS_UNDEFINED));
     ASSERT_TRUE(qjs_translation != nullptr);
 }
 
@@ -49,7 +49,12 @@ TEST_F(QuickJSTranslationTest, FilterCandidates) {
             return candidates.filter((it, idx) => it.text === "text2");
         }
     )";
-    auto qjs_translation = New<QuickJSTranslation>(translation, ctx_, jsCode, "filterCandidates");
+
+    JSValueRAII result(JS_Eval(ctx_, jsCode, strlen(jsCode), "<input>", JS_EVAL_TYPE_GLOBAL));
+    JSValueRAII global(JS_GetGlobalObject(ctx_));
+    JSValueRAII filterFunc(JS_GetPropertyStr(ctx_, global, "filterCandidates"));
+
+    auto qjs_translation = New<QuickJSTranslation>(translation, ctx_, filterFunc);
     auto candidate = qjs_translation->Peek();
 
     ASSERT_TRUE(candidate != nullptr);
@@ -63,7 +68,7 @@ TEST_F(QuickJSTranslationTest, FilterCandidates) {
 
 TEST_F(QuickJSTranslationTest, EmptyTranslation) {
     auto translation = New<FakeTranslation>();
-    auto qjs_translation = New<QuickJSTranslation>(translation, ctx_, "", "");
+    auto qjs_translation = New<QuickJSTranslation>(translation, ctx_, JSValueRAII(JS_UNDEFINED));
     EXPECT_TRUE(qjs_translation->exhausted());
     EXPECT_FALSE(qjs_translation->Next());
     EXPECT_EQ(qjs_translation->Peek(), nullptr);

@@ -17,6 +17,7 @@ protected:
 
         QjsCandidate().Register(ctx_);
         QjsHelper::exposeLogToJsConsole(ctx_);
+        QjsHelper::basePath = "tests/js";
     }
 
     void TearDown() override {
@@ -29,13 +30,13 @@ protected:
 };
 
 TEST_F(QuickJSFilterTest, Initialize) {
-    Ticket ticket(nullptr, "filter", "qjs_filter@filter_test#filterCandidates");
+    Ticket ticket(nullptr, "filter", "qjs_filter@filter_test");
     auto filter = New<QuickJSFilter>(ticket, ctx_, "tests/js");
     ASSERT_TRUE(filter != nullptr);
 }
 
 TEST_F(QuickJSFilterTest, ApplyFilter) {
-    Ticket ticket(nullptr, "filter", "qjs_filter@filter_test#filterCandidates");
+    Ticket ticket(nullptr, "filter", "qjs_filter@filter_test");
     auto filter = New<QuickJSFilter>(ticket, ctx_, "tests/js");
 
     auto translation = New<FakeTranslation>();

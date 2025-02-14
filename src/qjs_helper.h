@@ -19,8 +19,16 @@ public:
 
     static JSValue loadJsModuleToNamespace(JSContext* ctx, const char* fileName) {
         JSValue funcObj = loadJsModule(ctx, fileName);
+        if (JS_IsException(funcObj)) {
+            return funcObj;
+        }
+
         JSModuleDef* md = reinterpret_cast<JSModuleDef*>(JS_VALUE_GET_PTR(funcObj));
-        JS_EvalFunction(ctx, funcObj);
+        JSValue evalResult = JS_EvalFunction(ctx, funcObj);
+        if (JS_IsException(funcObj)) {
+            return evalResult;
+        }
+        
         return JS_GetModuleNamespace(ctx, md);
     }
 

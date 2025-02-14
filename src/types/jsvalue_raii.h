@@ -27,10 +27,34 @@ public:
         }
     }
     ~JSValueRAII() {
-        if (ctx_) {  // Only free if we have a valid context
+        if (ctx_ && JS_IsUndefined(val_)) {  // Only free if we have a valid context and value
             JS_FreeValue(ctx_, val_);
         }
     }
+
+    // Add move constructor and assignment
+    JSValueRAII(JSValueRAII&& other) noexcept : val_(other.val_), ctx_(other.ctx_) {
+        other.val_ = JS_UNDEFINED;
+        other.ctx_ = nullptr;
+    }
+
+    JSValueRAII& operator=(JSValueRAII&& other) noexcept {
+        if (this != &other) {
+            if (ctx_ && JS_IsUndefined(val_)) {
+                JS_FreeValue(ctx_, val_);
+            }
+            val_ = other.val_;
+            ctx_ = other.ctx_;
+            other.val_ = JS_UNDEFINED;
+            other.ctx_ = nullptr;
+        }
+        return *this;
+    }
+
+    // Delete copy constructor and assignment
+    JSValueRAII(const JSValueRAII&) = delete;
+    JSValueRAII& operator=(const JSValueRAII&) = delete;
+
     operator JSValue() const { return val_; }
     JSValue get() const { return val_; }
     JSValue* getPtr() { return &val_; }

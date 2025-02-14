@@ -1,5 +1,7 @@
 #include "qjs_filter.h"
 #include "qjs_translation.h"
+#include "jsvalue_raii.h"
+#include "qjs_helper.h"
 
 #include <fstream>
 #include <rime/translation.h>
@@ -11,48 +13,43 @@ QuickJSFilter::QuickJSFilter(const Ticket& ticket,
                              JSContext* ctx,
                              const std::string& jsDirectory)
     : Filter(ticket), TagMatching(ticket), ctx_(ctx) {
-
   // filters:
-  //   - qjs_filter@abc#doFilter
-  // => klass = qjs_filter, name_space = abc#doFilter
-  if (ticket.name_space == "filter") {
-    name_space_ = "filter";
+  //   - qjs_filter@abc
+  // => klass = qjs_filter, name_space = abc
+  std::string fileName = ticket.name_space + ".js";
+  JSValue moduleNamespace = QjsHelper::loadJsModuleToNamespace(ctx_, fileName.c_str());
+  if (JS_IsUndefined(moduleNamespace)) {
+    LOG(ERROR) << "[qjs] QuickJSFilter::QuickJSFilter Could not load " << fileName;
+    return;
   }
 
-  string filename = ticket.name_space;
-  size_t pos = ticket.name_space.find('#');
-  if (pos != string::npos) {
-    filename = ticket.name_space.substr(0, pos);
-    jsFunctionName_ = ticket.name_space.substr(pos + 1);
+  JSValueRAII initFunc(JS_GetPropertyStr(ctx_, moduleNamespace, "init"));
+  if (!JS_IsUndefined(initFunc)) {
+    LOG(INFO) << "[qjs] QuickJSFilter::QuickJSFilter running the init function";
+    JS_Call(ctx_, initFunc, JS_UNDEFINED, 0, nullptr);
   } else {
-    jsFunctionName_ = "doFilter";
+    LOG(INFO) << "[qjs] QuickJSFilter::QuickJSFilter no `init` function exported in " << fileName;
   }
 
-  string scriptPath = jsDirectory + "/" + filename + ".js";
-  isLoaded_ = LoadScript(scriptPath);
+  finitFunc_ = JSValueRAII(JS_GetPropertyStr(ctx_, moduleNamespace, "finit"));
+
+  filterFunc_ = JSValueRAII(JS_GetPropertyStr(ctx_, moduleNamespace, "filter"));
+  if (JS_IsUndefined(filterFunc_)) {
+    LOG(ERROR) << "[qjs] QuickJSFilter::QuickJSFilter No `filter` function exported in " << fileName;
+    return;
+  }
+
+  isLoaded_ = true;
 }
 
 QuickJSFilter::~QuickJSFilter() {
-  LOG(INFO) << "[qjs] QuickJSFilter::~QuickJSFilter";
-}
-
-bool QuickJSFilter::LoadScript(const string& scriptPath) {
-  std::ifstream jsFile(scriptPath);
-  if (!jsFile.is_open()) {
-    LOG(ERROR) << "[qjs] QuickJSFilter::LoadScript Could not open " << scriptPath;
-    return false;
+  if (!JS_IsUndefined(finitFunc_)) {
+    LOG(INFO) << "[qjs] QuickJSFilter::~QuickJSFilter running the finit function";
+    JS_Call(ctx_, finitFunc_, JS_UNDEFINED, 0, nullptr);
+  } else {
+    LOG(INFO) << "[qjs] QuickJSFilter::~QuickJSFilter no `finit` function exported.";
   }
-
-  std::string jsCode((std::istreambuf_iterator<char>(jsFile)),
-                      std::istreambuf_iterator<char>());
-  JSValueRAII result(JS_Eval(ctx_, jsCode.data(), jsCode.size(), "<input>", JS_EVAL_TYPE_GLOBAL));
-  if (JS_IsException(result)) {
-    LOG(ERROR) << "[qjs] QuickJSFilter::LoadScript Failed to eval the js code of " << scriptPath;
-    return false;
-  }
-  return true;
 }
-
 
 bool QuickJSFilter::AppliesToSegment(Segment* segment) {
   return TagsMatch(segment);
@@ -64,7 +61,7 @@ an<Translation> QuickJSFilter::Apply(an<Translation> translation,
     return translation;
   }
 
-  return New<QuickJSTranslation>(translation, ctx_, jsFunctionName_);
+  return New<QuickJSTranslation>(translation, ctx_, filterFunc_);
 }
 
 }  // namespace rime

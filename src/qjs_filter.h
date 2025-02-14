@@ -4,6 +4,7 @@
 #include <rime/filter.h>
 #include <rime/gear/filter_commons.h>
 #include "quickjs.h"
+#include "jsvalue_raii.h"
 
 namespace rime {
 
@@ -19,10 +20,10 @@ public:
 
 private:
   JSContext* ctx_;   // QuickJS context
-  string jsFunctionName_;
-  bool isLoaded_ = false;
+  JSValueRAII filterFunc_{JS_UNDEFINED};
+  JSValueRAII finitFunc_{JS_UNDEFINED};
 
-  bool LoadScript(const string& scriptPath);
+  bool isLoaded_ = false;
 };
 
 } // namespace rime
