@@ -4,47 +4,75 @@
 #include <iostream>
 #include <gtest/gtest.h>
 
-#include "./js-module-loader.h"
+#include "qjs_helper.h"
+#include "jsvalue_raii.h"
 
-TEST(QuickJSTest, TestImportJsModule) {
-    JSRuntime* rt = JS_NewRuntime();
-    JSContext* ctx = JS_NewContext(rt);
-    JS_SetModuleLoaderFunc(rt, nullptr, js_module_loader, nullptr);
+using namespace rime;
 
-    JSValue module = loadMjsFile(ctx, "main.js");
-    JS_FreeValue(ctx, module);
+JSContext* JSValueRAII::context_ = nullptr;
+std::string QjsHelper::basePath = "tests/qjs/js";
 
-    // Get the global object and MyClass
-    JSValue global_obj = JS_GetGlobalObject(ctx);
-    JSValue myClass = JS_GetPropertyStr(ctx, global_obj, "MyClass");
+class QuickJSModuleTest : public testing::Test {
+protected:
+    JSRuntime* rt_;
+    JSContext* ctx_;
+
+    void SetUp() override {
+        rt_ = JS_NewRuntime();
+        ctx_ = JS_NewContext(rt_);
+        JSValueRAII::context_ = ctx_;
+        JS_SetModuleLoaderFunc(rt_, nullptr, QjsHelper::jsModuleLoader, nullptr);
+        QjsHelper::exposeLogToJsConsole(ctx_);
+        QjsHelper::basePath = "tests/qjs/js";
+    }
+
+    void TearDown() override {
+        JSValueRAII::context_ = nullptr;
+        JS_FreeContext(ctx_);
+        JS_FreeRuntime(rt_);
+    }
+};
+
+TEST_F(QuickJSModuleTest, ImportJsModuleFromAnotherJsFile) {
+    JSValueRAII module(QjsHelper::loadJsModuleToGlobalThis(ctx_, "main.js"));
+
+    JSValueRAII global_obj(JS_GetGlobalObject(ctx_));
+    JSValueRAII myClass(JS_GetPropertyStr(ctx_, global_obj, "MyClass"));
     ASSERT_FALSE(JS_IsException(myClass));
 
-    // Create an instance of MyClass with value 10
-    JSValue args[] = { JS_NewInt32(ctx, 10) };
-    JSValue obj = JS_CallConstructor(ctx, myClass, 1, args);
+    JSValueRAII arg(JS_NewInt32(ctx_, 10));
+    JSValue args[] = { arg.get() };
+    JSValueRAII obj(JS_CallConstructor(ctx_, myClass, 1, args));
     ASSERT_FALSE(JS_IsException(obj));
 
-    // Call the greet method with "QuickJS" argument
-    JSValue greet_arg = JS_NewString(ctx, "QuickJS");
-    JSAtom greet_atom = JS_NewAtom(ctx, "greet");
-    JSValue greet_result = JS_Invoke(ctx, obj, greet_atom, 1, &greet_arg);
+    JSValueRAII greet_arg(JS_NewString(ctx_, "QuickJS"));
+    JSAtom greet_atom = JS_NewAtom(ctx_, "greet");
+    JSValueRAII greet_result(JS_Invoke(ctx_, obj, greet_atom, 1, greet_arg.getPtr()));
     ASSERT_FALSE(JS_IsException(greet_result));
-    JS_FreeAtom(ctx, greet_atom);
+    JS_FreeAtom(ctx_, greet_atom);
 
-    // Verify the result
-    const char* str = JS_ToCString(ctx, greet_result);
+    const char* str = JS_ToCString(ctx_, greet_result);
     ASSERT_TRUE(str != nullptr);
     EXPECT_STREQ(str, "Hello QuickJS!");
-    JS_FreeCString(ctx, str);
+    JS_FreeCString(ctx_, str);
+}
 
-    // Clean up
-    JS_FreeValue(ctx, greet_arg);
-    JS_FreeValue(ctx, greet_result);
-    JS_FreeValue(ctx, obj);
-    JS_FreeValue(ctx, myClass);
-    JS_FreeValue(ctx, global_obj);
-    JS_FreeValue(ctx, args[0]);
+TEST_F(QuickJSModuleTest, ImportJsModuleToNamespace) {
+    JSValueRAII moduleNamespace(QjsHelper::loadJsModuleToNamespace(ctx_, "lib.js"));
+    ASSERT_FALSE(JS_IsException(moduleNamespace));
 
-    JS_FreeContext(ctx);
-    JS_FreeRuntime(rt);
+    // Get the greet function from the namespace
+    JSValueRAII greetFunc(JS_GetPropertyStr(ctx_, moduleNamespace, "greet"));
+    ASSERT_FALSE(JS_IsException(greetFunc));
+
+    JSValueRAII arg(JS_NewString(ctx_, "QuickJS"));
+    JSValue args[] = { arg.get() };
+    JSValueRAII result(JS_Call(ctx_, greetFunc, JS_UNDEFINED, 1, args));
+    ASSERT_FALSE(JS_IsException(result));
+
+    // Verify the result
+    const char* str = JS_ToCString(ctx_, result);
+    ASSERT_TRUE(str != nullptr);
+    EXPECT_STREQ(str, "Hello QuickJS!");
+    JS_FreeCString(ctx_, str);
 }

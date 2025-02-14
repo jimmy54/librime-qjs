@@ -4,7 +4,9 @@
 #include <iostream>
 #include <gtest/gtest.h>
 
-#include "./js-module-loader.h"
+#include "qjs_helper.h"
+
+std::string QjsHelper::basePath = "";
 
 std::string trim(const std::string& str) {
     const auto start = str.find_first_not_of(" \t\n\r");
@@ -17,9 +19,12 @@ std::string trim(const std::string& str) {
 TEST(QuickJSTest, TestJsRuntimeError) {
     JSRuntime* rt = JS_NewRuntime();
     JSContext* ctx = JS_NewContext(rt);
-    JS_SetModuleLoaderFunc(rt, nullptr, js_module_loader, nullptr);
 
-    JSValue module = loadMjsFile(ctx, "runtime-error.js");
+    JS_SetModuleLoaderFunc(rt, nullptr, QjsHelper::jsModuleLoader, nullptr);
+    QjsHelper::exposeLogToJsConsole(ctx);
+    QjsHelper::basePath = "tests/qjs/js";
+
+    JSValue module = QjsHelper::loadJsModuleToGlobalThis(ctx, "runtime-error.js");
     JSValue global_obj = JS_GetGlobalObject(ctx);
     JSValue func = JS_GetPropertyStr(ctx, global_obj, "funcWithRuntimeError");
     ASSERT_FALSE(JS_IsException(func));

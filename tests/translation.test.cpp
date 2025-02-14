@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include "qjs_translation.h"
 #include "qjs_candidate.h"
-#include "qjs_helpers.h"
+#include "qjs_helper.h"
 #include <rime/candidate.h>
 #include <rime/translation.h>
 
@@ -15,7 +15,7 @@ protected:
         ctx_ = JS_NewContext(rt_);
 
         QjsCandidate().Register(ctx_);
-        registerLogToJsConsole(ctx_);
+        QjsHelper::exposeLogToJsConsole(ctx_);
     }
 
     void TearDown() override {
