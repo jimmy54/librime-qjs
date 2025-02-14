@@ -4,8 +4,6 @@
 #include <quickjs.h>
 #include <string>
 
-#define countof(x) (sizeof(x) / sizeof((x)[0]))
-
 namespace rime {
 
 // Base class for type registration
@@ -25,6 +23,10 @@ protected:
 
   // Helper to register class properties
   void RegisterClassProperties(JSContext* ctx, JSValue proto, const JSCFunctionListEntry* properties, int count);
+
+  static JSValue js_new_string_from_std(JSContext* ctx, const std::string& str) {
+    return JS_NewString(ctx, str.c_str());
+  }
 };
 
 } // namespace rime
