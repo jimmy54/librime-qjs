@@ -33,7 +33,7 @@ DEF_FUNC_WITH_SINGLE_STRING_PARAM(Config, get_bool,
 DEF_FUNC_WITH_SINGLE_STRING_PARAM(Config, get_int,
   int value = 0;
   bool success = obj->GetInt(param, &value);
-  return success ? JS_NewBool(ctx, value) : JS_NULL;
+  return success ? JS_NewInt32(ctx, value) : JS_NULL;
 )
 DEF_FUNC_WITH_SINGLE_STRING_PARAM(Config, get_double,
   double value = 0.0;
