@@ -6,8 +6,6 @@
 
 #include "qjs_helper.h"
 
-std::string QjsHelper::basePath = "";
-
 std::string trim(const std::string& str) {
     const auto start = str.find_first_not_of(" \t\n\r");
     if (start == std::string::npos) return "";
@@ -16,14 +14,20 @@ std::string trim(const std::string& str) {
     return str.substr(start, end - start + 1);
 }
 
-TEST(QuickJSTest, TestJsRuntimeError) {
-    JSRuntime* rt = JS_NewRuntime();
-    JSContext* ctx = JS_NewContext(rt);
+class QuickJSErrorTest : public ::testing::Test {
+protected:
+    JSContext* ctx;
 
-    JS_SetModuleLoaderFunc(rt, nullptr, QjsHelper::jsModuleLoader, nullptr);
-    QjsHelper::exposeLogToJsConsole(ctx);
-    QjsHelper::basePath = "tests/qjs/js";
+    void SetUp() override {
+        ctx = QjsHelper::getInstance().getContext();
+        auto rt = JS_GetRuntime(ctx);
+        JS_SetModuleLoaderFunc(rt, nullptr, QjsHelper::jsModuleLoader, nullptr);
+        QjsHelper::exposeLogToJsConsole(ctx);
+        QjsHelper::basePath = "tests/qjs/js";
+    }
+};
 
+TEST_F(QuickJSErrorTest, TestJsRuntimeError) {
     JSValue module = QjsHelper::loadJsModuleToGlobalThis(ctx, "runtime-error.js");
     JSValue global_obj = JS_GetGlobalObject(ctx);
     JSValue func = JS_GetPropertyStr(ctx, global_obj, "funcWithRuntimeError");
@@ -52,7 +56,4 @@ TEST(QuickJSTest, TestJsRuntimeError) {
     JS_FreeValue(ctx, func);
     JS_FreeValue(ctx, global_obj);
     JS_FreeValue(ctx, module);
-
-    JS_FreeContext(ctx);
-    JS_FreeRuntime(rt);
 }

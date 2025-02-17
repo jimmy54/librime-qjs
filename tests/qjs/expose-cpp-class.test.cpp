@@ -2,6 +2,7 @@
 #include <sstream>
 #include <gtest/gtest.h>
 #include "quickjs.h"
+#include "qjs_helper.h"
 
 class MyClass {
 public:
@@ -133,11 +134,17 @@ void register_myclass(JSContext* ctx) {
     JS_FreeValue(ctx, constructor);
 }
 
-TEST(QuickJSTest, TestExposeClassToQuickJS) {
-    JSRuntime* rt = JS_NewRuntime();
-    JSContext* ctx = JS_NewContext(rt);
-    register_myclass(ctx);
+class QuickJSExposeClassTest : public ::testing::Test {
+protected:
+    JSContext* ctx;
 
+    void SetUp() override {
+        ctx = QjsHelper::getInstance().getContext();
+        register_myclass(ctx);
+    }
+};
+
+TEST_F(QuickJSExposeClassTest, TestExposeClassToQuickJS) {
     const char* script = R"(
         function testExposedCppClass() {
             let ret;
@@ -155,8 +162,4 @@ TEST(QuickJSTest, TestExposeClassToQuickJS) {
     const char* result_str = JS_ToCString(ctx, result);
     EXPECT_STREQ(result_str, "Hello, QuickJS! Hello, Trae!");
     JS_FreeCString(ctx, result_str);
-
-    // Clean up context and runtime
-    JS_FreeContext(ctx);
-    JS_FreeRuntime(rt);
 }

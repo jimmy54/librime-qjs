@@ -9,27 +9,15 @@
 
 using namespace rime;
 
-JSContext* JSValueRAII::context_ = nullptr;
-std::string QjsHelper::basePath = "tests/qjs/js";
-
 class QuickJSModuleTest : public testing::Test {
 protected:
-    JSRuntime* rt_;
     JSContext* ctx_;
 
     void SetUp() override {
-        rt_ = JS_NewRuntime();
-        ctx_ = JS_NewContext(rt_);
-        JSValueRAII::context_ = ctx_;
-        JS_SetModuleLoaderFunc(rt_, nullptr, QjsHelper::jsModuleLoader, nullptr);
+        ctx_ = QjsHelper::getInstance().getContext();
+        JS_SetModuleLoaderFunc(JS_GetRuntime(ctx_), nullptr, QjsHelper::jsModuleLoader, nullptr);
         QjsHelper::exposeLogToJsConsole(ctx_);
         QjsHelper::basePath = "tests/qjs/js";
-    }
-
-    void TearDown() override {
-        JSValueRAII::context_ = nullptr;
-        JS_FreeContext(ctx_);
-        JS_FreeRuntime(rt_);
     }
 };
 

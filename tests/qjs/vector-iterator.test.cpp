@@ -6,6 +6,7 @@
 #include <gtest/gtest.h>
 
 #include "jsvalue_raii.h"
+#include "qjs_helper.h"
 #include "qjs_iterator.h"
 
 using namespace rime;
@@ -32,36 +33,24 @@ private:
 template<>
 JSClassID JSIteratorWrapper<VectorIterator>::class_id_ = 0;  // Initialize with 0
 
-// Add after JSValueRAII class definition and before QuickJSTest class
-JSContext* JSValueRAII::context_ = nullptr;
-
-class QuickJSTest : public ::testing::Test {
+class QuickJSGeneratorTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        runtime_ = JS_NewRuntime();
-        ASSERT_TRUE(runtime_);
-        context_ = JS_NewContext(runtime_);
-        ASSERT_TRUE(context_);
-
-        JSValueRAII::context_ = context_;
+        context_ = QjsHelper::getInstance().getContext();
         wrapper_ = std::make_unique<JSIteratorWrapper<VectorIterator>>(context_);
     }
 
     void TearDown() override {
         // free the wrapper before freeing the context and runtime
         wrapper_.reset();
-
-        JS_FreeContext(context_);
-        JS_FreeRuntime(runtime_);
     }
 
-    JSRuntime* runtime_{nullptr};
     JSContext* context_{nullptr};
     std::unique_ptr<JSIteratorWrapper<VectorIterator>> wrapper_;
 };
 
 // Update the test to remove context_ parameter from JSValueRAII construction
-TEST_F(QuickJSTest, TestVectorIterator) {
+TEST_F(QuickJSGeneratorTest, TestVectorIterator) {
     std::vector<int> numbers{1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
     auto* vecIterator = new VectorIterator(context_, numbers);
     JSValueRAII iterator(wrapper_->createIterator(vecIterator));

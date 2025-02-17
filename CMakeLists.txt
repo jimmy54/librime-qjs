@@ -40,20 +40,20 @@ set(plugin_objs $<TARGET_OBJECTS:librime-qjs-objs> PARENT_SCOPE)
 set(plugin_deps ${rime_library} ${rime_gears_library} quickjs PARENT_SCOPE)
 set(plugin_modules "qjs" PARENT_SCOPE)
 
-message(STATUS "building ${plugin_name} as a plugin")
-
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src SRC)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/types SRC_TYPES)
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/helpers SRC_HELPERS)
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_SOURCE_DIR}/src/types
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/helpers
     ${CMAKE_CURRENT_SOURCE_DIR}/tests/
 )
 
 # create a dynamic library
-add_library(librime-qjs-objs OBJECT ${SRC} ${SRC_TYPES})
+add_library(librime-qjs-objs OBJECT ${SRC} ${SRC_TYPES} ${SRC_HELPERS})
 
 # Link QuickJS to librime-qjs
 target_link_libraries(librime-qjs-objs PRIVATE quickjs)
@@ -62,40 +62,28 @@ target_link_libraries(librime-qjs-objs PRIVATE quickjs)
 enable_testing()
 
 # Set output directory for test executables
-set(TEST_OUTPUT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build)
-file(MAKE_DIRECTORY ${TEST_OUTPUT_DIR})
+set(TEST_OUTPUT_DIR ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 
-# Find all quickjs test files automatically
+# Create a symbolic link for the YAML file
+execute_process(
+    COMMAND ${CMAKE_COMMAND} -E create_symlink
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../data/minimal/default.yaml
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/yaml/default.yaml
+)
+
 file(GLOB QJS_TEST_FILES "tests/qjs/*.test.cpp")
-
-# Create test targets
-foreach(test_file ${QJS_TEST_FILES})
-    get_filename_component(test_name ${test_file} NAME_WE)
-    set(test_name "${test_name}-test")
-    add_executable(${test_name} ${test_file})
-    set_target_properties(${test_name} PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY ${TEST_OUTPUT_DIR})
-    target_link_libraries(${test_name} gtest gtest_main quickjs glog)
-    add_test(NAME ${test_name} COMMAND ${test_name})
-endforeach()
-
-# Find all quickjs test files automatically
 file(GLOB QJS_GEAR_TEST_FILES "tests/*.test.cpp")
+aux_source_directory(tests/qjs TEST_SRC)
+add_executable(librime-qjs-tests ${QJS_TEST_FILES} ${QJS_GEAR_TEST_FILES})
+target_link_libraries(librime-qjs-tests
+  ${rime_library}
+  ${rime_dict_library}
+  ${rime_gears_library}
+  ${GTEST_LIBRARIES}
+  quickjs
+  librime-qjs-objs
+)
 
-# Create test targets
-foreach(test_file ${QJS_GEAR_TEST_FILES})
-    get_filename_component(test_name ${test_file} NAME_WE)
-    set(test_name "${test_name}-test")
-    add_executable(${test_name} ${test_file})
-    set_target_properties(${test_name} PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY ${TEST_OUTPUT_DIR})
-    target_link_libraries(${test_name}
-        gtest
-        gtest_main
-        ${rime_library}
-        ${rime_gears_library}
-        quickjs
-        librime-qjs-objs
-    )
-    add_test(NAME ${test_name} COMMAND ${test_name})
-endforeach()
+add_test(NAME librime-qjs-tests
+  COMMAND librime-qjs-tests
+  WORKING_DIRECTORY ${EXECUTABLE_OUTPUT_PATH})

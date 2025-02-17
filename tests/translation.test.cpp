@@ -11,17 +11,13 @@ using namespace rime;
 class QuickJSTranslationTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        rt_ = JS_NewRuntime();
-        ctx_ = JS_NewContext(rt_);
+        rt_ = QjsHelper::getInstance().getRuntime();
+        ctx_ = QjsHelper::getInstance().getContext();
 
         QjsCandidate().Register(ctx_);
         QjsHelper::exposeLogToJsConsole(ctx_);
     }
 
-    void TearDown() override {
-        JS_FreeContext(ctx_);
-        JS_FreeRuntime(rt_);
-    }
 
     an<Translation> CreateMockTranslation() {
         auto translation = New<FakeTranslation>();
@@ -37,16 +33,17 @@ protected:
 
 TEST_F(QuickJSTranslationTest, Initialize) {
     auto translation = CreateMockTranslation();
-    auto qjs_translation = New<QuickJSTranslation>(translation, ctx_, JSValueRAII(JS_UNDEFINED));
+    auto qjs_translation = New<QuickJSTranslation>(translation, JSValueRAII(JS_UNDEFINED), JS_UNDEFINED);
     ASSERT_TRUE(qjs_translation != nullptr);
 }
 
 TEST_F(QuickJSTranslationTest, FilterCandidates) {
     auto translation = CreateMockTranslation();
     const char* jsCode = R"(
-        function filterCandidates(candidates) {
+        function filterCandidates(candidates, env) {
             console.log(`filterCandidates: ${candidates.length}`)
-            return candidates.filter((it, idx) => it.text === "text2");
+            console.log(`env.expectingText: ${env.expectingText}`)
+            return candidates.filter((it, idx) => it.text === env.expectingText)
         }
     )";
 
@@ -54,7 +51,11 @@ TEST_F(QuickJSTranslationTest, FilterCandidates) {
     JSValueRAII global(JS_GetGlobalObject(ctx_));
     JSValueRAII filterFunc(JS_GetPropertyStr(ctx_, global, "filterCandidates"));
 
-    auto qjs_translation = New<QuickJSTranslation>(translation, ctx_, filterFunc);
+    JSValueRAII env(JS_NewObject(ctx_));
+    JSValueRAII jsExpectingText(JS_NewString(ctx_, "text2"));
+    JS_SetPropertyStr(ctx_, env, "expectingText", jsExpectingText);
+
+    auto qjs_translation = New<QuickJSTranslation>(translation, filterFunc, env);
     auto candidate = qjs_translation->Peek();
 
     ASSERT_TRUE(candidate != nullptr);
@@ -68,7 +69,7 @@ TEST_F(QuickJSTranslationTest, FilterCandidates) {
 
 TEST_F(QuickJSTranslationTest, EmptyTranslation) {
     auto translation = New<FakeTranslation>();
-    auto qjs_translation = New<QuickJSTranslation>(translation, ctx_, JSValueRAII(JS_UNDEFINED));
+    auto qjs_translation = New<QuickJSTranslation>(translation, JSValueRAII(JS_UNDEFINED), JS_UNDEFINED);
     EXPECT_TRUE(qjs_translation->exhausted());
     EXPECT_FALSE(qjs_translation->Next());
     EXPECT_EQ(qjs_translation->Peek(), nullptr);
