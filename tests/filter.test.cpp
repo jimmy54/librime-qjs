@@ -1,9 +1,14 @@
 #include <gtest/gtest.h>
+#include "qjs_types.h"
 #include "qjs_filter.h"
 #include "qjs_candidate.h"
-#include "qjs_helper.h"
+#include "qjs_engine.h"
 #include <rime/candidate.h>
 #include <rime/translation.h>
+#include <rime/engine.h>
+#include <rime/schema.h>
+#include <rime/context.h>
+#include <rime/config/config_component.h>
 
 #include "fake_translation.h"
 
@@ -12,32 +17,28 @@ using namespace rime;
 class QuickJSFilterTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        rt_ = JS_NewRuntime();
-        ctx_ = JS_NewContext(rt_);
-
-        QjsCandidate().Register(ctx_);
-        QjsHelper::exposeLogToJsConsole(ctx_);
         QjsHelper::basePath = "tests/js";
     }
-
-    void TearDown() override {
-        JS_FreeContext(ctx_);
-        JS_FreeRuntime(rt_);
-    }
-
-    JSRuntime* rt_;
-    JSContext* ctx_;
 };
 
-TEST_F(QuickJSFilterTest, Initialize) {
-    Ticket ticket(nullptr, "filter", "qjs_filter@filter_test");
-    auto filter = New<QuickJSFilter>(ticket, ctx_, "tests/js");
-    ASSERT_TRUE(filter != nullptr);
-}
-
 TEST_F(QuickJSFilterTest, ApplyFilter) {
-    Ticket ticket(nullptr, "filter", "qjs_filter@filter_test");
-    auto filter = New<QuickJSFilter>(ticket, ctx_, "tests/js");
+    auto ctx = QjsHelper::getInstance().getContext();
+    QjsHelper::exposeLogToJsConsole(ctx);
+
+    auto arg = JSValueRAII(JS_NewObject(ctx));
+    auto engine = Engine::Create();
+    // engine->ApplySchema(&schema); // ApplySchema 会触发回调函数，导致 segfault
+    // engine->schema()->schema_id() = .default, engine->schema()->schema_name() = .default
+    ASSERT_TRUE(engine->schema() != nullptr);
+
+    auto config = engine->schema()->config();
+    ASSERT_TRUE(config != nullptr);
+    config->SetString("greet", "hello from c++");
+    config->SetString("expectingText", "text2");
+
+    Ticket ticket(engine, "filter", "qjs_filter@filter_test");
+
+    auto filter = New<QuickJSFilter>(ticket, "tests/js");
 
     auto translation = New<FakeTranslation>();
     translation->Append(New<SimpleCandidate>("mock", 0, 1, "text1", "comment1"));
@@ -50,7 +51,7 @@ TEST_F(QuickJSFilterTest, ApplyFilter) {
 
     auto candidate = filtered->Peek();
     ASSERT_TRUE(candidate!= nullptr);
-    ASSERT_EQ(candidate->text(), "text1");
+    ASSERT_EQ(candidate->text(), "text2");
 
     filtered->Next();
     EXPECT_TRUE(filtered->exhausted());
