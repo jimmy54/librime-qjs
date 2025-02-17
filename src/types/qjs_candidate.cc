@@ -1,13 +1,12 @@
 #include <rime/gear/translator_commons.h>
 #include "qjs_candidate.h"
-#include "qjs_macros.h"
 #include <memory>
 
 namespace rime {
 
-DEFINE_JS_CLASS(Candidate,
+DEFINE_JS_CLASS_WITH_SHARED_POINTER(Candidate,
   DEFINE_PROPERTIES(text, comment, type, start, end, quality, preedit),
-  // no functions to register
+  NO_FUNCTION_TO_REGISTER
 )
 
 DEFINE_GETTER(Candidate, text, const string&, js_new_string_from_std)
