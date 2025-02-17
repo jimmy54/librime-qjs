@@ -1,13 +1,14 @@
 #include "qjs_types.h"
 #include "jsvalue_raii.h"
+#include "jsstring_raii.h"
 // #include "qjs_segment.h"
 #include "qjs_candidate.h"
 // #include "qjs_translation.h"
 // #include "qjs_key_event.h"
 // #include "qjs_context.h"
-// #include "qjs_schema.h"
-// #include "qjs_config.h"
-// #include "qjs_engine.h"
+#include "qjs_schema.h"
+#include "qjs_config.h"
+#include "qjs_engine.h"
 // #include "qjs_menu.h"
 // #include "qjs_memory.h"
 // #include "qjs_dictionary.h"
@@ -33,20 +34,17 @@
 
 namespace rime {
 
-JSContext* JSValueRAII::context_ = nullptr;
-
 void init_qjs_types(JSContext* ctx) {
-  JSValueRAII::context_ = ctx;
-
+  LOG(INFO) << "registering rime types to the quickjs engine...";
   // Register all types
   // QjsSegment().Register(ctx);
   QjsCandidate().Register(ctx);
   // QjsTranslation().Register(ctx);
   // QjsKeyEvent().Register(ctx);
   // QjsContext().Register(ctx);
-  // QjsSchema().Register(ctx);
-  // QjsConfig().Register(ctx);
-  // QjsEngine().Register(ctx);
+  QjsSchema().Register(ctx);
+  QjsConfig().Register(ctx);
+  QjsEngine().Register(ctx);
   // QjsMenu().Register(ctx);
   // QjsMemory().Register(ctx);
   // QjsDictionary().Register(ctx);
