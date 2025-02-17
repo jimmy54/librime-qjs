@@ -2,6 +2,7 @@
 #include "qjs_translation.h"
 #include "jsvalue_raii.h"
 #include "qjs_helper.h"
+#include "qjs_engine.h"
 
 #include <fstream>
 #include <rime/translation.h>
@@ -10,30 +11,36 @@
 namespace rime {
 
 QuickJSFilter::QuickJSFilter(const Ticket& ticket,
-                             JSContext* ctx,
                              const std::string& jsDirectory)
-    : Filter(ticket), TagMatching(ticket), ctx_(ctx) {
+    : Filter(ticket) {
+  auto ctx = QjsHelper::getInstance().getContext();
+
   // filters:
   //   - qjs_filter@abc
   // => klass = qjs_filter, name_space = abc
   std::string fileName = ticket.name_space + ".js";
-  JSValue moduleNamespace = QjsHelper::loadJsModuleToNamespace(ctx_, fileName.c_str());
+  JSValue moduleNamespace = QjsHelper::loadJsModuleToNamespace(ctx, fileName.c_str());
   if (JS_IsUndefined(moduleNamespace)) {
     LOG(ERROR) << "[qjs] QuickJSFilter::QuickJSFilter Could not load " << fileName;
     return;
   }
 
-  JSValueRAII initFunc(JS_GetPropertyStr(ctx_, moduleNamespace, "init"));
+  environment_ = JSValueRAII(JS_NewObject(ctx));
+  JSValueRAII jsEngine(QjsEngine::Wrap(ctx, engine_));
+  JS_SetPropertyStr(ctx, environment_, "engine", jsEngine);
+  JSValueRAII jsNamespace(JS_NewString(ctx, name_space_.c_str()));
+  JS_SetPropertyStr(ctx, environment_, "namespace", jsNamespace);
+
+  JSValueRAII initFunc(JS_GetPropertyStr(ctx, moduleNamespace, "init"));
   if (!JS_IsUndefined(initFunc)) {
-    LOG(INFO) << "[qjs] QuickJSFilter::QuickJSFilter running the init function";
-    JS_Call(ctx_, initFunc, JS_UNDEFINED, 0, nullptr);
+    JS_Call(ctx, initFunc, JS_UNDEFINED, 1, (JSValueConst[]){environment_.get()});
   } else {
-    LOG(INFO) << "[qjs] QuickJSFilter::QuickJSFilter no `init` function exported in " << fileName;
+    DLOG(INFO) << "[qjs] QuickJSFilter::QuickJSFilter no `init` function exported in " << fileName;
   }
 
-  finitFunc_ = JSValueRAII(JS_GetPropertyStr(ctx_, moduleNamespace, "finit"));
+  finitFunc_ = JSValueRAII(JS_GetPropertyStr(ctx, moduleNamespace, "finit"));
 
-  filterFunc_ = JSValueRAII(JS_GetPropertyStr(ctx_, moduleNamespace, "filter"));
+  filterFunc_ = JSValueRAII(JS_GetPropertyStr(ctx, moduleNamespace, "filter"));
   if (JS_IsUndefined(filterFunc_)) {
     LOG(ERROR) << "[qjs] QuickJSFilter::QuickJSFilter No `filter` function exported in " << fileName;
     return;
@@ -44,15 +51,15 @@ QuickJSFilter::QuickJSFilter(const Ticket& ticket,
 
 QuickJSFilter::~QuickJSFilter() {
   if (!JS_IsUndefined(finitFunc_)) {
-    LOG(INFO) << "[qjs] QuickJSFilter::~QuickJSFilter running the finit function";
-    JS_Call(ctx_, finitFunc_, JS_UNDEFINED, 0, nullptr);
+    DLOG(INFO) << "[qjs] QuickJSFilter::~QuickJSFilter running the finit function";
+    JS_Call(QjsHelper::getInstance().getContext(),
+            finitFunc_,
+            JS_UNDEFINED,
+            1,
+            (JSValueConst[]){environment_});
   } else {
-    LOG(INFO) << "[qjs] QuickJSFilter::~QuickJSFilter no `finit` function exported.";
+    DLOG(INFO) << "[qjs] QuickJSFilter::~QuickJSFilter no `finit` function exported.";
   }
-}
-
-bool QuickJSFilter::AppliesToSegment(Segment* segment) {
-  return TagsMatch(segment);
 }
 
 an<Translation> QuickJSFilter::Apply(an<Translation> translation,
@@ -61,7 +68,7 @@ an<Translation> QuickJSFilter::Apply(an<Translation> translation,
     return translation;
   }
 
-  return New<QuickJSTranslation>(translation, ctx_, filterFunc_);
+  return New<QuickJSTranslation>(translation, filterFunc_, environment_);
 }
 
 }  // namespace rime

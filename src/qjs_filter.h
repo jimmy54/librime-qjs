@@ -8,20 +8,18 @@
 
 namespace rime {
 
-class QuickJSFilter : public Filter, TagMatching {
+class QuickJSFilter : public Filter {
 public:
-  explicit QuickJSFilter(const Ticket& ticket, JSContext* ctx, const string& jsDirectory);
+  explicit QuickJSFilter(const Ticket& ticket, const string& jsDirectory);
   virtual ~QuickJSFilter();
 
   virtual an<Translation> Apply(an<Translation> translation,
-                              CandidateList* candidates);
-
-  virtual bool AppliesToSegment(Segment* segment);
+                                CandidateList* candidates);
 
 private:
-  JSContext* ctx_;   // QuickJS context
   JSValueRAII filterFunc_{JS_UNDEFINED};
   JSValueRAII finitFunc_{JS_UNDEFINED};
+  JSValueRAII environment_{JS_UNDEFINED};
 
   bool isLoaded_ = false;
 };

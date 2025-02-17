@@ -12,17 +12,17 @@ namespace rime {
 
 class QuickJSTranslation : public PrefetchTranslation {
  public:
-  QuickJSTranslation(an<Translation> translation, JSContext* ctx, const JSValueRAII& filterFunc);
+  QuickJSTranslation(an<Translation> translation,
+                     const JSValueRAII& filterFunc,
+                     const JSValue& environment);
   ~QuickJSTranslation() override;
 
  protected:
   bool Replenish() override { return replenished_; }
 
  private:
-  bool DoFilter(JSContext* ctx, const JSValueRAII& filterFunc);
-
+  bool DoFilter(const JSValueRAII& filterFunc, const JSValue& environment);
   bool replenished_ = false;
-
 };
 
 } // namespace rime
