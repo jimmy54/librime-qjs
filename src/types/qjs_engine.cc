@@ -1,12 +1,12 @@
 #include "qjs_engine.h"
 #include "qjs_schema.h"
-// #include "qjs_context.h"
+#include "qjs_context.h"
 // #include "qjs_key_event.h"
 
 namespace rime {
 
 DEFINE_JS_CLASS_WITH_RAW_POINTER(Engine,
-  DEFINE_GETTERS(schema, activeEngine), // TODO: context
+  DEFINE_GETTERS(schema, activeEngine, context),
   DEFINE_FUNCTIONS(
     // JS_CFUNC_DEF("processKey", 1, process_key), // TODO: key_event
     // JS_CFUNC_DEF("compose", 0, compose), // TODO: context
@@ -16,6 +16,7 @@ DEFINE_JS_CLASS_WITH_RAW_POINTER(Engine,
 )
 
 DEFINE_GETTER(Engine, schema, Schema*, QjsSchema::Wrap)
+DEFINE_GETTER(Engine, context, Context*, QjsContext::Wrap)
 DEFINE_GETTER_2(Engine, activeEngine, active_engine, Engine*, QjsEngine::Wrap)
 
 DEF_FUNC_WITH_SINGLE_STRING_PARAM(Engine, commit_text,

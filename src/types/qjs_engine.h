@@ -6,7 +6,7 @@
 #include <rime/engine.h>
 
 DECLARE_JS_CLASS_WITH_RAW_POINTER(Engine,
-  DECLARE_GETTERS(schema, activeEngine), // TODO: context
+  DECLARE_GETTERS(schema, activeEngine, context),
   DECLARE_FUNCTIONS(commit_text, apply_schema)
 )
 

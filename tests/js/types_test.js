@@ -13,6 +13,10 @@ function checkArgument(arg) {
 
     config.setString("greet", 'hello from js')
 
+    const context = arg.engine.context
+    assert(context.input === 'hello')
+    context.input = 'world'
+    
     return arg
 }
 

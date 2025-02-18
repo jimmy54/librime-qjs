@@ -34,6 +34,10 @@ TEST_F(QuickJSTypesTest, WrapUnwrapRimeGears) {
     config->SetDouble("key4", 0.999);
     config->SetString("key5", "string");
 
+    auto context = engine->context();
+    ASSERT_TRUE(context != nullptr);
+    context->set_input("hello");
+
     auto jsEngine = JSValueRAII(QjsEngine::Wrap(ctx, engine));
     JS_SetPropertyStr(ctx, arg, "engine", jsEngine);
 
@@ -62,4 +66,7 @@ TEST_F(QuickJSTypesTest, WrapUnwrapRimeGears) {
     bool success = retEngine->schema()->config()->GetString("greet", &greet);
     ASSERT_TRUE(success);
     ASSERT_EQ(greet, "hello from js");
+
+    Context* retContext = retEngine->context();
+    ASSERT_EQ(retContext->input(), "world");
 }

@@ -213,13 +213,7 @@ void Qjs##class_name::Register(JSContext* ctx) {                               \
 
 // to define a js getter with the same name of the c++ getter
 #define DEFINE_GETTER(class_name, name, type, converter)                       \
-  [[nodiscard]]                                                                \
-  JSValue Qjs##class_name::get_##name(JSContext* ctx, JSValueConst this_val) { \
-    if (auto obj = Unwrap(ctx, this_val)) {                                    \
-      return converter(ctx, obj->name());                                      \
-    }                                                                          \
-    return JS_UNDEFINED;                                                       \
-  }
+  DEFINE_GETTER_2(class_name, name, name, type, converter)
 
 // to define a js getter with a different name of the c++ getter
 #define DEFINE_GETTER_2(class_name, jsName, cppName, type, converter)          \
@@ -248,15 +242,18 @@ void Qjs##class_name::Register(JSContext* ctx) {                               \
   }
 
 #define DEFINE_NUMERIC_SETTER(class_name, name, type, converter)               \
-  JSValue Qjs##class_name::set_##name(JSContext* ctx, JSValueConst this_val, JSValue val) { \
+  DEFINE_NUMERIC_SETTER_2(class_name, name, set_##name, type, converter)
+
+#define DEFINE_NUMERIC_SETTER_2(class_name, jsName, cppName, type, converter)  \
+  JSValue Qjs##class_name::set_##jsName(JSContext* ctx, JSValueConst this_val, JSValue val) { \
     if (auto obj = Unwrap(ctx, this_val)) {                                    \
       type value;                                                              \
       if (converter(ctx, &value, val) == 0) {                                  \
-        obj->set_##name(value);                                                \
+        obj->cppName(value);                                                   \
         return JS_UNDEFINED;                                                   \
       } else {                                                                 \
         return JS_ThrowTypeError(ctx,                                          \
-          " %s.%s = rvalue: rvalue is not a number", #class_name, #name);      \
+          " %s.%s = rvalue: rvalue is not a number", #class_name, #jsName);    \
       }                                                                        \
     }                                                                          \
     return JS_ThrowTypeError(ctx,                                              \
