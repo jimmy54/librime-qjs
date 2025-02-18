@@ -5,8 +5,9 @@
 #include "jsstring_raii.h"
 
 #define NO_PROPERTY_TO_DECLARE void useless() {};
-#define NO_PROPERTY_TO_REGISTER {};
-#define NO_FUNCTION_TO_REGISTER {};
+#define NO_PROPERTY_TO_REGISTER {}
+#define NO_FUNCTION_TO_REGISTER {}
+#define NO_CONSTRUCTOR_TO_REGISTER {}
 
 // Helper macro for FOR_EACH implementation
 #define EXPAND(...) __VA_ARGS__
@@ -95,6 +96,16 @@ private: \
   DECLARE_JS_CLASS(class_name, declareProperties, declareFunctions, DECLARE_WRAP_UNWRAP_WITH_SHARED_POINTER(class_name))
 
 // ========== class implementation ==========
+#define DEFINE_CONSTRUCTOR(class_name, constructor, expectingArgc)             \
+  /* do not free the jsConstructor */                                          \
+  JSValue jsConstructor = JS_NewCFunction2(ctx,                                \
+    constructor, #class_name, expectingArgc, JS_CFUNC_constructor, 0);         \
+  JS_SetConstructor(ctx, jsConstructor, proto);                                \
+                                                                               \
+  auto jsGlobal = JS_GetGlobalObject(ctx);                                     \
+  JS_SetPropertyStr(ctx, jsGlobal, #class_name, jsConstructor);                \
+  JS_FreeValue(ctx, jsGlobal);
+
 #define DEFINE_PROPERTY(name) JS_CGETSET_DEF(#name, get_##name, set_##name),
 
 #define DEFINE_PROPERTIES(...)                                                 \
@@ -182,7 +193,7 @@ static void js_##class_name##_finalizer(JSRuntime* rt, JSValue val) {          \
   }                                                                            \
 }                                                                              \
 
-#define DEFINE_JS_CLASS(class_name, registerProperties, registerFunctions, defineWrapUnwrap)   \
+#define DEFINE_JS_CLASS_IMPL(class_name, defineWrapUnwrap, constructor, properties, methods)       \
 static JSClassID js_##class_name##_class_id;                                   \
                                                                                \
 defineWrapUnwrap;                                                              \
@@ -199,17 +210,18 @@ void Qjs##class_name::Register(JSContext* ctx) {                               \
                                                                                \
   JSValue proto = JS_NewObject(ctx);                                           \
                                                                                \
-  registerProperties;                                                          \
-  registerFunctions;                                                           \
+  constructor                                                                  \
+  properties                                                                   \
+  methods                                                                      \
                                                                                \
   JS_SetClassProto(ctx, js_##class_name##_class_id, proto);                    \
 }
 
-#define DEFINE_JS_CLASS_WITH_RAW_POINTER(class_name, registerProperties, registerFunctions)   \
-  DEFINE_JS_CLASS(class_name, EXPAND(registerProperties), EXPAND(registerFunctions), WRAP_UNWRAP_WITH_RAW_POINTER(class_name))
+#define DEFINE_JS_CLASS_WITH_SHARED_POINTER(class_name, constructor, properties, methods) \
+  DEFINE_JS_CLASS_IMPL(class_name, WRAP_UNWRAP_WITH_SHARED_POINTER(class_name), EXPAND(constructor), EXPAND(properties), EXPAND(methods))
 
-#define DEFINE_JS_CLASS_WITH_SHARED_POINTER(class_name, registerProperties, registerFunctions) \
-  DEFINE_JS_CLASS(class_name, EXPAND(registerProperties), EXPAND(registerFunctions), WRAP_UNWRAP_WITH_SHARED_POINTER(class_name))
+#define DEFINE_JS_CLASS_WITH_RAW_POINTER(class_name, constructor, properties, methods) \
+  DEFINE_JS_CLASS_IMPL(class_name, WRAP_UNWRAP_WITH_RAW_POINTER(class_name), EXPAND(constructor), EXPAND(properties), EXPAND(methods))
 
 // define a js getter with the same name of the c++ getter
 #define DEFINE_GETTER(class_name, name, type, converter)                       \
@@ -279,7 +291,10 @@ JSValue Qjs##class_name::func_name(                                            \
 JSValue Qjs##class_name::func_name(                                            \
   JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {       \
                                                                                \
-                                                                               \
+  if (argc < expectingArgc) {                                                  \
+    return JS_ThrowSyntaxError(ctx, "%s.%s(...) expects %d arguments",         \
+      #class_name, #func_name, expectingArgc);                                 \
+  }                                                                            \
   auto obj = Unwrap(ctx, this_val);                                            \
   if (!obj) {                                                                  \
     return JS_ThrowTypeError(ctx,                                              \
@@ -287,5 +302,23 @@ JSValue Qjs##class_name::func_name(                                            \
   }                                                                            \
   statements;                                                                  \
 }
+
+#define STRING_ASSIGNMENT_FROM_JS_ARGV(name, index)                            \
+    if (const char* name = JS_ToCString(ctx, argv[index])) {                   \
+      obj->set_##name(name);                                                   \
+      JS_FreeCString(ctx, name);                                               \
+    } else {                                                                   \
+      return JS_ThrowTypeError(ctx,                                            \
+        "argv[%d] should be of string type", index);                           \
+    }
+
+#define NUMERIC_ASSIGNMENT_FROM_JS_ARGV(name, index, type, converter)          \
+    type name;                                                                 \
+    if (converter(ctx, &name, argv[index]) == 0) {                             \
+      obj->set_##name(name);                                                   \
+    } else {                                                                   \
+      return JS_ThrowTypeError(ctx,                                            \
+        "argv[%d] should be of %s type", index, #type);                        \
+    }
 
 #endif  // RIME_QJS_MACROS_H_

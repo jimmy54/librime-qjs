@@ -24,6 +24,8 @@ function checkArgument(arg) {
     assert(context.input === 'hello')
     context.input = 'world'
 
+    arg.newCandidate = new Candidate('js', 32, 100, 'the text', 'the comment', 888)
+
     return arg
 }
 

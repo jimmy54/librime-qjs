@@ -2,7 +2,9 @@
 
 namespace rime {
 
-DEFINE_JS_CLASS_WITH_RAW_POINTER(Context,
+DEFINE_JS_CLASS_WITH_RAW_POINTER(
+  Context,
+  NO_CONSTRUCTOR_TO_REGISTER,
   DEFINE_PROPERTIES(input, caretPos),
   DEFINE_FUNCTIONS(
     // Input methods

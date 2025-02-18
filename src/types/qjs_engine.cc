@@ -5,7 +5,9 @@
 
 namespace rime {
 
-DEFINE_JS_CLASS_WITH_RAW_POINTER(Engine,
+DEFINE_JS_CLASS_WITH_RAW_POINTER(
+  Engine,
+  NO_CONSTRUCTOR_TO_REGISTER,
   DEFINE_GETTERS(schema, activeEngine, context),
   DEFINE_FUNCTIONS(
     // JS_CFUNC_DEF("processKey", 1, process_key), // TODO: key_event

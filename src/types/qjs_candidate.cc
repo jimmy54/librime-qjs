@@ -4,7 +4,23 @@
 
 namespace rime {
 
-DEFINE_JS_CLASS_WITH_SHARED_POINTER(Candidate,
+static JSValue makeCandidate(JSContext* ctx, JSValueConst newTarget, int argc, JSValueConst* argv) {
+  auto obj = std::make_shared<SimpleCandidate>();
+  STRING_ASSIGNMENT_FROM_JS_ARGV(type, 0)
+  NUMERIC_ASSIGNMENT_FROM_JS_ARGV(start, 1, int64_t, JS_ToInt64)
+  NUMERIC_ASSIGNMENT_FROM_JS_ARGV(end, 2, int64_t, JS_ToInt64)
+  STRING_ASSIGNMENT_FROM_JS_ARGV(text, 3)
+  STRING_ASSIGNMENT_FROM_JS_ARGV(comment, 4)
+  if (argc >= 6) {
+    NUMERIC_ASSIGNMENT_FROM_JS_ARGV(quality, 5, int32_t, JS_ToInt32)
+  }
+
+  return QjsCandidate::Wrap(ctx, obj);
+}
+
+DEFINE_JS_CLASS_WITH_SHARED_POINTER(
+  Candidate,
+  DEFINE_CONSTRUCTOR(Candidate, makeCandidate, 5),
   DEFINE_PROPERTIES(text, comment, type, start, end, quality, preedit),
   NO_FUNCTION_TO_REGISTER
 )

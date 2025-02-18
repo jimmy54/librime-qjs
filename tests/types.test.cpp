@@ -75,4 +75,13 @@ TEST_F(QuickJSTypesTest, WrapUnwrapRimeGears) {
 
     Context* retContext = retEngine->context();
     ASSERT_EQ(retContext->input(), "world");
+
+    // arg.newCandidate = new Candidate('js', 32, 100, 'the text', 'the comment', 888)
+    auto newCandidate = QjsCandidate::Unwrap(ctx, JS_GetPropertyStr(ctx, retValue, "newCandidate"));
+    ASSERT_EQ(newCandidate->type(), "js");
+    ASSERT_EQ(newCandidate->start(), 32);
+    ASSERT_EQ(newCandidate->end(), 100);
+    ASSERT_EQ(newCandidate->text(), "the text");
+    ASSERT_EQ(newCandidate->comment(), "the comment");
+    ASSERT_EQ(newCandidate->quality(), 888);
 }

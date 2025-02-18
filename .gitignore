@@ -10,8 +10,10 @@ Testing
 
 tests/qjs/js/qjs
 tests/qjs/js/qjsc
+tests/**/*.i
 
 thirdparty
+src/types/others
 
 .vscode
 .editorconfig

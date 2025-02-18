@@ -3,9 +3,11 @@
 
 namespace rime {
 
-DEFINE_JS_CLASS_WITH_RAW_POINTER(Schema,
+DEFINE_JS_CLASS_WITH_RAW_POINTER(
+  Schema,
+  NO_CONSTRUCTOR_TO_REGISTER,
   DEFINE_GETTERS(id, name, config, pageSize, selectKeys),
-  // no functions to register
+  NO_FUNCTION_TO_REGISTER
 )
 
 DEFINE_GETTER_2(Schema, id, schema_id, const string&, js_new_string_from_std)
