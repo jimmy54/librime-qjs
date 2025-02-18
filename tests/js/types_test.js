@@ -2,6 +2,7 @@ function checkArgument(arg) {
     assert(arg.namespace === 'namespace')
     assert(arg.candidate.text === 'text')
     assert(arg.engine.schema.id === '.default')
+    arg.candidate.text = 'new text'
 
     const config = arg.engine.schema.config
     assert(config.getBool("key") === null)
@@ -11,12 +12,18 @@ function checkArgument(arg) {
     assert(config.getDouble("key4") === 0.999)
     assert(config.getString("key5") === 'string')
 
+    const list = config.getList("list")
+    assert(list.getValueAt(0).getString() === 'item1')
+    assert(list.getValueAt(1).getString() === 'item2')
+    assert(list.getValueAt(2).getString() === 'item3')
+    assert(list.getValueAt(3) === null)
+
     config.setString("greet", 'hello from js')
 
     const context = arg.engine.context
     assert(context.input === 'hello')
     context.input = 'world'
-    
+
     return arg
 }
 

@@ -18,9 +18,10 @@
 // #include "qjs_translation.h"
 // #include "qjs_segmentation.h"
 // #include "qjs_key_sequence.h"
-// #include "qjs_config_value.h"
-// #include "qjs_config_list.h"
-// #include "qjs_config_map.h"
+#include "qjs_config_item.h"
+#include "qjs_config_value.h"
+#include "qjs_config_list.h"
+#include "qjs_config_map.h"
 // #include "qjs_segmentor.h"
 // #include "qjs_translator.h"
 // #include "qjs_notifier.h"
@@ -28,7 +29,6 @@
 // #include "qjs_reverse_db.h"
 // #include "qjs_user_db.h"
 // #include "qjs_dict_entry.h"
-// #include "qjs_config_item.h"
 // #include "qjs_simple_candidate.h"
 // Include other type headers
 
@@ -54,9 +54,10 @@ void init_qjs_types(JSContext* ctx) {
   // QjsFilter().Register(ctx);
   // QjsSegmentation().Register(ctx);
   // QjsKeySequence().Register(ctx);
-  // QjsConfigValue().Register(ctx);
-  // QjsConfigList().Register(ctx);
-  // QjsConfigMap().Register(ctx);
+  QjsConfigItem().Register(ctx);
+  QjsConfigValue().Register(ctx);
+  QjsConfigList().Register(ctx);
+  QjsConfigMap().Register(ctx);
   // QjsSegmentor().Register(ctx);
   // QjsTranslator().Register(ctx);
   // QjsNotifier().Register(ctx);
@@ -64,7 +65,6 @@ void init_qjs_types(JSContext* ctx) {
   // QjsReverseDb().Register(ctx);
   // QjsUserDb().Register(ctx);
   // QjsDictEntry().Register(ctx);
-  // QjsConfigItem().Register(ctx);
   // QjsSimpleCandidate().Register(ctx);
   // Register other types...
 }

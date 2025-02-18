@@ -55,7 +55,8 @@ DEF_FUNC(Context, clear,
   return JS_UNDEFINED;
 )
 
-DEF_FUNC_WITH_SINGLE_STRING_PARAM(Context, push_input,
+DEF_FUNC_WITH_ARGC(Context, push_input, 1,
+  JSStringRAII param(JS_ToCString(ctx, argv[0]));
   bool result = obj->PushInput(param);
   return JS_NewBool(ctx, result);
 )
@@ -91,25 +92,29 @@ DEF_FUNC(Context, refresh_non_confirmed_composition,
   return JS_UNDEFINED;
 )
 
-DEF_FUNC_WITH_STRING_AND_ANOTHER(Context, set_option,
+DEF_FUNC_WITH_ARGC(Context, set_option, 2,
+  JSStringRAII firstParam(JS_ToCString(ctx, argv[0]));
   bool value = JS_ToBool(ctx, argv[1]);
   obj->set_option(firstParam, value);
   return JS_TRUE;
 )
 
-DEF_FUNC_WITH_SINGLE_STRING_PARAM(Context, get_option,
+DEF_FUNC_WITH_ARGC(Context, get_option, 1,
+  JSStringRAII param(JS_ToCString(ctx, argv[0]));
   bool result = obj->get_option(param);
   return JS_NewBool(ctx, result);
 )
 
-DEF_FUNC_WITH_STRING_AND_ANOTHER(Context, set_property,
+DEF_FUNC_WITH_ARGC(Context, set_property, 2,
+  JSStringRAII firstParam(JS_ToCString(ctx, argv[0]));
   const char* value = JS_ToCString(ctx, argv[1]);
   obj->set_property(firstParam, value);
   JS_FreeCString(ctx, value);
   return JS_TRUE;
 )
 
-DEF_FUNC_WITH_SINGLE_STRING_PARAM(Context, get_property,
+DEF_FUNC_WITH_ARGC(Context, get_property, 1,
+  JSStringRAII param(JS_ToCString(ctx, argv[0]));
   string result = obj->get_property(param);
   return JS_NewString(ctx, result.c_str());
 )

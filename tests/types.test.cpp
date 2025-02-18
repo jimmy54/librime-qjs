@@ -34,6 +34,12 @@ TEST_F(QuickJSTypesTest, WrapUnwrapRimeGears) {
     config->SetDouble("key4", 0.999);
     config->SetString("key5", "string");
 
+    auto list = New<ConfigList>();
+    list->Append(New<ConfigValue>("item1"));
+    list->Append(New<ConfigValue>("item2"));
+    list->Append(New<ConfigValue>("item3"));
+    config->SetItem("list", list);
+
     auto context = engine->context();
     ASSERT_TRUE(context != nullptr);
     context->set_input("hello");
@@ -58,7 +64,7 @@ TEST_F(QuickJSTypesTest, WrapUnwrapRimeGears) {
     ASSERT_EQ(retEngine, engine);
     ASSERT_EQ(retEngine->schema()->schema_name(), engine->schema()->schema_name());
     an<Candidate> retCandidate = QjsCandidate::Unwrap(ctx, JS_GetPropertyStr(ctx, retValue, "candidate"));
-    ASSERT_EQ(retCandidate->text(), candidate->text());
+    ASSERT_EQ(retCandidate->text(), "new text");
     ASSERT_EQ(retCandidate.get(), candidate.get());
 
     Config* retConfig = retEngine->schema()->config();

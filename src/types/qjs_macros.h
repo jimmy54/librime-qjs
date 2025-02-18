@@ -211,11 +211,11 @@ void Qjs##class_name::Register(JSContext* ctx) {                               \
 #define DEFINE_JS_CLASS_WITH_SHARED_POINTER(class_name, registerProperties, registerFunctions) \
   DEFINE_JS_CLASS(class_name, EXPAND(registerProperties), EXPAND(registerFunctions), WRAP_UNWRAP_WITH_SHARED_POINTER(class_name))
 
-// to define a js getter with the same name of the c++ getter
+// define a js getter with the same name of the c++ getter
 #define DEFINE_GETTER(class_name, name, type, converter)                       \
   DEFINE_GETTER_2(class_name, name, name, type, converter)
 
-// to define a js getter with a different name of the c++ getter
+// define a js getter with a different name of the c++ getter
 #define DEFINE_GETTER_2(class_name, jsName, cppName, type, converter)          \
   [[nodiscard]]                                                                \
   JSValue Qjs##class_name::get_##jsName(JSContext* ctx, JSValueConst this_val) { \
@@ -273,47 +273,18 @@ JSValue Qjs##class_name::func_name(                                            \
   statements;                                                                  \
 }
 
-// to define a js function with only one parameter of the string type
-#define DEF_FUNC_WITH_SINGLE_STRING_PARAM(class_name, func_name, statements)   \
+// define a js function with ${expectingArgc} arguments
+#define DEF_FUNC_WITH_ARGC(class_name, func_name, expectingArgc, statements)   \
 [[nodiscard]]                                                                  \
 JSValue Qjs##class_name::func_name(                                            \
   JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {       \
                                                                                \
-  if (argc < 1) {                                                              \
-    return JS_ThrowPlainError(ctx,                                             \
-      "%s.%s(...) requires a string parameter", #class_name, #func_name);      \
-  }                                                                            \
                                                                                \
   auto obj = Unwrap(ctx, this_val);                                            \
   if (!obj) {                                                                  \
     return JS_ThrowTypeError(ctx,                                              \
       "Failed to unwrap the js object to a cpp %s object", #class_name);       \
   }                                                                            \
-                                                                               \
-  JSStringRAII param(JS_ToCString(ctx, argv[0]));                              \
-  statements;                                                                  \
-}
-
-// to define a js function with 2 parameters:
-// the first one must be of string type,
-// but the second one's type is not limited
-#define DEF_FUNC_WITH_STRING_AND_ANOTHER(class_name, func_name, statements)    \
-[[nodiscard]]                                                                  \
-JSValue Qjs##class_name::func_name(                                            \
-  JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {       \
-                                                                               \
-  if (argc < 2) {                                                              \
-    return JS_ThrowPlainError(ctx,                                             \
-      "%s.%s(...) requires 2 parameter2", #class_name, #func_name);            \
-  }                                                                            \
-                                                                               \
-  auto obj = Unwrap(ctx, this_val);                                            \
-  if (!obj) {                                                                  \
-    return JS_ThrowTypeError(ctx,                                              \
-      "Failed to unwrap the js object to a cpp %s object", #class_name);       \
-  }                                                                            \
-                                                                               \
-  JSStringRAII firstParam(JS_ToCString(ctx, argv[0]));                         \
   statements;                                                                  \
 }
 

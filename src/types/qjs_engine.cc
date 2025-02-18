@@ -19,7 +19,8 @@ DEFINE_GETTER(Engine, schema, Schema*, QjsSchema::Wrap)
 DEFINE_GETTER(Engine, context, Context*, QjsContext::Wrap)
 DEFINE_GETTER_2(Engine, activeEngine, active_engine, Engine*, QjsEngine::Wrap)
 
-DEF_FUNC_WITH_SINGLE_STRING_PARAM(Engine, commit_text,
+DEF_FUNC_WITH_ARGC(Engine, commit_text, 1,
+  JSStringRAII param(JS_ToCString(ctx, argv[0]));
   obj->CommitText(param);
   return JS_UNDEFINED;
 )
