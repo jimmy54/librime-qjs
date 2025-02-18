@@ -22,7 +22,15 @@ function checkArgument(arg) {
 
     const context = arg.engine.context
     assert(context.input === 'hello')
+
     context.input = 'world'
+
+    assert(context.preedit !== null)
+    console.log(context.preedit.text) // => [nothing]
+    assert(context.preedit.text?.length === 5)
+    assert(context.preedit.caretPos === 5)
+    assert(context.preedit.selectStart === 0)
+    assert(context.preedit.selectEnd === 0)
 
     arg.newCandidate = new Candidate('js', 32, 100, 'the text', 'the comment', 888)
 

@@ -6,6 +6,7 @@
 // #include "qjs_translation.h"
 // #include "qjs_key_event.h"
 #include "qjs_context.h"
+#include "qjs_preedit.h"
 #include "qjs_schema.h"
 #include "qjs_config.h"
 #include "qjs_engine.h"
@@ -42,6 +43,7 @@ void init_qjs_types(JSContext* ctx) {
   // QjsTranslation().Register(ctx);
   // QjsKeyEvent().Register(ctx);
   QjsContext().Register(ctx);
+  QjsPreedit().Register(ctx);
   QjsSchema().Register(ctx);
   QjsConfig().Register(ctx);
   QjsEngine().Register(ctx);

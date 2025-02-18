@@ -237,6 +237,16 @@ void Qjs##class_name::Register(JSContext* ctx) {                               \
     return JS_UNDEFINED;                                                       \
   }
 
+// define a js getter with a different name of the c++ struct's field
+#define DEFINE_GETTER_3(class_name, jsName, cppName, type, converter)          \
+  [[nodiscard]]                                                                \
+  JSValue Qjs##class_name::get_##jsName(JSContext* ctx, JSValueConst this_val) { \
+    if (auto obj = Unwrap(ctx, this_val)) {                                    \
+      return converter(ctx, obj->cppName);                                   \
+    }                                                                          \
+    return JS_UNDEFINED;                                                       \
+  }
+
 #define DEFINE_STRING_SETTER(class_name, name, assignment)                     \
   JSValue Qjs##class_name::set_##name(JSContext* ctx, JSValueConst this_val, JSValue val) { \
     if (auto obj = Unwrap(ctx, this_val)) {                                    \
@@ -253,15 +263,34 @@ void Qjs##class_name::Register(JSContext* ctx) {                               \
       "Failed to unwrap the js object to a cpp %s object", #class_name);       \
   }
 
+// define a numeric setter with the same name of the c++ setter
 #define DEFINE_NUMERIC_SETTER(class_name, name, type, converter)               \
   DEFINE_NUMERIC_SETTER_2(class_name, name, set_##name, type, converter)
 
+// define a numeric setter with a different name of the c++ setter
 #define DEFINE_NUMERIC_SETTER_2(class_name, jsName, cppName, type, converter)  \
   JSValue Qjs##class_name::set_##jsName(JSContext* ctx, JSValueConst this_val, JSValue val) { \
     if (auto obj = Unwrap(ctx, this_val)) {                                    \
       type value;                                                              \
       if (converter(ctx, &value, val) == 0) {                                  \
         obj->cppName(value);                                                   \
+        return JS_UNDEFINED;                                                   \
+      } else {                                                                 \
+        return JS_ThrowTypeError(ctx,                                          \
+          " %s.%s = rvalue: rvalue is not a number", #class_name, #jsName);    \
+      }                                                                        \
+    }                                                                          \
+    return JS_ThrowTypeError(ctx,                                              \
+      "Failed to unwrap the js object to a cpp %s object", #class_name);       \
+  }
+
+// define a numeric setter with a different name of the c++ struct's field
+#define DEFINE_NUMERIC_SETTER_3(class_name, jsName, cppName, type, converter)  \
+  JSValue Qjs##class_name::set_##jsName(JSContext* ctx, JSValueConst this_val, JSValue val) { \
+    if (auto obj = Unwrap(ctx, this_val)) {                                    \
+      type value;                                                              \
+      if (converter(ctx, &value, val) == 0) {                                  \
+        obj->cppName = value;                                                   \
         return JS_UNDEFINED;                                                   \
       } else {                                                                 \
         return JS_ThrowTypeError(ctx,                                          \

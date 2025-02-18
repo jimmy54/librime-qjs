@@ -1,11 +1,12 @@
 #include "qjs_context.h"
+#include "qjs_preedit.h"
 
 namespace rime {
 
 DEFINE_JS_CLASS_WITH_RAW_POINTER(
   Context,
   NO_CONSTRUCTOR_TO_REGISTER,
-  DEFINE_PROPERTIES(input, caretPos),
+  DEFINE_PROPERTIES(input, caretPos, preedit),
   DEFINE_FUNCTIONS(
     // Input methods
     JS_CFUNC_DEF("commit", 0, commit),
@@ -42,6 +43,19 @@ DEFINE_STRING_SETTER(Context, input,
   obj->set_input(str);
 )
 DEFINE_NUMERIC_SETTER_2(Context, caretPos, set_caret_pos, int32_t, JS_ToInt32)
+
+[[nodiscard]]
+JSValue QjsContext::get_preedit(JSContext* ctx, JSValueConst this_val) {
+  if (auto obj = Unwrap(ctx, this_val)) {
+    auto preedit = obj->GetPreedit();
+    return QjsPreedit::Wrap(ctx, &preedit);
+  }
+  return JS_UNDEFINED;
+}
+[[nodiscard]]
+JSValue QjsContext::set_preedit(JSContext* ctx, JSValueConst this_val, JSValue val) {
+  return JS_ThrowTypeError(ctx, "Cannot assign to read only property 'preedit'");
+}
 
 DEF_FUNC(Context, commit,
   obj->Commit();
