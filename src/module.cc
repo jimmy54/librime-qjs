@@ -16,12 +16,10 @@ static void rime_qjs_initialize() {
   auto ctx = QjsHelper::getInstance().getContext();
   init_qjs_types(ctx);
 
-  string jsDirectory = string(rime_get_api()->get_user_data_dir()) + "/js";
-
-  QjsHelper::basePath = jsDirectory + "/";
+  QjsHelper::basePath = string(rime_get_api()->get_user_data_dir()) + "/js";
   QjsHelper::exposeLogToJsConsole(ctx);
 
-  r.Register("qjs_filter", new QuickJSComponent<QuickJSFilter>(jsDirectory));
+  r.Register("qjs_filter", new QuickJSComponent<QuickJSFilter>());
 }
 
 static void rime_qjs_finalize() {}

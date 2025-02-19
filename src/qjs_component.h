@@ -11,19 +11,18 @@ namespace rime {
 template<typename T>
 class QuickJSComponent : public T::Component {
 public:
-  QuickJSComponent(const string& jsDirectory) : jsDirectory_(jsDirectory) {}
+  QuickJSComponent() {}
 
   T* Create(const Ticket& a) {
     if (!components_.count(a.name_space)) {
       LOG(INFO) << "[qjs] creating component '" << a.name_space << "'.";
       Ticket t(a.engine, a.name_space, a.name_space);
-      components_[t.name_space] = new T(t, jsDirectory_);
+      components_[t.name_space] = new T(t);
     }
     return components_[a.name_space];
   }
 
 private:
-  const string jsDirectory_;
   std::map<string, T*> components_;
 };
 

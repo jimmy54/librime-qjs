@@ -1,6 +1,7 @@
 export function init(env) {
   console.log('filter_test init')
   assert(env.namespace === 'filter_test')
+  assert(env.userDataDir === 'tests/js')
   const config = env.engine.schema.config
   assert(config.getString('greet') === 'hello from c++')
 }

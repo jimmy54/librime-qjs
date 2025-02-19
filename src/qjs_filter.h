@@ -10,7 +10,7 @@ namespace rime {
 
 class QuickJSFilter : public Filter {
 public:
-  explicit QuickJSFilter(const Ticket& ticket, const string& jsDirectory);
+  explicit QuickJSFilter(const Ticket& ticket);
   virtual ~QuickJSFilter();
 
   virtual an<Translation> Apply(an<Translation> translation,

@@ -38,7 +38,7 @@ TEST_F(QuickJSFilterTest, ApplyFilter) {
 
     Ticket ticket(engine, "filter", "qjs_filter@filter_test");
 
-    auto filter = New<QuickJSFilter>(ticket, "tests/js");
+    auto filter = New<QuickJSFilter>(ticket);
 
     auto translation = New<FakeTranslation>();
     translation->Append(New<SimpleCandidate>("mock", 0, 1, "text1", "comment1"));

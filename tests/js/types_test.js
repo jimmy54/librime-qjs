@@ -26,7 +26,7 @@ function checkArgument(arg) {
   context.input = 'world'
 
   assert(context.preedit !== null)
-  console.log(context.preedit.text) // => [nothing]
+  console.log(context.preedit.text) // => [nothing visible]
   assert(context.preedit.text?.length === 5)
   assert(context.preedit.caretPos === 5)
   assert(context.preedit.selectStart === 0)

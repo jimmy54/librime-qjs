@@ -10,8 +10,7 @@
 
 namespace rime {
 
-QuickJSFilter::QuickJSFilter(const Ticket& ticket,
-                             const std::string& jsDirectory)
+QuickJSFilter::QuickJSFilter(const Ticket& ticket)
     : Filter(ticket) {
   auto ctx = QjsHelper::getInstance().getContext();
 
@@ -30,10 +29,12 @@ QuickJSFilter::QuickJSFilter(const Ticket& ticket,
   JS_SetPropertyStr(ctx, environment_, "engine", jsEngine);
   JSValueRAII jsNamespace(JS_NewString(ctx, name_space_.c_str()));
   JS_SetPropertyStr(ctx, environment_, "namespace", jsNamespace);
+  JSValueRAII jsUserDataDir(JS_NewString(ctx, QjsHelper::basePath.c_str()));
+  JS_SetPropertyStr(ctx, environment_, "userDataDir", jsUserDataDir);
 
   JSValueRAII initFunc(JS_GetPropertyStr(ctx, moduleNamespace, "init"));
   if (!JS_IsUndefined(initFunc)) {
-    JS_Call(ctx, initFunc, JS_UNDEFINED, 1, (JSValueConst[]){environment_.get()});
+    JS_Call(ctx, initFunc, JS_UNDEFINED, 1, environment_.getPtr());
   } else {
     DLOG(INFO) << "[qjs] QuickJSFilter::QuickJSFilter no `init` function exported in " << fileName;
   }
@@ -56,7 +57,7 @@ QuickJSFilter::~QuickJSFilter() {
             finitFunc_,
             JS_UNDEFINED,
             1,
-            (JSValueConst[]){environment_});
+            environment_.getPtr());
   } else {
     DLOG(INFO) << "[qjs] QuickJSFilter::~QuickJSFilter no `finit` function exported.";
   }
