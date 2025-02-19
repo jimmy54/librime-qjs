@@ -46,7 +46,7 @@ TEST_F(QuickJSErrorTest, TestJsRuntimeError) {
     JSValue stack = JS_GetPropertyStr(ctx, exception, "stack");
     const char *stack_trace = JS_ToCString(ctx, stack);
     std::string trimmed_stack_trace = trim(stack_trace);
-    ASSERT_STREQ(trimmed_stack_trace.c_str(), "at <anonymous> (runtime-error.js:7:21)");
+    ASSERT_STREQ(trimmed_stack_trace.c_str(), "at <anonymous> (runtime-error.js:7:19)");
     JS_FreeCString(ctx, stack_trace);
     JS_FreeValue(ctx, stack);
 
