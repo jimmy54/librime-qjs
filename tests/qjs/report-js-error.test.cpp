@@ -20,9 +20,6 @@ protected:
 
     void SetUp() override {
         ctx = QjsHelper::getInstance().getContext();
-        auto rt = JS_GetRuntime(ctx);
-        JS_SetModuleLoaderFunc(rt, nullptr, QjsHelper::jsModuleLoader, nullptr);
-        QjsHelper::exposeLogToJsConsole(ctx);
         QjsHelper::basePath = "tests/qjs/js";
     }
 };

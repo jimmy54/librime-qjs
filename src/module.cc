@@ -13,11 +13,9 @@ static void rime_qjs_initialize() {
   LOG(INFO) << "[qjs] registering components from module 'qjs'.";
   Registry& r = Registry::instance();
 
+  QjsHelper::basePath = string(rime_get_api()->get_user_data_dir()) + "/js";
   auto ctx = QjsHelper::getInstance().getContext();
   init_qjs_types(ctx);
-
-  QjsHelper::basePath = string(rime_get_api()->get_user_data_dir()) + "/js";
-  QjsHelper::exposeLogToJsConsole(ctx);
 
   r.Register("qjs_filter", new QuickJSComponent<QuickJSFilter>());
 }

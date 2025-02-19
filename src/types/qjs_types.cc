@@ -1,6 +1,4 @@
 #include "qjs_types.h"
-#include "jsvalue_raii.h"
-#include "jsstring_raii.h"
 // #include "qjs_segment.h"
 #include "qjs_candidate.h"
 // #include "qjs_translation.h"
@@ -37,6 +35,10 @@ namespace rime {
 
 void init_qjs_types(JSContext* ctx) {
   LOG(INFO) << "registering rime types to the quickjs engine...";
+
+  JS_SetModuleLoaderFunc(JS_GetRuntime(ctx), nullptr, QjsHelper::jsModuleLoader, nullptr);
+  QjsHelper::exposeLogToJsConsole(ctx);
+
   // Register all types
   // QjsSegment().Register(ctx);
   QjsCandidate().Register(ctx);

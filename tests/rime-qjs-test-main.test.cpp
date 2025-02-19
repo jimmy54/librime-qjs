@@ -28,7 +28,6 @@ int main(int argc, char** argv) {
   auto ctx = QjsHelper::getInstance().getContext();
   DLOG(INFO) << "QuickJSFilterTest ctx = " << ctx;
   init_qjs_types(ctx);
-  QjsHelper::exposeLogToJsConsole(ctx);
 
   // "librime-qjs-tests" start time: Feb 17 10:18 CST
   // Output:

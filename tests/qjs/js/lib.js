@@ -14,10 +14,3 @@ export class MyClass {
     return greet(name)
   }
 }
-
-const quickjs_load_file_test_data = [
-  'Hello, 世界!',
-  '测试 UTF-8 编码',
-  '🌟 Emoji test',
-  'Mixed content: あいうえお',
-]

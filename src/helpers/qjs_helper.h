@@ -18,6 +18,8 @@ public:
     static JSValue loadJsModuleToGlobalThis(JSContext* ctx, const char* fileName);
     static void exposeLogToJsConsole(JSContext* ctx);
 
+    static std::string loadFile(const char* absolutePath);
+
     static std::string basePath;
 
     // Getters for runtime and context

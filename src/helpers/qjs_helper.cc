@@ -43,6 +43,17 @@ void QjsHelper::exposeLogToJsConsole(JSContext* ctx) {
     JS_FreeValue(ctx, global_obj);
 }
 
+std::string QjsHelper::loadFile(const char* absolutePath) {
+    std::ifstream stream(absolutePath);
+    if (!stream.is_open()) {
+        LOG(ERROR) << "Failed to open file at: " << absolutePath;
+        return "";
+    }
+    std::string content((std::istreambuf_iterator<char>(stream)),
+                         std::istreambuf_iterator<char>());
+    return content;
+}
+
 std::string QjsHelper::readJsCode(JSContext* ctx, const char* fileName) {
     if (basePath.empty()) {
         LOG(ERROR) << "basePath is empty in loading js file: " << fileName;
@@ -50,19 +61,15 @@ std::string QjsHelper::readJsCode(JSContext* ctx, const char* fileName) {
         return "";
     }
     std::string fullPath = basePath + "/" + fileName;
-    std::ifstream jsFile(fullPath);
-    if (!jsFile.is_open()) {
-        LOG(ERROR) << "Could not open" << fullPath;
-        JS_ThrowReferenceError(ctx, "Could not open %s", fullPath.c_str());
-        return "";
-    }
-    std::string jsCode((std::istreambuf_iterator<char>(jsFile)),
-                        std::istreambuf_iterator<char>());
-    return jsCode;
+    return loadFile(fullPath.c_str());
 }
 
 JSValue QjsHelper::loadJsModule(JSContext* ctx, const char* fileName) {
     std::string code = readJsCode(ctx, fileName);
+    if (code == "") {
+        return JS_ThrowReferenceError(ctx, "Could not open %s", fileName);
+    }
+
     JSValue funcObj = JS_Eval(ctx, code.c_str(), code.size(), fileName,
                         JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_COMPILE_ONLY);
 

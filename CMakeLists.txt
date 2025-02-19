@@ -23,7 +23,6 @@ set(QUICKJS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/quickjs/libunicode.c
     ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/quickjs/libbf.c
     ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/quickjs/cutils.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/quickjs/quickjs-libc.c
 )
 
 include_directories(include ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/quickjs)
