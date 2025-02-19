@@ -4,6 +4,7 @@
 #include <rime/common.h>
 #include <rime/component.h>
 #include <rime/ticket.h>
+#include <map>
 
 namespace rime {
 
@@ -13,13 +14,17 @@ public:
   QuickJSComponent(const string& jsDirectory) : jsDirectory_(jsDirectory) {}
 
   T* Create(const Ticket& a) {
-    // Create a new ticket with the same namespace for both schema and config
-    Ticket t(a.engine, a.name_space, a.name_space);
-    return new T(t, jsDirectory_);
+    if (!components_.count(a.name_space)) {
+      LOG(INFO) << "[qjs] creating component '" << a.name_space << "'.";
+      Ticket t(a.engine, a.name_space, a.name_space);
+      components_[t.name_space] = new T(t, jsDirectory_);
+    }
+    return components_[a.name_space];
   }
 
 private:
   const string jsDirectory_;
+  std::map<string, T*> components_;
 };
 
 } // namespace rime
