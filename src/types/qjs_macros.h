@@ -189,7 +189,8 @@ std::shared_ptr<class_name> Qjs##class_name::Unwrap(JSContext* ctx, JSValue valu
 static void js_##class_name##_finalizer(JSRuntime* rt, JSValue val) {          \
   DLOG(INFO) << "Calling js_" << #class_name << "_finalizer.";                 \
   if (auto ptr = JS_GetOpaque(val, js_##class_name##_class_id)) {              \
-    delete static_cast<std::shared_ptr<class_name>*>(ptr);                     \
+    auto ppObj = static_cast<std::shared_ptr<class_name>*>(ptr);               \
+    (*ppObj).reset();                                                          \
   }                                                                            \
 }                                                                              \
 
