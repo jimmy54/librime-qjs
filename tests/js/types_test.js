@@ -34,7 +34,30 @@ function checkArgument(arg) {
 
   arg.newCandidate = new Candidate('js', 32, 100, 'the text', 'the comment', 888)
 
+  testTrie()
   return arg
+}
+
+function testTrie() {
+  const trie = new Trie()
+  trie.loadTextFile('./tests/dummy_dict.txt', 6)
+  checkTrieData(trie)
+
+  trie.saveToBinaryFile('./tests/dumm.bin')
+  const trie2 = new Trie()
+  trie2.loadBinaryFile('./tests/dumm.bin')
+  checkTrieData(trie2)
+}
+
+function checkTrieData(trie) {
+  const result1 = trie.find('accord')
+  assert(result1 === '[ә\'kɒ:d]; n. 一致, 调和, 协定\\n vt. 给与, 使一致\\n vi. 相符合')
+  const result2 = trie.find('accordion')
+  assert(result2 === '[ә\'kɒ:djәn]; n. 手风琴\\n a. 可折叠的')
+  const result3 = trie.find('nonexistent-word')
+  assert(result3 === null)
+  const prefix_results = trie.prefixSearch('accord')
+  assert(prefix_results.length === 6)
 }
 
 function assert(condition, msg) {

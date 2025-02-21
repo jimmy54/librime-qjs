@@ -1,4 +1,5 @@
 #include "qjs_types.h"
+#include "qjs_trie.h"
 // #include "qjs_segment.h"
 #include "qjs_candidate.h"
 // #include "qjs_translation.h"
@@ -37,9 +38,13 @@ void init_qjs_types(JSContext* ctx) {
   LOG(INFO) << "registering rime types to the quickjs engine...";
 
   JS_SetModuleLoaderFunc(JS_GetRuntime(ctx), nullptr, QjsHelper::jsModuleLoader, nullptr);
+  // Do not trigger GC when heap size is less than 16MB
+  // default: rt->malloc_gc_threshold = 256 * 1024
+  JS_SetGCThreshold(JS_GetRuntime(ctx), 16 * 1024 * 1024);
   QjsHelper::exposeLogToJsConsole(ctx);
 
   // Register all types
+  QjsTrie().Register(ctx);
   // QjsSegment().Register(ctx);
   QjsCandidate().Register(ctx);
   // QjsTranslation().Register(ctx);

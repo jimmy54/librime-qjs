@@ -7,19 +7,26 @@
 #include <rime/schema.h>
 #include <rime/context.h>
 #include <rime/config/config_component.h>
+#include "trie_data_helper.h"
 
 using namespace rime;
 
 class QuickJSTypesTest : public ::testing::Test {
 protected:
+    TrieDataHelper trieDataHelper_ = TrieDataHelper("./tests", "dummy_dict.txt");
+
     void SetUp() override {
         QjsHelper::basePath = "tests/js";
+        trieDataHelper_.createDummyTextFile();
+    }
+
+    void TearDown() override {
+        trieDataHelper_.cleanupDummyFiles();
     }
 };
 
 TEST_F(QuickJSTypesTest, WrapUnwrapRimeGears) {
     auto ctx = QjsHelper::getInstance().getContext();
-    QjsHelper::exposeLogToJsConsole(ctx);
 
     auto arg = JSValueRAII(JS_NewObject(ctx));
     auto engine = Engine::Create();

@@ -11,6 +11,8 @@ Testing
 tests/qjs/js/qjs
 tests/qjs/js/qjsc
 tests/**/*.i
+tests/**/*.bin
+tests/**/*.trie
 
 thirdparty
 src/types/others

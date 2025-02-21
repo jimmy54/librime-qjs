@@ -5,6 +5,7 @@
 #include "qjs_engine.h"
 
 #include <fstream>
+#include <filesystem>
 #include <rime/translation.h>
 #include <rime/gear/filter_commons.h>
 
@@ -24,6 +25,22 @@ static JSValue loadFile(JSContext* ctx, JSValueConst this_val, int argc, JSValue
   JS_FreeCString(ctx, path);
 
   return JS_NewString(ctx, content.c_str());
+}
+
+static JSValue fileExists(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
+  if (argc < 1) {
+    return JS_ThrowSyntaxError(ctx, "The absolutePath argument is required");
+  }
+
+  const char* path = JS_ToCString(ctx, argv[0]);
+  if (!path) {
+    return JS_ThrowSyntaxError(ctx, "The absolutePath argument should be a string");
+  }
+
+  bool exists = std::filesystem::exists(path);
+  JS_FreeCString(ctx, path);
+
+  return JS_NewBool(ctx, exists);
 }
 
 QuickJSFilter::QuickJSFilter(const Ticket& ticket)
@@ -50,6 +67,8 @@ QuickJSFilter::QuickJSFilter(const Ticket& ticket)
 
   JSValue loadFileFunc = JS_NewCFunction(ctx, loadFile, "loadFile", 1);
   JS_SetPropertyStr(ctx, environment_, "loadFile", loadFileFunc);
+  JSValue fileExistsFunc = JS_NewCFunction(ctx, fileExists, "fileExists", 1);
+  JS_SetPropertyStr(ctx, environment_, "fileExists", fileExistsFunc);
 
   JSValueRAII initFunc(JS_GetPropertyStr(ctx, moduleNamespace, "init"));
   if (!JS_IsUndefined(initFunc)) {

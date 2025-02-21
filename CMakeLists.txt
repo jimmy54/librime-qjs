@@ -63,13 +63,6 @@ enable_testing()
 # Set output directory for test executables
 set(TEST_OUTPUT_DIR ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 
-# Create a symbolic link for the YAML file
-execute_process(
-    COMMAND ${CMAKE_COMMAND} -E create_symlink
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../data/minimal/default.yaml
-    ${CMAKE_CURRENT_SOURCE_DIR}/tests/yaml/default.yaml
-)
-
 file(GLOB QJS_TEST_FILES "tests/qjs/*.test.cpp")
 file(GLOB QJS_GEAR_TEST_FILES "tests/*.test.cpp")
 aux_source_directory(tests/qjs TEST_SRC)
@@ -86,3 +79,12 @@ target_link_libraries(librime-qjs-tests
 add_test(NAME librime-qjs-tests
   COMMAND librime-qjs-tests
   WORKING_DIRECTORY ${EXECUTABLE_OUTPUT_PATH})
+
+set(benchmark_files "tests/benchmark/dict/load_dict_benchmark.cc")
+add_executable(load-dict-benchmark ${benchmark_files})
+target_link_libraries(load-dict-benchmark
+  ${rime_library}
+  ${rime_dict_library}
+  ${rime_gears_library}
+  ${GTEST_LIBRARIES}
+)
