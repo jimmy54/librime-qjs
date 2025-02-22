@@ -19,7 +19,7 @@ bool QuickJSTranslation::DoFilter(const JSValueRAII& filterFunc, const JSValue& 
   auto ctx = QjsHelper::getInstance().getContext();
   JSValueRAII jsArray(JS_NewArray(ctx));
   size_t idx = 0;
-  while (auto candidate = translation_->Peek()) {
+  while (auto candidate = translation_->exhausted() ? nullptr : translation_->Peek()) {
     translation_->Next();
     JS_SetPropertyUint32(ctx, jsArray, idx++, QjsCandidate::Wrap(ctx, candidate));
   }

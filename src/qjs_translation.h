@@ -4,7 +4,6 @@
 #include <rime/translation.h>
 
 #include "jsvalue_raii.h"
-#include "qjs_iterator.h"
 #include "qjs_candidate.h"
 #include "quickjs.h"
 

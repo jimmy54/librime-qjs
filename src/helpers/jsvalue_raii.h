@@ -17,7 +17,7 @@ public:
             LOG(ERROR) << "[qjs] JS exception: " << message;
             JS_FreeCString(ctx, message);  // Free the C string
 
-            JSValueRAII stack(JS_GetPropertyStr(ctx, exception, "stack"));
+            JSValue stack = JS_GetPropertyStr(ctx, exception, "stack");
             const char *stack_trace = JS_ToCString(ctx, stack);
             if (stack_trace) {
                 LOG(ERROR) << "[qjs] JS stack trace: " << stack_trace;
@@ -26,15 +26,14 @@ public:
                 LOG(ERROR) << "[qjs] JS stack trace is null.";
             }
 
+            JS_FreeValue(ctx, stack);
             JS_FreeValue(ctx, exception);
         }
     }
 
     ~JSValueRAII() {
         auto ctx = QjsHelper::getInstance().getContext();
-        if (ctx && !JS_IsUndefined(val_) && !JS_IsNull(val_)) {
-            JS_FreeValue(ctx, val_);
-        }
+        JS_FreeValue(ctx, val_);
     }
 
     // Move constructor
@@ -46,9 +45,7 @@ public:
     JSValueRAII& operator=(JSValueRAII&& other) noexcept {
         if (this != &other) {
             auto ctx = QjsHelper::getInstance().getContext();
-            if (ctx && !JS_IsUndefined(val_) && !JS_IsNull(val_)) {
-                JS_FreeValue(ctx, val_);
-            }
+            JS_FreeValue(ctx, val_);
             val_ = other.val_;
             other.val_ = JS_UNDEFINED;
         }
@@ -62,11 +59,6 @@ public:
     operator JSValue() const { return val_; }
     JSValue get() const { return val_; }
     JSValue* getPtr() { return &val_; }
-
-    JSValue dup() const {
-        auto ctx = QjsHelper::getInstance().getContext();
-        return ctx ? JS_DupValue(ctx, val_) : JS_UNDEFINED;
-    }
 
 private:
     JSValue val_;

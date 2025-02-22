@@ -8,26 +8,24 @@ using namespace rime;
 
 class FakeTranslation : public Translation {
 public:
+    FakeTranslation() : Translation() {
+        set_exhausted(true);
+    }
     bool Next() override {
         if (exhausted()) {
             return false;
         }
-        if (++iter_ >= candidates_.size()) {
-            set_exhausted(true);
-        }
+        set_exhausted(++iter_ >= candidates_.size());
         return true;
     }
 
     an<Candidate> Peek() override {
-        if (exhausted() || iter_ >= candidates_.size()) {
-            set_exhausted(true);
-            return nullptr;
-        }
         return candidates_[iter_];
     }
 
     void Append(an<Candidate> candidate) {
         candidates_.push_back(candidate);
+        set_exhausted(iter_ >= candidates_.size());
     }
 
 private:
