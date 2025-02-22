@@ -3,8 +3,13 @@
 #include <rime/service.h>
 #include <rime/setup.h>
 
+#include <rime/registry.h>
+
 #include "qjs_helper.h"
+#include "qjs_component.h"
 #include "qjs_types.h"
+#include "qjs_filter.h"
+
 using namespace rime;
 
 // copied from ../../../test/rime_test_main.cc
@@ -12,21 +17,15 @@ using namespace rime;
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
 
-  RIME_STRUCT(RimeTraits, traits);
-  traits.shared_data_dir =
-    traits.user_data_dir =
-    traits.prebuilt_data_dir =
-    traits.staging_dir =
-      "../tests/yaml";
-  rime::SetupDeployer(&traits);
   rime::SetupLogging("rime.test");
   rime::LoadModules(rime::kDefaultModules);
-  rime::Service::instance().StartService();
+  // Do not StartService, otherwise it would leak memory.
+  // rime::Service::instance().StartService();
 
   // Register the Rime types to quickjs again, since the ones registered in module.cc are not available in the tests.
   // It seems two diffrent quickjs engines/contexts are created. Probably in diffrent process?
+  QjsHelper::basePath = string(rime_get_api()->get_user_data_dir()) + "/js";
   auto ctx = QjsHelper::getInstance().getContext();
-  DLOG(INFO) << "QuickJSFilterTest ctx = " << ctx;
   init_qjs_types(ctx);
 
   // "librime-qjs-tests" start time: Feb 17 10:18 CST

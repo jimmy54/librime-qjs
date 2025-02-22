@@ -27,8 +27,7 @@ TEST_F(QuickJSModuleTest, ImportJsModuleFromAnotherJsFile) {
     ASSERT_FALSE(JS_IsException(myClass));
 
     JSValueRAII arg(JS_NewInt32(ctx_, 10));
-    JSValue args[] = { arg.get() };
-    JSValueRAII obj(JS_CallConstructor(ctx_, myClass, 1, args));
+    JSValueRAII obj(JS_CallConstructor(ctx_, myClass, 1, arg.getPtr()));
     ASSERT_FALSE(JS_IsException(obj));
 
     JSValueRAII greet_arg(JS_NewString(ctx_, "QuickJS"));

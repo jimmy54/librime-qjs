@@ -27,6 +27,7 @@ JSValue QjsHelper::loadJsModuleToNamespace(JSContext* ctx, const char* fileName)
         return evalResult;
     }
 
+    JS_FreeValue(ctx, evalResult);
     return JS_GetModuleNamespace(ctx, md);
 }
 
@@ -80,6 +81,7 @@ JSValue QjsHelper::loadJsModule(JSContext* ctx, const char* fileName) {
         LOG(ERROR) << "Module evaluation failed: " << message_str;
 
         JS_FreeCString(ctx, message_str);
+        JS_FreeValue(ctx, message);
         JS_FreeValue(ctx, exception);
     }
     return funcObj;

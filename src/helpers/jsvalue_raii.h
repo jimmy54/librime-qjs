@@ -29,22 +29,24 @@ public:
             JS_FreeValue(ctx, exception);
         }
     }
+
     ~JSValueRAII() {
         auto ctx = QjsHelper::getInstance().getContext();
-        if (ctx && JS_IsUndefined(val_)) {  // Only free if we have a valid context and value
+        if (ctx && !JS_IsUndefined(val_) && !JS_IsNull(val_)) {
             JS_FreeValue(ctx, val_);
         }
     }
 
-    // Add move constructor and assignment
+    // Move constructor
     JSValueRAII(JSValueRAII&& other) noexcept : val_(other.val_) {
         other.val_ = JS_UNDEFINED;
     }
 
+    // Move assignment
     JSValueRAII& operator=(JSValueRAII&& other) noexcept {
         if (this != &other) {
             auto ctx = QjsHelper::getInstance().getContext();
-            if (ctx && JS_IsUndefined(val_)) {
+            if (ctx && !JS_IsUndefined(val_) && !JS_IsNull(val_)) {
                 JS_FreeValue(ctx, val_);
             }
             val_ = other.val_;
@@ -61,10 +63,9 @@ public:
     JSValue get() const { return val_; }
     JSValue* getPtr() { return &val_; }
 
-    // Add methods to duplicate/protect values
     JSValue dup() const {
         auto ctx = QjsHelper::getInstance().getContext();
-        return JS_DupValue(ctx, val_);
+        return ctx ? JS_DupValue(ctx, val_) : JS_UNDEFINED;
     }
 
 private:

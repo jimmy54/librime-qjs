@@ -19,17 +19,9 @@ bool QuickJSTranslation::DoFilter(const JSValueRAII& filterFunc, const JSValue& 
   auto ctx = QjsHelper::getInstance().getContext();
   JSValueRAII jsArray(JS_NewArray(ctx));
   size_t idx = 0;
-  while (!translation_->exhausted()) {
-    an<Candidate> candidate = translation_->Peek();
-    if (!candidate) {
-      break;
-    }
-
+  while (auto candidate = translation_->Peek()) {
     translation_->Next();
-
-    JSValueRAII jsObjectRAII(QjsCandidate::Wrap(ctx, candidate));
-    // Use dup() to create a new reference for the array
-    JS_SetPropertyUint32(ctx, jsArray, idx++, jsObjectRAII.dup());
+    JS_SetPropertyUint32(ctx, jsArray, idx++, QjsCandidate::Wrap(ctx, candidate));
   }
   if (idx == 0) {
     return true;

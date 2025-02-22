@@ -25,7 +25,6 @@ TEST_F(QuickJSFilterTest, ApplyFilter) {
     auto ctx = QjsHelper::getInstance().getContext();
     QjsHelper::exposeLogToJsConsole(ctx);
 
-    auto arg = JSValueRAII(JS_NewObject(ctx));
     auto engine = Engine::Create();
     // engine->ApplySchema(&schema); // ApplySchema 会触发回调函数，导致 segfault
     // engine->schema()->schema_id() = .default, engine->schema()->schema_name() = .default

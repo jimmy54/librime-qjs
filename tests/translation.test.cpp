@@ -10,15 +10,6 @@
 using namespace rime;
 class QuickJSTranslationTest : public ::testing::Test {
 protected:
-    void SetUp() override {
-        rt_ = QjsHelper::getInstance().getRuntime();
-        ctx_ = QjsHelper::getInstance().getContext();
-
-        QjsCandidate().Register(ctx_);
-        QjsHelper::exposeLogToJsConsole(ctx_);
-    }
-
-
     an<Translation> CreateMockTranslation() {
         auto translation = New<FakeTranslation>();
         translation->Append(New<SimpleCandidate>("mock", 0, 1, "text1", "comment1"));
@@ -26,15 +17,14 @@ protected:
         translation->Append(New<SimpleCandidate>("mock", 0, 1, "text3", "comment3"));
         return translation;
     }
-
-    JSRuntime* rt_;
-    JSContext* ctx_;
 };
 
 TEST_F(QuickJSTranslationTest, Initialize) {
     auto translation = CreateMockTranslation();
     auto qjs_translation = New<QuickJSTranslation>(translation, JSValueRAII(JS_UNDEFINED), JS_UNDEFINED);
-    ASSERT_TRUE(qjs_translation != nullptr);
+    EXPECT_TRUE(qjs_translation->exhausted());
+    EXPECT_FALSE(qjs_translation->Next());
+    EXPECT_EQ(qjs_translation->Peek(), nullptr);
 }
 
 TEST_F(QuickJSTranslationTest, FilterCandidates) {
@@ -47,13 +37,13 @@ TEST_F(QuickJSTranslationTest, FilterCandidates) {
         }
     )";
 
-    JSValueRAII result(JS_Eval(ctx_, jsCode, strlen(jsCode), "<input>", JS_EVAL_TYPE_GLOBAL));
-    JSValueRAII global(JS_GetGlobalObject(ctx_));
-    JSValueRAII filterFunc(JS_GetPropertyStr(ctx_, global, "filterCandidates"));
+    auto ctx = QjsHelper::getInstance().getContext();
+    JSValueRAII result(JS_Eval(ctx, jsCode, strlen(jsCode), "<input>", JS_EVAL_TYPE_GLOBAL));
+    JSValueRAII global(JS_GetGlobalObject(ctx));
+    JSValueRAII filterFunc(JS_GetPropertyStr(ctx, global, "filterCandidates"));
 
-    JSValueRAII env(JS_NewObject(ctx_));
-    JSValueRAII jsExpectingText(JS_NewString(ctx_, "text2"));
-    JS_SetPropertyStr(ctx_, env, "expectingText", jsExpectingText);
+    JSValueRAII env(JS_NewObject(ctx));
+    JS_SetPropertyStr(ctx, env, "expectingText", JS_NewString(ctx, "text2"));
 
     auto qjs_translation = New<QuickJSTranslation>(translation, filterFunc, env);
     auto candidate = qjs_translation->Peek();

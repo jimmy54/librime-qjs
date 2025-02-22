@@ -65,7 +65,6 @@ set(TEST_OUTPUT_DIR ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 
 file(GLOB QJS_TEST_FILES "tests/qjs/*.test.cpp")
 file(GLOB QJS_GEAR_TEST_FILES "tests/*.test.cpp")
-aux_source_directory(tests/qjs TEST_SRC)
 add_executable(librime-qjs-tests ${QJS_TEST_FILES} ${QJS_GEAR_TEST_FILES})
 target_link_libraries(librime-qjs-tests
   ${rime_library}
@@ -80,11 +79,11 @@ add_test(NAME librime-qjs-tests
   COMMAND librime-qjs-tests
   WORKING_DIRECTORY ${EXECUTABLE_OUTPUT_PATH})
 
-set(benchmark_files "tests/benchmark/dict/load_dict_benchmark.cc")
-add_executable(load-dict-benchmark ${benchmark_files})
-target_link_libraries(load-dict-benchmark
-  ${rime_library}
-  ${rime_dict_library}
-  ${rime_gears_library}
-  ${GTEST_LIBRARIES}
-)
+# set(benchmark_files "tests/benchmark/dict/load_dict_benchmark.cc")
+# add_executable(load-dict-benchmark ${benchmark_files})
+# target_link_libraries(load-dict-benchmark
+#   ${rime_library}
+#   ${rime_dict_library}
+#   ${rime_gears_library}
+#   ${GTEST_LIBRARIES}
+# )

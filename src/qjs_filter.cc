@@ -51,24 +51,18 @@ QuickJSFilter::QuickJSFilter(const Ticket& ticket)
   //   - qjs_filter@abc
   // => klass = qjs_filter, name_space = abc
   std::string fileName = ticket.name_space + ".js";
-  JSValue moduleNamespace = QjsHelper::loadJsModuleToNamespace(ctx, fileName.c_str());
+  JSValueRAII moduleNamespace(QjsHelper::loadJsModuleToNamespace(ctx, fileName.c_str()));
   if (JS_IsUndefined(moduleNamespace)) {
     LOG(ERROR) << "[qjs] QuickJSFilter Could not load " << fileName;
     return;
   }
 
-  environment_ = JSValueRAII(JS_NewObject(ctx));
-  JSValueRAII jsEngine(QjsEngine::Wrap(ctx, engine_));
-  JS_SetPropertyStr(ctx, environment_, "engine", jsEngine);
-  JSValueRAII jsNamespace(JS_NewString(ctx, name_space_.c_str()));
-  JS_SetPropertyStr(ctx, environment_, "namespace", jsNamespace);
-  JSValueRAII jsUserDataDir(JS_NewString(ctx, QjsHelper::basePath.c_str()));
-  JS_SetPropertyStr(ctx, environment_, "userDataDir", jsUserDataDir);
-
-  JSValue loadFileFunc = JS_NewCFunction(ctx, loadFile, "loadFile", 1);
-  JS_SetPropertyStr(ctx, environment_, "loadFile", loadFileFunc);
-  JSValue fileExistsFunc = JS_NewCFunction(ctx, fileExists, "fileExists", 1);
-  JS_SetPropertyStr(ctx, environment_, "fileExists", fileExistsFunc);
+  environment_ = JSValueRAII(JS_NewObject(ctx)); // do not free its properties/methods manually
+  JS_SetPropertyStr(ctx, environment_, "engine", QjsEngine::Wrap(ctx, engine_));
+  JS_SetPropertyStr(ctx, environment_, "namespace", JS_NewString(ctx, name_space_.c_str()));
+  JS_SetPropertyStr(ctx, environment_, "userDataDir", JS_NewString(ctx, QjsHelper::basePath.c_str()));
+  JS_SetPropertyStr(ctx, environment_, "loadFile", JS_NewCFunction(ctx, loadFile, "loadFile", 1));
+  JS_SetPropertyStr(ctx, environment_, "fileExists", JS_NewCFunction(ctx, fileExists, "fileExists", 1));
 
   JSValueRAII initFunc(JS_GetPropertyStr(ctx, moduleNamespace, "init"));
   if (!JS_IsUndefined(initFunc)) {
@@ -82,14 +76,12 @@ QuickJSFilter::QuickJSFilter(const Ticket& ticket)
   }
 
   finitFunc_ = JSValueRAII(JS_GetPropertyStr(ctx, moduleNamespace, "finit"));
-
   filterFunc_ = JSValueRAII(JS_GetPropertyStr(ctx, moduleNamespace, "filter"));
   if (JS_IsUndefined(filterFunc_)) {
     LOG(ERROR) << "[qjs] QuickJSFilter No `filter` function exported in " << fileName;
-    return;
+  } else {
+    isLoaded_ = true;
   }
-
-  isLoaded_ = true;
 }
 
 QuickJSFilter::~QuickJSFilter() {
@@ -102,7 +94,6 @@ QuickJSFilter::~QuickJSFilter() {
                                     environment_.getPtr()));
     if (JS_IsException(finitResult)) {
       LOG(ERROR) << "[qjs] ~QuickJSFilter Error running the finit function.";
-      return;
     }
   } else {
     DLOG(INFO) << "[qjs] ~QuickJSFilter no `finit` function exported.";
