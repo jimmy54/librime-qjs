@@ -17,7 +17,7 @@ static void rime_qjs_initialize() {
   auto ctx = QjsHelper::getInstance().getContext();
   init_qjs_types(ctx);
 
-  r.Register("qjs_filter", new QuickJSComponent<QuickJSFilter>());
+  r.Register("qjs_filter", new QuickJSComponent<QuickJSFilter, FilterWrapper<QuickJSFilter>>());
 }
 
 static void rime_qjs_finalize() {}
