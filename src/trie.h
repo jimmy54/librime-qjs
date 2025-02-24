@@ -150,12 +150,23 @@ public:
         std::vector<std::pair<std::string, std::string>> items(entrySize);
         std::ifstream infile(txtPath);
         std::string line;
+        int idx = 0;
         while (std::getline(infile, line)) {
+            if (!line.empty() && line[0] == '#') continue;
+
             size_t tab_pos = line.find('\t');
             if (tab_pos != std::string::npos) {
-                std::string key = line.substr(0, tab_pos);
-                std::string value = line.substr(tab_pos + 1);
-                items.emplace_back(key, value);
+                std::string_view lineView = std::string_view(line);
+                std::string_view key = lineView.substr(0, tab_pos);
+                std::string_view value = lineView.substr(tab_pos + 1);
+
+                if (!value.empty() && value.back() == '\r') value.remove_suffix(1);
+
+                if (idx < entrySize) {
+                    items[idx++] = std::make_pair(std::string(key), std::string(value));
+                } else {
+                    items.emplace_back(std::string(key), std::string(value));
+                }
             }
         }
         build(items);
@@ -181,14 +192,14 @@ public:
 
     void add(const std::string& key, const std::string& value) {
         marisa::Keyset keyset;
-        keyset.push_back(key.c_str());
+        keyset.push_back(key.c_str(), key.length());
 
         // Build the trie
-        trie_.build(keyset);
+        trie_.build(keyset, MARISA_BINARY_TAIL); // UTF-8 support
 
         // Get the ID for the key
         marisa::Agent agent;
-        agent.set_query(key.c_str());
+        agent.set_query(key.c_str(), key.length());
 
         if (trie_.lookup(agent)) {
             std::size_t id = agent.key().id();
@@ -200,6 +211,8 @@ public:
 
             // Store the associated data
             data_[id] = value;
+        } else {
+            throw std::runtime_error("Failed to add key-value pair");
         }
     }
 
@@ -208,11 +221,11 @@ public:
 
         // First, add all keys to the keyset
         for (const auto& [key, _] : items) {
-            keyset.push_back(key.c_str());
+            keyset.push_back(key.c_str(), key.length());
         }
 
         // Build the trie
-        trie_.build(keyset);
+        trie_.build(keyset, MARISA_BINARY_TAIL); // UTF-8 support
 
         // Resize data vector to accommodate all values
         data_.resize(items.size());
@@ -220,17 +233,19 @@ public:
         // Store all values
         for (const auto& [key, value] : items) {
             marisa::Agent agent;
-            agent.set_query(key.c_str());
+            agent.set_query(key.c_str(), key.length());
 
             if (trie_.lookup(agent)) {
                 data_[agent.key().id()] = value;
+            } else {
+                throw std::runtime_error("Failed to add key-value pair");
             }
         }
     }
 
     [[nodiscard]] std::optional<std::string> find(std::string_view key) const {
         marisa::Agent agent;
-        agent.set_query(key.data());
+        agent.set_query(key.data(), key.length());
 
         if (trie_.lookup(agent)) {
             std::size_t id = agent.key().id();
@@ -243,7 +258,7 @@ public:
 
     [[nodiscard]] bool contains(std::string_view key) const {
         marisa::Agent agent;
-        agent.set_query(key.data());
+        agent.set_query(key.data(), key.length());
         return trie_.lookup(agent);
     }
 
@@ -251,7 +266,7 @@ public:
         prefix_search(std::string_view prefix) const {
         std::vector<std::pair<std::string, std::string>> results;
         marisa::Agent agent;
-        agent.set_query(prefix.data());
+        agent.set_query(prefix.data(), prefix.length());
 
         while (trie_.predictive_search(agent)) {
             std::string key(agent.key().ptr(), agent.key().length());
