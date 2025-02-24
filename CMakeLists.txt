@@ -44,6 +44,7 @@ aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/types SRC_TYPES)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/helpers SRC_HELPERS)
 
 include_directories(
+    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/yas/include
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_SOURCE_DIR}/src/types
@@ -79,7 +80,7 @@ add_test(NAME librime-qjs-tests
   COMMAND librime-qjs-tests
   WORKING_DIRECTORY ${EXECUTABLE_OUTPUT_PATH})
 
-# set(benchmark_files "tests/benchmark/dict/load_dict_benchmark.cc")
+# set(benchmark_files "tests/benchmark/dict/load_trie_benchmark.cc")
 # add_executable(load-dict-benchmark ${benchmark_files})
 # target_link_libraries(load-dict-benchmark
 #   ${rime_library}

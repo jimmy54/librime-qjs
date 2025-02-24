@@ -14,9 +14,14 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include <yas/binary_iarchive.hpp>
+#include <yas/binary_oarchive.hpp>
+#include <yas/std_types.hpp>
+#include <yas/serialize.hpp>
+
 #include "trie.h"
 
-class TrieWithStringExt: public rime::Trie {
+class TrieWithStringExt : public rime::Trie {
 
 public:
     void save_to_files(std::string_view data_path) const {
@@ -92,4 +97,66 @@ public:
 
         if (file.fail()) throw std::runtime_error("Failed to read data from file");
     }
+
+    void loadBinaryFileYas(std::string_view file_path) {
+        // Read the entire file into a buffer first
+        std::ifstream ifs(std::string(file_path), std::ios::binary | std::ios::ate);
+        if (!ifs) throw std::runtime_error("Failed to open file");
+
+        const auto size = ifs.tellg();
+        ifs.seekg(0);
+
+        std::vector<char> buffer(size);
+        if (!ifs.read(buffer.data(), size)) {
+            throw std::runtime_error("Failed to read file");
+        }
+
+        // Use memory buffer for deserialization
+        yas::mem_istream ms(buffer.data(), buffer.size());
+        constexpr std::uint32_t yas_flags = yas::binary | yas::no_header;
+        yas::binary_iarchive<yas::mem_istream, yas_flags> ia(ms);
+
+        ia & data_;
+
+        // Read and load trie
+        std::vector<char> trie_data;
+        ia & trie_data;
+
+        ScopedTempFile temp_file{ file_path };
+        {
+            std::ofstream trie_out(temp_file.path(), std::ios::binary);
+            trie_out.write(trie_data.data(), trie_data.size());
+        }
+        trie_.load(temp_file.path().c_str());
+    }
+
+    void saveToBinaryFileYas(std::string_view file_path) const {
+        // Use memory buffer for serialization
+        yas::mem_ostream ms;
+        constexpr std::uint32_t yas_flags = yas::binary | yas::no_header;
+        yas::binary_oarchive<yas::mem_ostream, yas_flags> oa(ms);
+
+        oa & data_;
+
+        // Handle trie data
+        ScopedTempFile temp_file{ file_path };
+        trie_.save(temp_file.path().c_str());
+
+        std::vector<char> trie_data;
+        {
+            std::ifstream trie_file(temp_file.path(), std::ios::binary);
+            trie_data.assign(
+                std::istreambuf_iterator<char>(trie_file),
+                std::istreambuf_iterator<char>()
+            );
+        }
+        oa & trie_data;
+
+        // Write the serialized data to file
+        auto buf = ms.get_shared_buffer();
+        std::ofstream ofs(std::string(file_path), std::ios::binary);
+        if (!ofs) throw std::runtime_error("Failed to open file for writing");
+        ofs.write(buf.data.get(), buf.size);
+    }
+
 };
