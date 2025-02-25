@@ -22,6 +22,7 @@ protected:
 
     void TearDown() override {
         trieDataHelper_.cleanupDummyFiles();
+        std::remove("tests/dumm.bin"); // the file generated in js
     }
 };
 
