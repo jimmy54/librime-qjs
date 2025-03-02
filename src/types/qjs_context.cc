@@ -17,6 +17,7 @@ DEFINE_JS_CLASS_WITH_RAW_POINTER(
 
     // Menu methods
     JS_CFUNC_DEF("hasMenu", 0, has_menu),
+    JS_CFUNC_DEF("isComposing", 0, is_composing),
 
     // Segment methods
     JS_CFUNC_DEF("clearPreviousSegment", 0, clear_previous_segment),
@@ -42,13 +43,13 @@ DEFINE_GETTER_2(Context, caretPos, caret_pos, int, JS_NewInt32)
 DEFINE_STRING_SETTER(Context, input,
   obj->set_input(str);
 )
-DEFINE_NUMERIC_SETTER_2(Context, caretPos, set_caret_pos, int32_t, JS_ToInt32)
+DEFINE_SETTER_2(Context, caretPos, set_caret_pos, int32_t, JS_ToInt32)
 
 [[nodiscard]]
 JSValue QjsContext::get_preedit(JSContext* ctx, JSValueConst this_val) {
   if (auto obj = Unwrap(ctx, this_val)) {
     auto preedit = obj->GetPreedit();
-    return QjsPreedit::Wrap(ctx, &preedit);
+    return QjsPreedit::Wrap(ctx, &preedit); // <-- incompatible to DEFINE_GETTER_2
   }
   return JS_UNDEFINED;
 }
@@ -86,6 +87,10 @@ DEF_FUNC(Context, pop_input,
 
 DEF_FUNC(Context, has_menu,
   return JS_NewBool(ctx, obj->HasMenu());
+)
+
+DEF_FUNC(Context, is_composing,
+  return JS_NewBool(ctx, obj->IsComposing());
 )
 
 DEF_FUNC(Context, clear_previous_segment,

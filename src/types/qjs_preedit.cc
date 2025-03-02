@@ -18,8 +18,8 @@ DEFINE_STRING_SETTER(Preedit, text,
   obj->text = str;
 )
 
-DEFINE_NUMERIC_SETTER_3(Preedit, caretPos, caret_pos, int64_t, JS_ToInt64)
-DEFINE_NUMERIC_SETTER_3(Preedit, selectStart, sel_start, int64_t, JS_ToInt64)
-DEFINE_NUMERIC_SETTER_3(Preedit, selectEnd, sel_end, int64_t, JS_ToInt64)
+DEFINE_SETTER_3(Preedit, caretPos, caret_pos, int64_t, JS_ToInt64)
+DEFINE_SETTER_3(Preedit, selectStart, sel_start, int64_t, JS_ToInt64)
+DEFINE_SETTER_3(Preedit, selectEnd, sel_end, int64_t, JS_ToInt64)
 
 } // namespace rime

@@ -51,9 +51,9 @@ DEFINE_STRING_SETTER(Candidate, type,
   obj->set_type(str);
 )
 
-DEFINE_NUMERIC_SETTER(Candidate, start, int64_t, JS_ToInt64)
-DEFINE_NUMERIC_SETTER(Candidate, end, int64_t, JS_ToInt64)
-DEFINE_NUMERIC_SETTER(Candidate, quality, int32_t, JS_ToInt32)
+DEFINE_SETTER(Candidate, start, int64_t, JS_ToInt64)
+DEFINE_SETTER(Candidate, end, int64_t, JS_ToInt64)
+DEFINE_SETTER(Candidate, quality, int32_t, JS_ToInt32)
 
 DEFINE_STRING_SETTER(Candidate, preedit,
   if (auto simpleCandidate = dynamic_cast<SimpleCandidate*>(obj.get())) {

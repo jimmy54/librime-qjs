@@ -265,11 +265,11 @@ void Qjs##class_name::Register(JSContext* ctx) {                               \
   }
 
 // define a numeric setter with the same name of the c++ setter
-#define DEFINE_NUMERIC_SETTER(class_name, name, type, converter)               \
-  DEFINE_NUMERIC_SETTER_2(class_name, name, set_##name, type, converter)
+#define DEFINE_SETTER(class_name, name, type, converter)               \
+  DEFINE_SETTER_2(class_name, name, set_##name, type, converter)
 
 // define a numeric setter with a different name of the c++ setter
-#define DEFINE_NUMERIC_SETTER_2(class_name, jsName, cppName, type, converter)  \
+#define DEFINE_SETTER_2(class_name, jsName, cppName, type, converter)  \
   JSValue Qjs##class_name::set_##jsName(JSContext* ctx, JSValueConst this_val, JSValue val) { \
     if (auto obj = Unwrap(ctx, this_val)) {                                    \
       type value;                                                              \
@@ -286,7 +286,7 @@ void Qjs##class_name::Register(JSContext* ctx) {                               \
   }
 
 // define a numeric setter with a different name of the c++ struct's field
-#define DEFINE_NUMERIC_SETTER_3(class_name, jsName, cppName, type, converter)  \
+#define DEFINE_SETTER_3(class_name, jsName, cppName, type, converter)  \
   JSValue Qjs##class_name::set_##jsName(JSContext* ctx, JSValueConst this_val, JSValue val) { \
     if (auto obj = Unwrap(ctx, this_val)) {                                    \
       type value;                                                              \
