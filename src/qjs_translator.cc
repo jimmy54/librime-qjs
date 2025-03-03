@@ -4,6 +4,7 @@
 #include "qjs_engine.h"
 #include "qjs_segment.h"
 #include "qjs_candidate.h"
+#include "helpers/qjs_environment.h"
 
 #include <fstream>
 #include <rime/translation.h>
@@ -21,22 +22,13 @@ QuickJSTranslator::QuickJSTranslator(const Ticket& ticket)
     return;
   }
 
-  environment_ = JSValueRAII(JS_NewObject(ctx)); // do not free its properties/methods manually
-  JS_SetPropertyStr(ctx, environment_, "engine", QjsEngine::Wrap(ctx, engine_));
-  JS_SetPropertyStr(ctx, environment_, "namespace", JS_NewString(ctx, name_space_.c_str()));
-  JS_SetPropertyStr(ctx, environment_, "userDataDir", JS_NewString(ctx, QjsHelper::basePath.c_str()));
-  // JS_SetPropertyStr(ctx, environment_, "loadFile", JS_NewCFunction(ctx, loadFile, "loadFile", 1));
-  // JS_SetPropertyStr(ctx, environment_, "fileExists", JS_NewCFunction(ctx, fileExists, "fileExists", 1));
+  environment_ = QjsEnvironment::Create(ctx, engine_, name_space_);
 
-  JSValueRAII initFunc(JS_GetPropertyStr(ctx, moduleNamespace, "init"));
-  if (!JS_IsUndefined(initFunc)) {
-    JSValueRAII initResult(JS_Call(ctx, initFunc, JS_UNDEFINED, 1, environment_.getPtr()));
-    if (JS_IsException(initResult)) {
-      LOG(ERROR) << "[qjs] QuickJSTranslator Error running the init function in " << fileName;
-      return;
-    }
+  if (!QjsEnvironment::CallInitFunction(ctx, moduleNamespace, environment_)) {
+    LOG(ERROR) << "[qjs] QuickJSTranslator Error running the init function in " << fileName;
+    return;
   } else {
-    DLOG(INFO) << "[qjs] QuickJSTranslator no `init` function exported in " << fileName;
+    DLOG(INFO) << "[qjs] QuickJSTranslator init function executed successfully in " << fileName;
   }
 
   finitFunc_ = JSValueRAII(JS_GetPropertyStr(ctx, moduleNamespace, "finit"));
@@ -51,12 +43,8 @@ QuickJSTranslator::QuickJSTranslator(const Ticket& ticket)
 QuickJSTranslator::~QuickJSTranslator() {
   if (!JS_IsUndefined(finitFunc_)) {
     DLOG(INFO) << "[qjs] QuickJSTranslator::~QuickJSTranslator running the finit function";
-    JSValueRAII finitResult(JS_Call(QjsHelper::getInstance().getContext(),
-                                    finitFunc_,
-                                    JS_UNDEFINED,
-                                    1,
-                                    environment_.getPtr()));
-    if (JS_IsException(finitResult)) {
+    auto ctx = QjsHelper::getInstance().getContext();
+    if (!QjsEnvironment::CallFinitFunction(ctx, finitFunc_, environment_)) {
       LOG(ERROR) << "[qjs] ~QuickJSTranslator Error running the finit function.";
     }
   } else {

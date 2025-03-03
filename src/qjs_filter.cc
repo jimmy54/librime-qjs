@@ -3,6 +3,7 @@
 #include "jsvalue_raii.h"
 #include "qjs_helper.h"
 #include "qjs_engine.h"
+#include "helpers/qjs_environment.h"
 
 #include <fstream>
 #include <filesystem>
@@ -11,37 +12,6 @@
 
 namespace rime {
 
-static JSValue loadFile(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
-  if (argc < 1) {
-    return JS_ThrowSyntaxError(ctx, "The absolutePath argument is required");
-  }
-
-  const char* path = JS_ToCString(ctx, argv[0]);
-  if (!path) {
-    return JS_ThrowSyntaxError(ctx, "The absolutePath argument should be a string");
-  }
-
-  std::string content = QjsHelper::loadFile(path);
-  JS_FreeCString(ctx, path);
-
-  return JS_NewString(ctx, content.c_str());
-}
-
-static JSValue fileExists(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
-  if (argc < 1) {
-    return JS_ThrowSyntaxError(ctx, "The absolutePath argument is required");
-  }
-
-  const char* path = JS_ToCString(ctx, argv[0]);
-  if (!path) {
-    return JS_ThrowSyntaxError(ctx, "The absolutePath argument should be a string");
-  }
-
-  bool exists = std::filesystem::exists(path);
-  JS_FreeCString(ctx, path);
-
-  return JS_NewBool(ctx, exists);
-}
 
 QuickJSFilter::QuickJSFilter(const Ticket& ticket)
     : Filter(ticket) {
@@ -57,22 +27,13 @@ QuickJSFilter::QuickJSFilter(const Ticket& ticket)
     return;
   }
 
-  environment_ = JSValueRAII(JS_NewObject(ctx)); // do not free its properties/methods manually
-  JS_SetPropertyStr(ctx, environment_, "engine", QjsEngine::Wrap(ctx, engine_));
-  JS_SetPropertyStr(ctx, environment_, "namespace", JS_NewString(ctx, name_space_.c_str()));
-  JS_SetPropertyStr(ctx, environment_, "userDataDir", JS_NewString(ctx, QjsHelper::basePath.c_str()));
-  JS_SetPropertyStr(ctx, environment_, "loadFile", JS_NewCFunction(ctx, loadFile, "loadFile", 1));
-  JS_SetPropertyStr(ctx, environment_, "fileExists", JS_NewCFunction(ctx, fileExists, "fileExists", 1));
+  // Create and initialize the environment
+  environment_ = QjsEnvironment::Create(ctx, engine_, name_space_);
 
-  JSValueRAII initFunc(JS_GetPropertyStr(ctx, moduleNamespace, "init"));
-  if (!JS_IsUndefined(initFunc)) {
-    JSValueRAII initResult(JS_Call(ctx, initFunc, JS_UNDEFINED, 1, environment_.getPtr()));
-    if (JS_IsException(initResult)) {
-      LOG(ERROR) << "[qjs] QuickJSFilter Error running the init function in " << fileName;
-      return;
-    }
-  } else {
-    DLOG(INFO) << "[qjs] QuickJSFilter no `init` function exported in " << fileName;
+  // Call the init function if it exists
+  if (!QjsEnvironment::CallInitFunction(ctx, moduleNamespace, environment_)) {
+    LOG(ERROR) << "[qjs] QuickJSFilter Error running the init function in " << fileName;
+    return;
   }
 
   finitFunc_ = JSValueRAII(JS_GetPropertyStr(ctx, moduleNamespace, "finit"));
@@ -87,12 +48,8 @@ QuickJSFilter::QuickJSFilter(const Ticket& ticket)
 QuickJSFilter::~QuickJSFilter() {
   if (!JS_IsUndefined(finitFunc_)) {
     DLOG(INFO) << "[qjs] QuickJSFilter::~QuickJSFilter running the finit function";
-    JSValueRAII finitResult(JS_Call(QjsHelper::getInstance().getContext(),
-                                    finitFunc_,
-                                    JS_UNDEFINED,
-                                    1,
-                                    environment_.getPtr()));
-    if (JS_IsException(finitResult)) {
+    auto ctx = QjsHelper::getInstance().getContext();
+    if (!QjsEnvironment::CallFinitFunction(ctx, finitFunc_, environment_)) {
       LOG(ERROR) << "[qjs] ~QuickJSFilter Error running the finit function.";
     }
   } else {
