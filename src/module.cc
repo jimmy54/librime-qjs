@@ -18,8 +18,8 @@ static void rime_qjs_initialize() {
   auto ctx = QjsHelper::getInstance().getContext();
   init_qjs_types(ctx);
 
-  r.Register("qjs_filter", new QuickJSComponent<QuickJSFilter, FilterWrapper<QuickJSFilter>>());
-  r.Register("qjs_translator", new QuickJSComponent<QuickJSTranslator, TranslatorWrapper<QuickJSTranslator>>());
+  r.Register("qjs_filter", new QuickJSComponent<QuickJSFilter, Filter>());
+  r.Register("qjs_translator", new QuickJSComponent<QuickJSTranslator, Translator>());
 }
 
 static void rime_qjs_finalize() {}

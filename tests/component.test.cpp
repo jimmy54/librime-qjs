@@ -24,45 +24,45 @@ public:
 };
 
 TEST(QuickJSComponentTest, ShareComponentAcrossRimeSessions) {
-  QuickJSComponent<MockFilter, FilterWrapper<MockFilter>> component;
+  QuickJSComponent<MockFilter, Filter> component;
 
   Ticket ticket(nullptr, "test_namespace", "test");
-  FilterWrapper<MockFilter>* instance1 = component.Create(ticket);
-  auto actualInstance1 = instance1->actualFilter_;
+  auto* instance1 = component.Create(ticket);
+  auto actualInstance1 = instance1->actual_;
   delete instance1; // Rime session 1 ends
 
-  FilterWrapper<MockFilter>* instance2 = component.Create(ticket);
-  ASSERT_EQ(actualInstance1, instance2->actualFilter_)
+  auto* instance2 = component.Create(ticket);
+  ASSERT_EQ(actualInstance1, instance2->actual_)
     << "delete instance1 should not destroy the actual filter instance";
   delete instance2; // Rime session 2 ends
 
   Ticket ticket2(nullptr, "test_namespace", "test");
-  FilterWrapper<MockFilter>* instance3 = component.Create(ticket2);
-  ASSERT_EQ(actualInstance1, instance3->actualFilter_)
+  auto* instance3 = component.Create(ticket2);
+  ASSERT_EQ(actualInstance1, instance3->actual_)
     << "delete instance1 should not destroy the actual filter instance";
   delete instance3; // Rime session 3 ends
 }
 
 TEST(QuickJSComponentTest, CreateComponent) {
-  QuickJSComponent<MockFilter, FilterWrapper<MockFilter>> component;
+  QuickJSComponent<MockFilter, Filter> component;
 
   Ticket ticket(nullptr, "test_namespace", "test");
   auto* instance1 = component.Create(ticket);
   ASSERT_NE(nullptr, instance1);
 
   auto* instance2 = component.Create(ticket);
-  ASSERT_EQ(instance1->actualFilter_, instance2->actualFilter_)
+  ASSERT_EQ(instance1->actual_, instance2->actual_)
     << "should return the same actual filter with the same ticket";
 
   Ticket ticket2(nullptr, "test_namespace", "test");
   auto* instance3 = component.Create(ticket2);
-  ASSERT_EQ(instance1->actualFilter_, instance3->actualFilter_)
+  ASSERT_EQ(instance1->actual_, instance3->actual_)
     << "should return the same actual filter with the same ticket namespace";
 
   Ticket ticket3(nullptr, "test_namespace2", "test");
   auto* instance4 = component.Create(ticket3);
   ASSERT_NE(nullptr, instance4);
-  ASSERT_NE(instance1->actualFilter_, instance4->actualFilter_)
+  ASSERT_NE(instance1->actual_, instance4->actual_)
     << "should create a new instance with a different ticket namespace";
 
   delete instance1;

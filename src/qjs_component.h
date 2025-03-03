@@ -12,12 +12,58 @@
 
 namespace rime {
 
-template<typename T_ACTUAL, typename T_WRAPPER>
-class QuickJSComponent : public T_WRAPPER::Component {
+// Primary template declaration
+template<typename T_ACTUAL, typename T_BASE>
+class ComponentWrapper;
+
+// Specialization for Filter
+template<typename T_ACTUAL>
+class ComponentWrapper<T_ACTUAL, Filter> : public Filter {
+public:
+  explicit ComponentWrapper(const Ticket& ticket, an<T_ACTUAL>& actual)
+      : Filter(ticket), actual_(actual) {
+    DLOG(INFO) << "Filter ComponentWrapper created with ticket: " << ticket.name_space;
+  }
+
+  virtual ~ComponentWrapper() {
+    DLOG(INFO) << "Filter ComponentWrapper destroyed";
+  }
+
+  virtual an<Translation> Apply(an<Translation> translation,
+                                CandidateList* candidates) {
+    return actual_->Apply(translation, candidates);
+  }
+
+  an<T_ACTUAL> actual_;
+};
+
+// Specialization for Translator
+template<typename T_ACTUAL>
+class ComponentWrapper<T_ACTUAL, Translator> : public Translator {
+public:
+  explicit ComponentWrapper(const Ticket& ticket, an<T_ACTUAL>& actual)
+      : Translator(ticket), actual_(actual) {
+    DLOG(INFO) << "Translator ComponentWrapper created with ticket: " << ticket.name_space;
+  }
+
+  virtual ~ComponentWrapper() {
+    DLOG(INFO) << "Translator ComponentWrapper destroyed";
+  }
+
+  virtual an<Translation> Query(const string& input,
+                                const Segment& segment) {
+    return actual_->Query(input, segment);
+  }
+
+  an<T_ACTUAL> actual_;
+};
+
+template<typename T_ACTUAL, typename T_BASE>
+class QuickJSComponent : public T_BASE::Component {
 public:
   QuickJSComponent() {}
 
-  T_WRAPPER* Create(const Ticket& a) {
+  ComponentWrapper<T_ACTUAL, T_BASE>* Create(const Ticket& a) {
     if (!components_.count(a.name_space)) {
       LOG(INFO) << "[qjs] creating component '" << a.name_space << "'.";
       components_[a.name_space] = New<T_ACTUAL>(a);
@@ -26,49 +72,12 @@ public:
       // update the new engine to the component
       components_[a.name_space]->setEngine(a.engine);
     }
-    return new T_WRAPPER(a, components_[a.name_space]);
+    return new ComponentWrapper<T_ACTUAL, T_BASE>(a, components_[a.name_space]);
   }
 
 private:
   std::map<string, an<T_ACTUAL>> components_;
 };
-
-template<typename T>
-class FilterWrapper : public Filter {
-public:
-  explicit FilterWrapper(const Ticket& ticket, an<T>& actualFilter)
-      : Filter(ticket), actualFilter_(actualFilter) {
-    DLOG(INFO) << "FilterWrapper created with ticket: " << ticket.name_space;
-  };
-  virtual ~FilterWrapper() {
-    DLOG(INFO) << "FilterWrapper destroyed";
-  }
-  virtual an<Translation> Apply(an<Translation> translation,
-                                CandidateList* candidates) {
-    return actualFilter_->Apply(translation, candidates);
-  }
-
-  an<T> actualFilter_;
-};
-
-template<typename T>
-class TranslatorWrapper : public Translator {
-public:
-  explicit TranslatorWrapper(const Ticket& ticket, an<T>& actualTranslator)
-      : Translator(ticket), actualTranslator_(actualTranslator) {
-    DLOG(INFO) << "TranslatorWrapper created with ticket: " << ticket.name_space;
-  };
-  virtual ~TranslatorWrapper() {
-    DLOG(INFO) << "TranslatorWrapper destroyed";
-  }
-  virtual an<Translation> Query(const string& input,
-                                const Segment& segment) {
-    return actualTranslator_->Query(input, segment);
-  }
-
-  an<T> actualTranslator_;
-};
-
 
 } // namespace rime
 
