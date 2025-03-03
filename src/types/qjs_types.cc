@@ -1,9 +1,9 @@
 #include "qjs_types.h"
 #include "qjs_trie.h"
-// #include "qjs_segment.h"
+#include "qjs_segment.h"
 #include "qjs_candidate.h"
 // #include "qjs_translation.h"
-// #include "qjs_key_event.h"
+#include "qjs_key_event.h"
 #include "qjs_context.h"
 #include "qjs_preedit.h"
 #include "qjs_schema.h"
@@ -22,7 +22,6 @@
 #include "qjs_config_value.h"
 #include "qjs_config_list.h"
 #include "qjs_config_map.h"
-// #include "qjs_segmentor.h"
 // #include "qjs_translator.h"
 // #include "qjs_notifier.h"
 // #include "qjs_switcher.h"
@@ -45,10 +44,10 @@ void init_qjs_types(JSContext* ctx) {
 
   // Register all types
   QjsTrie().Register(ctx);
-  // QjsSegment().Register(ctx);
+  QjsSegment().Register(ctx);
   QjsCandidate().Register(ctx);
   // QjsTranslation().Register(ctx);
-  // QjsKeyEvent().Register(ctx);
+  QjsKeyEvent().Register(ctx);
   QjsContext().Register(ctx);
   QjsPreedit().Register(ctx);
   QjsSchema().Register(ctx);

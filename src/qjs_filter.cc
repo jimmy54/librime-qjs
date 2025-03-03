@@ -52,7 +52,7 @@ QuickJSFilter::QuickJSFilter(const Ticket& ticket)
   // => klass = qjs_filter, name_space = abc
   std::string fileName = ticket.name_space + ".js";
   JSValueRAII moduleNamespace(QjsHelper::loadJsModuleToNamespace(ctx, fileName.c_str()));
-  if (JS_IsUndefined(moduleNamespace)) {
+  if (JS_IsUndefined(moduleNamespace) || JS_IsException(moduleNamespace)) {
     LOG(ERROR) << "[qjs] QuickJSFilter Could not load " << fileName;
     return;
   }

@@ -6,6 +6,7 @@
 #include "qjs_component.h"
 #include "qjs_types.h"
 #include "qjs_filter.h"
+#include "qjs_translator.h"
 
 using namespace rime;
 
@@ -18,6 +19,7 @@ static void rime_qjs_initialize() {
   init_qjs_types(ctx);
 
   r.Register("qjs_filter", new QuickJSComponent<QuickJSFilter, FilterWrapper<QuickJSFilter>>());
+  r.Register("qjs_translator", new QuickJSComponent<QuickJSTranslator, TranslatorWrapper<QuickJSTranslator>>());
 }
 
 static void rime_qjs_finalize() {}

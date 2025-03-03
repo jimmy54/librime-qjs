@@ -53,10 +53,7 @@ JSValue QjsContext::get_preedit(JSContext* ctx, JSValueConst this_val) {
   }
   return JS_UNDEFINED;
 }
-[[nodiscard]]
-JSValue QjsContext::set_preedit(JSContext* ctx, JSValueConst this_val, JSValue val) {
-  return JS_ThrowTypeError(ctx, "Cannot assign to read only property 'preedit'");
-}
+DEFINE_FORBIDDEN_SETTER(Context, preedit)
 
 DEF_FUNC(Context, commit,
   obj->Commit();

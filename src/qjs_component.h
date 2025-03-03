@@ -6,6 +6,8 @@
 #include <rime/filter.h>
 #include <rime/ticket.h>
 #include <rime/gear/filter_commons.h>
+#include <rime/translator.h>
+#include <rime/gear/translator_commons.h>
 #include <map>
 
 namespace rime {
@@ -34,8 +36,8 @@ private:
 template<typename T>
 class FilterWrapper : public Filter {
 public:
-  explicit FilterWrapper(const Ticket& ticket, an<T>& actualFilter_)
-      : Filter(ticket), actualFilter_(actualFilter_) {
+  explicit FilterWrapper(const Ticket& ticket, an<T>& actualFilter)
+      : Filter(ticket), actualFilter_(actualFilter) {
     DLOG(INFO) << "FilterWrapper created with ticket: " << ticket.name_space;
   };
   virtual ~FilterWrapper() {
@@ -47,6 +49,24 @@ public:
   }
 
   an<T> actualFilter_;
+};
+
+template<typename T>
+class TranslatorWrapper : public Translator {
+public:
+  explicit TranslatorWrapper(const Ticket& ticket, an<T>& actualTranslator)
+      : Translator(ticket), actualTranslator_(actualTranslator) {
+    DLOG(INFO) << "TranslatorWrapper created with ticket: " << ticket.name_space;
+  };
+  virtual ~TranslatorWrapper() {
+    DLOG(INFO) << "TranslatorWrapper destroyed";
+  }
+  virtual an<Translation> Query(const string& input,
+                                const Segment& segment) {
+    return actualTranslator_->Query(input, segment);
+  }
+
+  an<T> actualTranslator_;
 };
 
 

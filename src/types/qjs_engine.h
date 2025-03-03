@@ -7,7 +7,7 @@
 
 DECLARE_JS_CLASS_WITH_RAW_POINTER(Engine,
   DECLARE_GETTERS(schema, activeEngine, context),
-  DECLARE_FUNCTIONS(commit_text, apply_schema)
+  DECLARE_FUNCTIONS(processKey, commitText, applySchema)
 )
 
 #endif // RIME_QJS_ENGINE_H_

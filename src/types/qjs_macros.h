@@ -243,7 +243,7 @@ void Qjs##class_name::Register(JSContext* ctx) {                               \
   [[nodiscard]]                                                                \
   JSValue Qjs##class_name::get_##jsName(JSContext* ctx, JSValueConst this_val) { \
     if (auto obj = Unwrap(ctx, this_val)) {                                    \
-      return converter(ctx, obj->cppName);                                   \
+      return converter(ctx, obj->cppName);                                     \
     }                                                                          \
     return JS_UNDEFINED;                                                       \
   }
@@ -252,7 +252,7 @@ void Qjs##class_name::Register(JSContext* ctx) {                               \
   JSValue Qjs##class_name::set_##name(JSContext* ctx, JSValueConst this_val, JSValue val) { \
     if (auto obj = Unwrap(ctx, this_val)) {                                    \
       if (const char* str = JS_ToCString(ctx, val)) {                          \
-        assignment                                                             \
+        assignment;                                                            \
         JS_FreeCString(ctx, str);                                              \
         return JS_UNDEFINED;                                                   \
       } else {                                                                 \
@@ -300,6 +300,12 @@ void Qjs##class_name::Register(JSContext* ctx) {                               \
     }                                                                          \
     return JS_ThrowTypeError(ctx,                                              \
       "Failed to unwrap the js object to a cpp %s object", #class_name);       \
+  }
+
+#define DEFINE_FORBIDDEN_SETTER(class_name, name)                              \
+  JSValue Qjs##class_name::set_##name(JSContext* ctx, JSValueConst this_val, JSValue val) { \
+    return JS_ThrowTypeError(ctx,                                              \
+      "Cannot assign to read only property '%s'", #name);                      \
   }
 
 #define DEF_FUNC(class_name, func_name, statements)                            \

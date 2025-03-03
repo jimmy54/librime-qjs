@@ -35,6 +35,10 @@ function checkArgument(arg) {
 
   arg.newCandidate = new Candidate('js', 32, 100, 'the text', 'the comment', 888)
 
+  // ensure adding extra fields to the qjs object would not break the quickjs engine
+  arg.newCandidate.extraField = 'extra field'
+  assert(arg.newCandidate.extraField === 'extra field')
+
   testTrie()
   return arg
 }
