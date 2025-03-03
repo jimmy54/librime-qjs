@@ -4,13 +4,6 @@ export function init(env) {
   assert(env.userDataDir === 'tests/js')
   const config = env.engine.schema.config
   assert(config.getString('greet') === 'hello from c++')
-
-  assert(env.fileExists('tests/js/types_test.js') == true)
-  assert(env.fileExists('tests/js/not_exists.js') == false)
-  
-  // test load file with utf-8 chars
-  const content = env.loadFile('tests/js/types_test.js')
-  assert(content.includes('测试 UTF-8 编码'))
 }
 export function finit(env) {
   console.log('filter_test finit')

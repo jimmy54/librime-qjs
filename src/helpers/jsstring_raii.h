@@ -13,12 +13,14 @@ public:
 
     ~JSStringRAII() {
         auto ctx = QjsHelper::getInstance().getContext();
-        if (ctx && str_) {
+        if (str_) {
             JS_FreeCString(ctx, str_);
         }
     }
 
     operator std::string() const { return std::string(str_); }
+
+    const char* c_str() const { return str_; }
 private:
     const char *str_{nullptr};
 };

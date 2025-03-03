@@ -35,6 +35,9 @@ private:
 
   // Utility function to get the Rime infomation
   static JSValue getRimeInfo(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
+
+  // Utility function to execute commands
+  static JSValue popen(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
 };
 
 } // namespace rime

@@ -39,6 +39,13 @@ function checkArgument(env) {
   env.newCandidate.extraField = 'extra field'
   assert(env.newCandidate.extraField === 'extra field')
 
+  testEnvUtilities(env)
+  testTrie()
+
+  return env
+}
+
+function testEnvUtilities(env) {
   const info = env.getRimeInfo()
   console.log(`Rime info = ${info}`)
   assert(info.includes('libRime v'))
@@ -46,8 +53,14 @@ function checkArgument(env) {
   assert(info.includes('Process RSS Mem: '))
   assert(info.includes('QuickJS Mem: '))
 
-  testTrie()
-  return env
+  assertEquals(env.popen('uname').trim(), 'Darwin')
+
+  assertEquals(env.fileExists('tests/js/types_test.js'), true)
+  assertEquals(env.fileExists('tests/js/not_found.js'), false)
+
+  // test load file with utf-8 chars
+  const content = env.loadFile('tests/js/types_test.js')
+  assert(content.includes('测试 UTF-8 编码'))
 }
 
 function testTrie() {
@@ -71,6 +84,15 @@ function checkTrieData(trie) {
   const prefix_results = trie.prefixSearch('accord')
   assert(prefix_results.length === 6)
 }
+
+function assertEquals(actual, expected, message) {
+  const actualStr = JSON.stringify(actual)
+  const expectedStr = JSON.stringify(expected)
+  if (actualStr !== expectedStr) {
+    throw new Error(`Expected ${expectedStr}, but got ${actualStr}. ${message}`)
+  }
+}
+
 
 function assert(condition, msg) {
   if (!condition) {
