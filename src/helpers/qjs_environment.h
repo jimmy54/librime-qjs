@@ -32,6 +32,9 @@ private:
 
   // Utility function to check if file exists
   static JSValue fileExists(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
+
+  // Utility function to get the Rime infomation
+  static JSValue getRimeInfo(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
 };
 
 } // namespace rime

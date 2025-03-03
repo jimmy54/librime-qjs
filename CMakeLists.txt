@@ -3,7 +3,9 @@
 cmake_minimum_required(VERSION 3.10)
 
 # Set the project name and version
-project(LibrimeQjs VERSION 1.0)
+project(LibrimeQjs VERSION 0.1)
+
+add_definitions(-DRIME_QJS_VERSION="${PROJECT_VERSION}")
 
 # Specify C++17 standard
 set(CMAKE_CXX_STANDARD 17)

@@ -1,10 +1,10 @@
-function checkArgument(arg) {
-  assert(arg.namespace === 'namespace')
-  assert(arg.candidate.text === 'text')
-  assert(arg.engine.schema.id === '.default')
-  arg.candidate.text = 'new text'
+function checkArgument(env) {
+  assert(env.namespace === 'namespace')
+  assert(env.candidate.text === 'text')
+  assert(env.engine.schema.id === '.default')
+  env.candidate.text = 'new text'
 
-  const config = arg.engine.schema.config
+  const config = env.engine.schema.config
   assert(config.getBool('key') === null)
   assert(config.getBool('key1') === true)
   assert(config.getBool('key2') === false)
@@ -20,7 +20,7 @@ function checkArgument(arg) {
 
   config.setString('greet', 'hello from js')
 
-  const context = arg.engine.context
+  const context = env.engine.context
   assert(context.input === 'hello')
 
   context.input = 'world'
@@ -33,14 +33,21 @@ function checkArgument(arg) {
   assert(!isNaN(context.preedit.selectStart)) // => 8 with llvm clang, 0 with apple clang
   assert(!isNaN(context.preedit.selectEnd)) // 140701946852032 with llvm clang, 0 with apple clang
 
-  arg.newCandidate = new Candidate('js', 32, 100, 'the text', 'the comment', 888)
+  env.newCandidate = new Candidate('js', 32, 100, 'the text', 'the comment', 888)
 
   // ensure adding extra fields to the qjs object would not break the quickjs engine
-  arg.newCandidate.extraField = 'extra field'
-  assert(arg.newCandidate.extraField === 'extra field')
+  env.newCandidate.extraField = 'extra field'
+  assert(env.newCandidate.extraField === 'extra field')
+
+  const info = env.getRimeInfo()
+  console.log(`Rime info = ${info}`)
+  assert(info.includes('libRime v'))
+  assert(info.includes('libRime-qjs v'))
+  assert(info.includes('Process RSS Mem: '))
+  assert(info.includes('QuickJS Mem: '))
 
   testTrie()
-  return arg
+  return env
 }
 
 function testTrie() {

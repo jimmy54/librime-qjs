@@ -1,4 +1,8 @@
+#include <rime_api.h>
+#include <quickjs.h>
+#include <sstream>
 #include "qjs_environment.h"
+#include "process_memory.h"
 
 namespace rime {
 
@@ -7,16 +11,17 @@ JSValueRAII QjsEnvironment::Create(JSContext* ctx, Engine* engine, const std::st
   JS_SetPropertyStr(ctx, environment, "engine", QjsEngine::Wrap(ctx, engine));
   JS_SetPropertyStr(ctx, environment, "namespace", JS_NewString(ctx, name_space.c_str()));
   JS_SetPropertyStr(ctx, environment, "userDataDir", JS_NewString(ctx, QjsHelper::basePath.c_str()));
-  
+
   // Add utility functions
   AddUtilityFunctions(ctx, environment);
-  
+
   return environment;
 }
 
 void QjsEnvironment::AddUtilityFunctions(JSContext* ctx, JSValue environment) {
   JS_SetPropertyStr(ctx, environment, "loadFile", JS_NewCFunction(ctx, loadFile, "loadFile", 1));
   JS_SetPropertyStr(ctx, environment, "fileExists", JS_NewCFunction(ctx, fileExists, "fileExists", 1));
+  JS_SetPropertyStr(ctx, environment, "getRimeInfo", JS_NewCFunction(ctx, getRimeInfo, "getRimeInfo", 0));
 }
 
 bool QjsEnvironment::CallInitFunction(JSContext* ctx, JSValue moduleNamespace, JSValue environment) {
@@ -55,6 +60,28 @@ JSValue QjsEnvironment::loadFile(JSContext* ctx, JSValueConst this_val, int argc
   JS_FreeCString(ctx, path);
 
   return JS_NewString(ctx, content.c_str());
+}
+
+static std::string formatMemoryUsage(size_t usage) {
+  return usage > 1024 * 1024
+    ? std::to_string(usage / 1024 / 1024) + "M" // in MB
+    : std::to_string(usage / 1024) + "K"; // in KB
+}
+
+JSValue QjsEnvironment::getRimeInfo(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
+  size_t vmUsage, residentSet; // memory usage in bytes
+  getMemoryUsage(vmUsage, residentSet);
+
+  JSMemoryUsage qjsMemStats;
+  JS_ComputeMemoryUsage(JS_GetRuntime(ctx), &qjsMemStats);
+
+  std::stringstream ss;
+  ss << "libRime v" << rime_get_api()->get_version() << " | "
+     << "libRime-qjs v" << RIME_QJS_VERSION << " | "
+     << "Process RSS Mem: " << formatMemoryUsage(residentSet) << " | "
+     << "QuickJS Mem: " << formatMemoryUsage(qjsMemStats.memory_used_size);
+
+  return JS_NewString(ctx, ss.str().c_str());
 }
 
 JSValue QjsEnvironment::fileExists(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {

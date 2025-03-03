@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include "jsvalue_raii.h"
+#include "qjs_environment.h"
 #include "qjs_candidate.h"
 #include "qjs_engine.h"
 #include <rime/candidate.h>
@@ -51,17 +52,15 @@ TEST_F(QuickJSTypesTest, WrapUnwrapRimeGears) {
     ASSERT_TRUE(context != nullptr);
     context->set_input("hello");
 
-    auto arg = JSValueRAII(JS_NewObject(ctx));
-    JS_SetPropertyStr(ctx, arg, "engine", QjsEngine::Wrap(ctx, engine));
-    JS_SetPropertyStr(ctx, arg, "namespace", JS_NewString(ctx, "namespace"));
+    auto env = QjsEnvironment::Create(ctx, engine, "namespace");
     auto candidate = New<SimpleCandidate>("mock", 0, 1, "text", "comment");
-    JS_SetPropertyStr(ctx, arg, "candidate", QjsCandidate::Wrap(ctx, candidate));
+    JS_SetPropertyStr(ctx, env, "candidate", QjsCandidate::Wrap(ctx, candidate));
 
     JSValueRAII module(QjsHelper::loadJsModuleToGlobalThis(ctx, "types_test.js")); // wrap it to free automatically
 
     JSValueRAII global(JS_GetGlobalObject(ctx));
     JSValueRAII jsFunc(JS_GetPropertyStr(ctx, global, "checkArgument"));
-    JSValueRAII retValue(JS_Call(ctx, jsFunc, JS_UNDEFINED, 1, arg.getPtr()));
+    JSValueRAII retValue(JS_Call(ctx, jsFunc, JS_UNDEFINED, 1, env.getPtr()));
 
     JSValueRAII retJsEngine(JS_GetPropertyStr(ctx, retValue, "engine")); // wrap it to free automatically
     Engine* retEngine = QjsEngine::Unwrap(ctx, retJsEngine);
@@ -81,7 +80,7 @@ TEST_F(QuickJSTypesTest, WrapUnwrapRimeGears) {
     Context* retContext = retEngine->context();
     ASSERT_EQ(retContext->input(), "world");
 
-    // arg.newCandidate = new Candidate('js', 32, 100, 'the text', 'the comment', 888)
+    // env.newCandidate = new Candidate('js', 32, 100, 'the text', 'the comment', 888)
     JSValueRAII retJsNewCandidate(JS_GetPropertyStr(ctx, retValue, "newCandidate")); // wrap it to free automatically
     auto newCandidate = QjsCandidate::Unwrap(ctx, retJsNewCandidate);
     ASSERT_EQ(newCandidate->type(), "js");
