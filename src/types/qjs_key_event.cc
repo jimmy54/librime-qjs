@@ -11,6 +11,7 @@ DEFINE_GETTER(KeyEvent, repr, js_new_string_from_std(ctx, obj->repr()))
 DEFINE_JS_CLASS_WITH_RAW_POINTER(
   KeyEvent,
   NO_CONSTRUCTOR_TO_REGISTER,
+  NO_PROPERTY_TO_REGISTER,
   DEFINE_GETTERS(shift, ctrl, alt, release, repr),
   NO_FUNCTION_TO_REGISTER
 )

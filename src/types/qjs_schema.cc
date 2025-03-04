@@ -12,6 +12,7 @@ DEFINE_GETTER(Schema, selectKeys, js_new_string_from_std(ctx, obj->select_keys()
 DEFINE_JS_CLASS_WITH_RAW_POINTER(
   Schema,
   NO_CONSTRUCTOR_TO_REGISTER,
+  NO_PROPERTY_TO_REGISTER,
   DEFINE_GETTERS(id, name, config, pageSize, selectKeys),
   NO_FUNCTION_TO_REGISTER
 )

@@ -9,14 +9,13 @@ DEFINE_GETTER(Engine, schema, QjsSchema::Wrap(ctx, obj->schema()))
 DEFINE_GETTER(Engine, context, QjsContext::Wrap(ctx, obj->context()))
 DEFINE_GETTER(Engine, activeEngine, QjsEngine::Wrap(ctx, obj->active_engine()))
 
-DEF_FUNC_WITH_ARGC(Engine, commitText, 1,
+DEFINE_FUNCTION_ARGC(Engine, commitText, 1,
   JSStringRAII param(JS_ToCString(ctx, argv[0]));
   obj->CommitText(param);
   return JS_UNDEFINED;
 )
 
-DEF_FUNC(Engine, applySchema,
-  if (argc < 1) return JS_FALSE;
+DEFINE_FUNCTION_ARGC(Engine, applySchema, 1,
   auto schema = QjsSchema::Unwrap(ctx, argv[0]);
   if (!schema) return JS_FALSE;
 
@@ -24,7 +23,7 @@ DEF_FUNC(Engine, applySchema,
   return JS_TRUE;
 )
 
-DEF_FUNC_WITH_ARGC(Engine, processKey, 1,
+DEFINE_FUNCTION_ARGC(Engine, processKey, 1,
   JSStringRAII repr(JS_ToCString(ctx, argv[0]));
   return JS_NewBool(ctx, obj->ProcessKey(KeyEvent(repr)));
 )
@@ -32,6 +31,7 @@ DEF_FUNC_WITH_ARGC(Engine, processKey, 1,
 DEFINE_JS_CLASS_WITH_RAW_POINTER(
   Engine,
   NO_CONSTRUCTOR_TO_REGISTER,
+  NO_PROPERTY_TO_REGISTER,
   DEFINE_GETTERS(schema, activeEngine, context),
   DEFINE_FUNCTIONS(
     JS_CFUNC_DEF("processKey", 1, processKey),

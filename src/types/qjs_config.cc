@@ -5,65 +5,65 @@
 
 namespace rime {
 
-DEF_FUNC_WITH_ARGC(Config, load_from_file, 1,
+DEFINE_FUNCTION_ARGC(Config, load_from_file, 1,
   JSStringRAII param(JS_ToCString(ctx, argv[0]));
   return JS_NewBool(ctx, obj->LoadFromFile(std::filesystem::path(param)));
 )
-DEF_FUNC_WITH_ARGC(Config, save_to_file, 1,
+DEFINE_FUNCTION_ARGC(Config, save_to_file, 1,
   JSStringRAII param(JS_ToCString(ctx, argv[0]));
   return JS_NewBool(ctx, obj->SaveToFile(std::filesystem::path(param)));
 )
-DEF_FUNC_WITH_ARGC(Config, get_bool, 1,
+DEFINE_FUNCTION_ARGC(Config, get_bool, 1,
   JSStringRAII param(JS_ToCString(ctx, argv[0]));
   bool value = false;
   bool success = obj->GetBool(param, &value);
   return success ? JS_NewBool(ctx, value) : JS_NULL;
 )
-DEF_FUNC_WITH_ARGC(Config, get_int, 1,
+DEFINE_FUNCTION_ARGC(Config, get_int, 1,
   JSStringRAII param(JS_ToCString(ctx, argv[0]));
   int value = 0;
   bool success = obj->GetInt(param, &value);
   return success ? JS_NewInt32(ctx, value) : JS_NULL;
 )
-DEF_FUNC_WITH_ARGC(Config, get_double, 1,
+DEFINE_FUNCTION_ARGC(Config, get_double, 1,
   JSStringRAII param(JS_ToCString(ctx, argv[0]));
   double value = 0.0;
   bool success = obj->GetDouble(param, &value);
   return success ? JS_NewFloat64(ctx, value) : JS_NULL;
 )
-DEF_FUNC_WITH_ARGC(Config, get_string, 1,
+DEFINE_FUNCTION_ARGC(Config, get_string, 1,
   JSStringRAII param(JS_ToCString(ctx, argv[0]));
   std::string value;
   bool success = obj->GetString(param, &value);
   return success ? JS_NewString(ctx, value.c_str()) : JS_NULL;
 )
-DEF_FUNC_WITH_ARGC(Config, get_list, 1,
+DEFINE_FUNCTION_ARGC(Config, get_list, 1,
   JSStringRAII param(JS_ToCString(ctx, argv[0]));
   auto list = obj->GetList(param);
   return QjsConfigList::Wrap(ctx, list);
 )
 
-DEF_FUNC_WITH_ARGC(Config, set_bool, 2,
+DEFINE_FUNCTION_ARGC(Config, set_bool, 2,
   JSStringRAII firstParam(JS_ToCString(ctx, argv[0]));
   bool value = JS_ToBool(ctx, argv[1]);
   bool success = obj->SetBool(firstParam, value);
   return JS_NewBool(ctx, success);
 )
-DEF_FUNC_WITH_ARGC(Config, set_int, 2,
+DEFINE_FUNCTION_ARGC(Config, set_int, 2,
   JSStringRAII firstParam(JS_ToCString(ctx, argv[0]));
   int32_t value;
   JS_ToInt32(ctx, &value, argv[1]);
   bool success = obj->SetInt(firstParam, value);
   return JS_NewBool(ctx, success);
 )
-DEF_FUNC_WITH_ARGC(Config, set_double, 2,
+DEFINE_FUNCTION_ARGC(Config, set_double, 2,
   JSStringRAII firstParam(JS_ToCString(ctx, argv[0]));
   double value;
   JS_ToFloat64(ctx, &value, argv[1]);
   bool success = obj->SetDouble(firstParam, value);
   return JS_NewBool(ctx, success);
 )
-DEF_FUNC_WITH_ARGC(Config, set_string, 2,
+DEFINE_FUNCTION_ARGC(Config, set_string, 2,
   JSStringRAII firstParam(JS_ToCString(ctx, argv[0]));
   JSStringRAII value(JS_ToCString(ctx, argv[1]));
   bool success = obj->SetString(firstParam, value);
@@ -74,6 +74,7 @@ DEFINE_JS_CLASS_WITH_RAW_POINTER(
   Config,
   NO_CONSTRUCTOR_TO_REGISTER,
   NO_PROPERTY_TO_REGISTER,
+  NO_GETTER_TO_REGISTER,
   DEFINE_FUNCTIONS(
     JS_CFUNC_DEF("loadFromFile", 1, load_from_file),
     JS_CFUNC_DEF("saveToFile", 1, save_to_file),

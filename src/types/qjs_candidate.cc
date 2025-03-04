@@ -64,6 +64,7 @@ DEFINE_JS_CLASS_WITH_SHARED_POINTER(
   Candidate,
   DEFINE_CONSTRUCTOR(Candidate, makeCandidate, 5),
   DEFINE_PROPERTIES(text, comment, type, start, end, quality, preedit),
+  NO_GETTER_TO_REGISTER,
   NO_FUNCTION_TO_REGISTER
 )
 

@@ -19,7 +19,6 @@ static JSValue get_preedit(JSContext* ctx, JSValueConst this_val) {
   }
   return JS_UNDEFINED;
 }
-DEFINE_FORBIDDEN_SETTER(Context, preedit)
 
 static JSValue get_lastSegment(JSContext* ctx, JSValueConst this_val) {
   if (auto obj = QjsContext::Unwrap(ctx, this_val)) {
@@ -34,34 +33,34 @@ static JSValue get_lastSegment(JSContext* ctx, JSValueConst this_val) {
   }
   return JS_UNDEFINED;
 }
-DEFINE_FORBIDDEN_SETTER(Context, lastSegment)
 
-DEF_FUNC(Context, commit,
+DEFINE_FUNCTION(Context, commit,
   obj->Commit();
   return JS_UNDEFINED;
 )
 
-DEF_FUNC(Context, get_commit_text,
+DEFINE_FUNCTION(Context, get_commit_text,
   return JS_NewString(ctx, obj->GetCommitText().c_str());
 )
 
-DEF_FUNC(Context, clear,
+DEFINE_FUNCTION(Context, clear,
   obj->Clear();
   return JS_UNDEFINED;
 )
 
-DEF_FUNC(Context, has_menu,
+DEFINE_FUNCTION(Context, has_menu,
   return JS_NewBool(ctx, obj->HasMenu());
 )
 
-DEF_FUNC(Context, is_composing,
+DEFINE_FUNCTION(Context, is_composing,
   return JS_NewBool(ctx, obj->IsComposing());
 )
 
 DEFINE_JS_CLASS_WITH_RAW_POINTER(
   Context,
   NO_CONSTRUCTOR_TO_REGISTER,
-  DEFINE_PROPERTIES(input, caretPos, preedit, lastSegment),
+  DEFINE_PROPERTIES(input, caretPos),
+  DEFINE_GETTERS(preedit, lastSegment),
   DEFINE_FUNCTIONS(
     // Input methods
     JS_CFUNC_DEF("commit", 0, commit),
