@@ -2,15 +2,6 @@
 
 namespace rime {
 
-DEFINE_JS_CLASS_WITH_SHARED_POINTER(
-  ConfigItem,
-  NO_CONSTRUCTOR_TO_REGISTER,
-  NO_PROPERTY_TO_REGISTER,
-  DEFINE_FUNCTIONS(
-    JS_CFUNC_DEF("getType", 0, get_type)
-  )
-)
-
 DEF_FUNC(ConfigItem, get_type,
   const char* strType;
   switch (obj->type()) {
@@ -30,6 +21,15 @@ DEF_FUNC(ConfigItem, get_type,
       strType = "unknown";
   }
   return JS_NewString(ctx, strType);
+)
+
+DEFINE_JS_CLASS_WITH_SHARED_POINTER(
+  ConfigItem,
+  NO_CONSTRUCTOR_TO_REGISTER,
+  NO_PROPERTY_TO_REGISTER,
+  DEFINE_FUNCTIONS(
+    JS_CFUNC_DEF("getType", 0, get_type)
+  )
 )
 
 } // namespace rime

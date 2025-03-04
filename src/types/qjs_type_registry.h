@@ -17,11 +17,11 @@ public:
   // Get the class name for this type
   virtual const char* GetClassName() const = 0;
 
-protected:
-  static JSValue js_new_string_from_std(JSContext* ctx, const std::string& str) {
-    return JS_NewString(ctx, str.c_str());
-  }
 };
+
+static JSValue js_new_string_from_std(JSContext* ctx, const std::string& str) {
+  return JS_NewString(ctx, str.c_str());
+}
 
 } // namespace rime
 

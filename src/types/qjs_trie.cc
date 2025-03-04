@@ -8,19 +8,6 @@ static JSValue loadFile(JSContext* ctx, JSValueConst newTarget, int argc, JSValu
   return QjsTrie::Wrap(ctx, obj);
 }
 
-DEFINE_JS_CLASS_WITH_SHARED_POINTER(
-  Trie,
-  DEFINE_CONSTRUCTOR(Trie, loadFile, 1),
-  NO_PROPERTY_TO_REGISTER,
-  DEFINE_FUNCTIONS(
-    JS_CFUNC_DEF("loadTextFile", 2, loadTextFile),
-    JS_CFUNC_DEF("loadBinaryFile", 1, loadBinaryFile),
-    JS_CFUNC_DEF("saveToBinaryFile", 1, saveToBinaryFile),
-    JS_CFUNC_DEF("find", 1, find),
-    JS_CFUNC_DEF("prefixSearch", 1, prefixSearch)
-  )
-)
-
 DEF_FUNC_WITH_ARGC(Trie, loadTextFile, 2,
   JSStringRAII str(JS_ToCString(ctx, argv[0]));
   std::string absolutePath(str);
@@ -79,6 +66,19 @@ DEF_FUNC_WITH_ARGC(Trie, prefixSearch, 1,
     JS_SetPropertyUint32(ctx, jsArray, i, jsObject);
   }
   return jsArray;
+)
+
+DEFINE_JS_CLASS_WITH_SHARED_POINTER(
+  Trie,
+  DEFINE_CONSTRUCTOR(Trie, loadFile, 1),
+  NO_PROPERTY_TO_REGISTER,
+  DEFINE_FUNCTIONS(
+    JS_CFUNC_DEF("loadTextFile", 2, loadTextFile),
+    JS_CFUNC_DEF("loadBinaryFile", 1, loadBinaryFile),
+    JS_CFUNC_DEF("saveToBinaryFile", 1, saveToBinaryFile),
+    JS_CFUNC_DEF("find", 1, find),
+    JS_CFUNC_DEF("prefixSearch", 1, prefixSearch)
+  )
 )
 
 } // namespace rime

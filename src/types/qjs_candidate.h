@@ -5,9 +5,6 @@
 #include "qjs_type_registry.h"
 #include <rime/candidate.h>
 
-DECLARE_JS_CLASS_WITH_SHARED_POINTER(Candidate,
-  DECLARE_PROPERTIES(text, comment, type, start, end, quality, preedit),
-  // no functions to declare
-)
+DECLARE_JS_CLASS_WITH_SHARED_POINTER(Candidate)
 
 #endif // RIME_QJS_CANDIDATE_H_

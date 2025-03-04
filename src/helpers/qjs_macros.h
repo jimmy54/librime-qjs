@@ -47,25 +47,6 @@
 #define countof(x) (sizeof(x) / sizeof((x)[0]))
 
 // ========== class declaration ==========
-#define DECLARE_PROPERTIES(...) \
-  FOR_EACH(DECLARE_GETTER_SETTER, __VA_ARGS__)
-
-#define DECLARE_GETTER_SETTER(name) \
-  static JSValue get_##name(JSContext* ctx, JSValueConst this_val); \
-  static JSValue set_##name(JSContext* ctx, JSValueConst this_val, JSValue val);
-
-#define DECLARE_GETTERS(...) \
-  FOR_EACH(DECLARE_GETTER, __VA_ARGS__)
-
-#define DECLARE_GETTER(name) \
-  static JSValue get_##name(JSContext* ctx, JSValueConst this_val);
-
-#define DECLARE_FUNCTION(name) \
-  static JSValue name(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
-
-#define DECLARE_FUNCTIONS(...) \
-  FOR_EACH(DECLARE_FUNCTION, __VA_ARGS__)
-
 #define DECLARE_WRAP_UNWRAP_WITH_RAW_POINTER(class_name) \
   static JSValue Wrap(JSContext* ctx, class_name* obj); \
   static class_name* Unwrap(JSContext* ctx, JSValue value);
@@ -74,26 +55,21 @@
   static JSValue Wrap(JSContext* ctx, std::shared_ptr<class_name> obj); \
   static std::shared_ptr<class_name> Unwrap(JSContext* ctx, JSValue value);
 
-#define DECLARE_JS_CLASS(class_name, declareProperties, declareFunctions, declareWrapUnwrap) \
+#define DECLARE_JS_CLASS(class_name, declareWrapUnwrap) \
 namespace rime { \
 class Qjs##class_name : public QjsTypeRegistry { \
 public: \
   void Register(JSContext* ctx) override; \
   const char* GetClassName() const override { return #class_name; } \
-\
   declareWrapUnwrap \
-\
-private: \
-  declareProperties \
-  declareFunctions \
 }; \
 } // namespace rime
 
-#define DECLARE_JS_CLASS_WITH_RAW_POINTER(class_name, declareProperties, declareFunctions) \
-  DECLARE_JS_CLASS(class_name, declareProperties, declareFunctions, DECLARE_WRAP_UNWRAP_WITH_RAW_POINTER(class_name))
+#define DECLARE_JS_CLASS_WITH_RAW_POINTER(class_name) \
+  DECLARE_JS_CLASS(class_name, DECLARE_WRAP_UNWRAP_WITH_RAW_POINTER(class_name))
 
-#define DECLARE_JS_CLASS_WITH_SHARED_POINTER(class_name, declareProperties, declareFunctions) \
-  DECLARE_JS_CLASS(class_name, declareProperties, declareFunctions, DECLARE_WRAP_UNWRAP_WITH_SHARED_POINTER(class_name))
+#define DECLARE_JS_CLASS_WITH_SHARED_POINTER(class_name) \
+  DECLARE_JS_CLASS(class_name, DECLARE_WRAP_UNWRAP_WITH_SHARED_POINTER(class_name))
 
 // ========== class implementation ==========
 #define DEFINE_CONSTRUCTOR(class_name, constructor, expectingArgc)             \
@@ -225,59 +201,55 @@ void Qjs##class_name::Register(JSContext* ctx) {                               \
   DEFINE_JS_CLASS_IMPL(class_name, WRAP_UNWRAP_WITH_RAW_POINTER(class_name), EXPAND(constructor), EXPAND(properties), EXPAND(methods))
 
 #define DEFINE_GETTER(class_name, jsName, statement)                           \
-[[nodiscard]]                                                                  \
-JSValue Qjs##class_name::get_##jsName(JSContext* ctx, JSValueConst this_val) { \
-  if (auto obj = Unwrap(ctx, this_val)) {                                      \
+static JSValue get_##jsName(JSContext* ctx, JSValueConst this_val) {                  \
+  if (auto obj = Qjs##class_name::Unwrap(ctx, this_val)) {                     \
     return statement;                                                          \
   }                                                                            \
   return JS_UNDEFINED;                                                         \
 }
 
 #define DEFINE_STRING_SETTER(class_name, name, assignment)                     \
-  JSValue Qjs##class_name::set_##name(JSContext* ctx, JSValueConst this_val, JSValue val) { \
-    if (auto obj = Unwrap(ctx, this_val)) {                                    \
-      if (const char* str = JS_ToCString(ctx, val)) {                          \
-        assignment;                                                            \
-        JS_FreeCString(ctx, str);                                              \
-        return JS_UNDEFINED;                                                   \
-      } else {                                                                 \
-        return JS_ThrowTypeError(ctx,                                          \
-          " %s.%s = rvalue: rvalue is not a string", #class_name, #name);      \
-      }                                                                        \
-    }                                                                          \
-    return JS_ThrowTypeError(ctx,                                              \
-      "Failed to unwrap the js object to a cpp %s object", #class_name);       \
-  }
+static JSValue set_##name(JSContext* ctx, JSValueConst this_val, JSValue val) { \
+  if (auto obj = Qjs##class_name::Unwrap(ctx, this_val)) {                                    \
+    if (const char* str = JS_ToCString(ctx, val)) {                          \
+      assignment;                                                            \
+      JS_FreeCString(ctx, str);                                              \
+      return JS_UNDEFINED;                                                   \
+    } else {                                                                 \
+      return JS_ThrowTypeError(ctx,                                          \
+        " %s.%s = rvalue: rvalue is not a string", #class_name, #name);      \
+    }                                                                        \
+  }                                                                          \
+  return JS_ThrowTypeError(ctx,                                              \
+    "Failed to unwrap the js object to a cpp %s object", #class_name);       \
+}
 
 #define DEFINE_SETTER(class_name, jsName, type, converter, assignment)         \
-  JSValue Qjs##class_name::set_##jsName(JSContext* ctx, JSValueConst this_val, JSValue val) { \
-    if (auto obj = Unwrap(ctx, this_val)) {                                    \
-      type value;                                                              \
-      if (converter(ctx, &value, val) == 0) {                                  \
-        assignment;                                                            \
-        return JS_UNDEFINED;                                                   \
-      } else {                                                                 \
-        return JS_ThrowTypeError(ctx,                                          \
-          "%s.%s = rvalue: rvalue could not be extracted with %s",             \
-          #class_name, #jsName, #converter);                                   \
-      }                                                                        \
-    }                                                                          \
-    return JS_ThrowTypeError(ctx,                                              \
-      "Failed to unwrap the js object to a cpp %s object", #class_name);       \
-  }
+static JSValue set_##jsName(JSContext* ctx, JSValueConst this_val, JSValue val) { \
+  if (auto obj = Qjs##class_name::Unwrap(ctx, this_val)) {                                    \
+    type value;                                                              \
+    if (converter(ctx, &value, val) == 0) {                                  \
+      assignment;                                                            \
+      return JS_UNDEFINED;                                                   \
+    } else {                                                                 \
+      return JS_ThrowTypeError(ctx,                                          \
+        "%s.%s = rvalue: rvalue could not be extracted with %s",             \
+        #class_name, #jsName, #converter);                                   \
+    }                                                                        \
+  }                                                                          \
+  return JS_ThrowTypeError(ctx,                                              \
+    "Failed to unwrap the js object to a cpp %s object", #class_name);       \
+}
 
 #define DEFINE_FORBIDDEN_SETTER(class_name, name)                              \
-  JSValue Qjs##class_name::set_##name(JSContext* ctx, JSValueConst this_val, JSValue val) { \
-    return JS_ThrowTypeError(ctx,                                              \
-      "Cannot assign to read only property '%s'", #name);                      \
-  }
+static JSValue set_##name(JSContext* ctx, JSValueConst this_val, JSValue val) { \
+  return JS_ThrowTypeError(ctx,                                              \
+    "Cannot assign to read only property '%s'", #name);                      \
+}
 
 #define DEF_FUNC(class_name, func_name, statements)                            \
-[[nodiscard]]                                                                  \
-JSValue Qjs##class_name::func_name(                                            \
-  JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {       \
-                                                                               \
-  auto obj = Unwrap(ctx, this_val);                                            \
+static JSValue func_name(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {       \
+  auto obj = Qjs##class_name::Unwrap(ctx, this_val);                                            \
   if (!obj) {                                                                  \
     return JS_ThrowTypeError(ctx,                                              \
       "Failed to unwrap the js object to a cpp %s object", #class_name);       \
@@ -287,15 +259,14 @@ JSValue Qjs##class_name::func_name(                                            \
 
 // define a js function with ${expectingArgc} arguments
 #define DEF_FUNC_WITH_ARGC(class_name, func_name, expectingArgc, statements)   \
-[[nodiscard]]                                                                  \
-JSValue Qjs##class_name::func_name(                                            \
+static JSValue func_name(                                            \
   JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {       \
                                                                                \
   if (argc < expectingArgc) {                                                  \
     return JS_ThrowSyntaxError(ctx, "%s.%s(...) expects %d arguments",         \
       #class_name, #func_name, expectingArgc);                                 \
   }                                                                            \
-  auto obj = Unwrap(ctx, this_val);                                            \
+  auto obj = Qjs##class_name::Unwrap(ctx, this_val);                                            \
   if (!obj) {                                                                  \
     return JS_ThrowTypeError(ctx,                                              \
       "Failed to unwrap the js object to a cpp %s object", #class_name);       \

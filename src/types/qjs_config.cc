@@ -5,25 +5,6 @@
 
 namespace rime {
 
-DEFINE_JS_CLASS_WITH_RAW_POINTER(
-  Config,
-  NO_CONSTRUCTOR_TO_REGISTER,
-  NO_PROPERTY_TO_REGISTER,
-  DEFINE_FUNCTIONS(
-    JS_CFUNC_DEF("loadFromFile", 1, load_from_file),
-    JS_CFUNC_DEF("saveToFile", 1, save_to_file),
-    JS_CFUNC_DEF("getBool", 1, get_bool),
-    JS_CFUNC_DEF("getInt", 1, get_int),
-    JS_CFUNC_DEF("getDouble", 1, get_double),
-    JS_CFUNC_DEF("getString", 1, get_string),
-    JS_CFUNC_DEF("getList", 1, get_list),
-    JS_CFUNC_DEF("setBool", 2, set_bool),
-    JS_CFUNC_DEF("setInt", 2, set_int),
-    JS_CFUNC_DEF("setDouble", 2, set_double),
-    JS_CFUNC_DEF("setString", 2, set_string),
-  )
-)
-
 DEF_FUNC_WITH_ARGC(Config, load_from_file, 1,
   JSStringRAII param(JS_ToCString(ctx, argv[0]));
   return JS_NewBool(ctx, obj->LoadFromFile(std::filesystem::path(param)));
@@ -87,6 +68,25 @@ DEF_FUNC_WITH_ARGC(Config, set_string, 2,
   JSStringRAII value(JS_ToCString(ctx, argv[1]));
   bool success = obj->SetString(firstParam, value);
   return JS_NewBool(ctx, success);
+)
+
+DEFINE_JS_CLASS_WITH_RAW_POINTER(
+  Config,
+  NO_CONSTRUCTOR_TO_REGISTER,
+  NO_PROPERTY_TO_REGISTER,
+  DEFINE_FUNCTIONS(
+    JS_CFUNC_DEF("loadFromFile", 1, load_from_file),
+    JS_CFUNC_DEF("saveToFile", 1, save_to_file),
+    JS_CFUNC_DEF("getBool", 1, get_bool),
+    JS_CFUNC_DEF("getInt", 1, get_int),
+    JS_CFUNC_DEF("getDouble", 1, get_double),
+    JS_CFUNC_DEF("getString", 1, get_string),
+    JS_CFUNC_DEF("getList", 1, get_list),
+    JS_CFUNC_DEF("setBool", 2, set_bool),
+    JS_CFUNC_DEF("setInt", 2, set_int),
+    JS_CFUNC_DEF("setDouble", 2, set_double),
+    JS_CFUNC_DEF("setString", 2, set_string),
+  )
 )
 
 } // namespace rime

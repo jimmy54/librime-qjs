@@ -4,20 +4,6 @@
 
 namespace rime {
 
-DEFINE_JS_CLASS_WITH_SHARED_POINTER(
-  ConfigList,
-  NO_CONSTRUCTOR_TO_REGISTER,
-  NO_PROPERTY_TO_REGISTER,
-  DEFINE_FUNCTIONS(
-    JS_CFUNC_DEF("getType", 0, get_type),
-    JS_CFUNC_DEF("getSize", 0, size),
-    JS_CFUNC_DEF("getItemAt", 1, get_item_at),
-    JS_CFUNC_DEF("getValueAt", 1, get_value_at),
-    JS_CFUNC_DEF("pushBack", 1, push_back),
-    JS_CFUNC_DEF("clear", 0, clear)
-  )
-)
-
 DEF_FUNC(ConfigList, get_type,
   return JS_NewString(ctx, "list");
 )
@@ -51,5 +37,19 @@ DEF_FUNC_WITH_ARGC(ConfigList, push_back, 1,
 DEF_FUNC(ConfigList, clear,
   obj->Clear();
   return JS_UNDEFINED;
+)
+
+DEFINE_JS_CLASS_WITH_SHARED_POINTER(
+  ConfigList,
+  NO_CONSTRUCTOR_TO_REGISTER,
+  NO_PROPERTY_TO_REGISTER,
+  DEFINE_FUNCTIONS(
+    JS_CFUNC_DEF("getType", 0, get_type),
+    JS_CFUNC_DEF("getSize", 0, size),
+    JS_CFUNC_DEF("getItemAt", 1, get_item_at),
+    JS_CFUNC_DEF("getValueAt", 1, get_value_at),
+    JS_CFUNC_DEF("pushBack", 1, push_back),
+    JS_CFUNC_DEF("clear", 0, clear)
+  )
 )
 } // namespace rime

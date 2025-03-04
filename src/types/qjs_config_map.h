@@ -5,9 +5,6 @@
 #include "qjs_type_registry.h"
 #include <rime/config.h>
 
-DECLARE_JS_CLASS_WITH_SHARED_POINTER(ConfigMap,
-  NO_PROPERTY_TO_DECLARE,
-  DECLARE_FUNCTIONS(getType, hasKey, getItem, getValue, setItem)
-)
+DECLARE_JS_CLASS_WITH_SHARED_POINTER(ConfigMap)
 
 #endif // RIME_QJS_CONFIG_MAP_H_

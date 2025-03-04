@@ -22,13 +22,6 @@ static JSValue makeCandidate(JSContext* ctx, JSValueConst newTarget, int argc, J
   return QjsCandidate::Wrap(ctx, obj);
 }
 
-DEFINE_JS_CLASS_WITH_SHARED_POINTER(
-  Candidate,
-  DEFINE_CONSTRUCTOR(Candidate, makeCandidate, 5),
-  DEFINE_PROPERTIES(text, comment, type, start, end, quality, preedit),
-  NO_FUNCTION_TO_REGISTER
-)
-
 DEFINE_GETTER(Candidate, text, js_new_string_from_std(ctx, obj->text()))
 DEFINE_GETTER(Candidate, comment, js_new_string_from_std(ctx, obj->comment()))
 DEFINE_GETTER(Candidate, type, js_new_string_from_std(ctx, obj->type()))
@@ -65,6 +58,13 @@ DEFINE_STRING_SETTER(Candidate, preedit,
   } else if (auto phrase = dynamic_cast<Phrase*>(obj.get())) {
     phrase->set_preedit(str);
   }
+)
+
+DEFINE_JS_CLASS_WITH_SHARED_POINTER(
+  Candidate,
+  DEFINE_CONSTRUCTOR(Candidate, makeCandidate, 5),
+  DEFINE_PROPERTIES(text, comment, type, start, end, quality, preedit),
+  NO_FUNCTION_TO_REGISTER
 )
 
 } // namespace rime

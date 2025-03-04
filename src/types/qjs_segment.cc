@@ -4,16 +4,6 @@
 
 namespace rime {
 
-DEFINE_JS_CLASS_WITH_RAW_POINTER(
-  Segment,
-  NO_CONSTRUCTOR_TO_REGISTER,
-  DEFINE_PROPERTIES(selectedIndex, selectedCandidate, candidateSize, start, end, prompt),
-  DEFINE_FUNCTIONS(
-    JS_CFUNC_DEF("getCandidateAt", 1, getCandidateAt),
-    JS_CFUNC_DEF("hasTag", 1, hasTag),
-  )
-)
-
 DEFINE_GETTER(Segment, selectedIndex, JS_NewInt32(ctx, obj->selected_index))
 DEFINE_SETTER(Segment, selectedIndex, int32_t, JS_ToInt32, obj->selected_index = value)
 
@@ -43,6 +33,16 @@ DEF_FUNC_WITH_ARGC(Segment, getCandidateAt, 1,
 DEF_FUNC_WITH_ARGC(Segment, hasTag, 1,
   JSStringRAII param(JS_ToCString(ctx, argv[0]));
   return JS_NewBool(ctx, obj->HasTag(param));
+)
+
+DEFINE_JS_CLASS_WITH_RAW_POINTER(
+  Segment,
+  NO_CONSTRUCTOR_TO_REGISTER,
+  DEFINE_PROPERTIES(selectedIndex, selectedCandidate, candidateSize, start, end, prompt),
+  DEFINE_FUNCTIONS(
+    JS_CFUNC_DEF("getCandidateAt", 1, getCandidateAt),
+    JS_CFUNC_DEF("hasTag", 1, hasTag),
+  )
 )
 
 } // namespace rime

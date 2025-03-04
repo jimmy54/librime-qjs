@@ -5,9 +5,6 @@
 #include "qjs_type_registry.h"
 #include "trie.h"
 
-DECLARE_JS_CLASS_WITH_SHARED_POINTER(Trie,
-  NO_PROPERTY_TO_DECLARE,
-  DECLARE_FUNCTIONS(loadTextFile, loadBinaryFile, saveToBinaryFile, find, prefixSearch)
-)
+DECLARE_JS_CLASS_WITH_SHARED_POINTER(Trie)
 
 #endif // RIME_QJS_TRIE_H_

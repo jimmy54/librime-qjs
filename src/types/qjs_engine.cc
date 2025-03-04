@@ -5,17 +5,6 @@
 
 namespace rime {
 
-DEFINE_JS_CLASS_WITH_RAW_POINTER(
-  Engine,
-  NO_CONSTRUCTOR_TO_REGISTER,
-  DEFINE_GETTERS(schema, activeEngine, context),
-  DEFINE_FUNCTIONS(
-    JS_CFUNC_DEF("processKey", 1, processKey),
-    JS_CFUNC_DEF("commitText", 1, commitText),
-    JS_CFUNC_DEF("applySchema", 1, applySchema),
-  )
-)
-
 DEFINE_GETTER(Engine, schema, QjsSchema::Wrap(ctx, obj->schema()))
 DEFINE_GETTER(Engine, context, QjsContext::Wrap(ctx, obj->context()))
 DEFINE_GETTER(Engine, activeEngine, QjsEngine::Wrap(ctx, obj->active_engine()))
@@ -38,6 +27,17 @@ DEF_FUNC(Engine, applySchema,
 DEF_FUNC_WITH_ARGC(Engine, processKey, 1,
   JSStringRAII repr(JS_ToCString(ctx, argv[0]));
   return JS_NewBool(ctx, obj->ProcessKey(KeyEvent(repr)));
+)
+
+DEFINE_JS_CLASS_WITH_RAW_POINTER(
+  Engine,
+  NO_CONSTRUCTOR_TO_REGISTER,
+  DEFINE_GETTERS(schema, activeEngine, context),
+  DEFINE_FUNCTIONS(
+    JS_CFUNC_DEF("processKey", 1, processKey),
+    JS_CFUNC_DEF("commitText", 1, commitText),
+    JS_CFUNC_DEF("applySchema", 1, applySchema),
+  )
 )
 
 } // namespace rime
