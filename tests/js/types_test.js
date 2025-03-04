@@ -53,7 +53,7 @@ function testEnvUtilities(env) {
   assert(info.includes('Process RSS Mem: '))
   assert(info.includes('QuickJS Mem: '))
 
-  assertEquals(env.popen('uname').trim(), 'Darwin')
+  assertEquals(env.popen(`echo 'libRime-qjs'`).trim(), 'libRime-qjs')
 
   assertEquals(env.fileExists('tests/js/types_test.js'), true)
   assertEquals(env.fileExists('tests/js/not_found.js'), false)

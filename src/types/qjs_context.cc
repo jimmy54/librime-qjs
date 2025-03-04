@@ -1,12 +1,13 @@
 #include "qjs_context.h"
 #include "qjs_preedit.h"
+#include "qjs_segment.h"
 
 namespace rime {
 
 DEFINE_JS_CLASS_WITH_RAW_POINTER(
   Context,
   NO_CONSTRUCTOR_TO_REGISTER,
-  DEFINE_PROPERTIES(input, caretPos, preedit),
+  DEFINE_PROPERTIES(input, caretPos, preedit, lastSegment),
   DEFINE_FUNCTIONS(
     // Input methods
     JS_CFUNC_DEF("commit", 0, commit),
@@ -48,12 +49,28 @@ DEFINE_SETTER_2(Context, caretPos, set_caret_pos, int32_t, JS_ToInt32)
 [[nodiscard]]
 JSValue QjsContext::get_preedit(JSContext* ctx, JSValueConst this_val) {
   if (auto obj = Unwrap(ctx, this_val)) {
-    auto preedit = obj->GetPreedit();
+    Preedit preedit = obj->GetPreedit();
     return QjsPreedit::Wrap(ctx, &preedit); // <-- incompatible to DEFINE_GETTER_2
   }
   return JS_UNDEFINED;
 }
 DEFINE_FORBIDDEN_SETTER(Context, preedit)
+
+[[nodiscard]]
+JSValue QjsContext::get_lastSegment(JSContext* ctx, JSValueConst this_val) {
+  if (auto obj = Unwrap(ctx, this_val)) {
+    if (obj->composition().empty()) {
+      DLOG(ERROR) << "no segment available in context->composition()";
+      return JS_NULL;
+    } else {
+      // must be set as reference here, otherwise fetching its prompt would crash the program
+      Segment& segment = obj->composition().back();
+      return QjsSegment::Wrap(ctx, &segment);
+    }
+  }
+  return JS_UNDEFINED;
+}
+DEFINE_FORBIDDEN_SETTER(Context, lastSegment)
 
 DEF_FUNC(Context, commit,
   obj->Commit();

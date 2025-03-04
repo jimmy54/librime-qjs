@@ -7,6 +7,8 @@
 #include "helpers/qjs_environment.h"
 
 #include <fstream>
+#include <rime/context.h>
+#include <rime/composition.h>
 #include <rime/translation.h>
 #include <rime/gear/translator_commons.h>
 
@@ -57,6 +59,13 @@ an<Translation> QuickJSTranslator::Query(const string& input,
   auto translation = New<FifoTranslation>();
   if (!isLoaded_) {
     return translation;
+  }
+
+  // TODO: the composition is always empty in the qjs processors, find the root cause and fix it.
+  // Temporary workaround: add the segment to the context and use it in the qjs processors.
+  if (engine_->context()->composition().empty()) {
+    DLOG(INFO) << "[qjs] QuickJSTranslator::Query adding segment to context for later usage in the qjs processors.";
+    engine_->context()->composition().AddSegment(segment);
   }
 
   auto ctx = QjsHelper::getInstance().getContext();

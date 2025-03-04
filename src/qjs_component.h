@@ -8,6 +8,7 @@
 #include <rime/gear/filter_commons.h>
 #include <rime/translator.h>
 #include <rime/gear/translator_commons.h>
+#include <rime/processor.h>
 #include <map>
 
 namespace rime {
@@ -53,6 +54,26 @@ public:
   virtual an<Translation> Query(const string& input,
                                 const Segment& segment) {
     return actual_->Query(input, segment);
+  }
+
+  an<T_ACTUAL> actual_;
+};
+
+// Specialization for Processor
+template<typename T_ACTUAL>
+class ComponentWrapper<T_ACTUAL, Processor> : public Processor {
+public:
+  explicit ComponentWrapper(const Ticket& ticket, an<T_ACTUAL>& actual)
+      : Processor(ticket), actual_(actual) {
+    DLOG(INFO) << "Processor ComponentWrapper created with ticket: " << ticket.name_space;
+  }
+
+  virtual ~ComponentWrapper() {
+    DLOG(INFO) << "Processor ComponentWrapper destroyed";
+  }
+
+  virtual ProcessResult ProcessKeyEvent(const KeyEvent& key_event) {
+    return actual_->ProcessKeyEvent(key_event);
   }
 
   an<T_ACTUAL> actual_;
