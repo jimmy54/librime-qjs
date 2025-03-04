@@ -10,10 +10,10 @@ DEFINE_JS_CLASS_WITH_RAW_POINTER(
   NO_FUNCTION_TO_REGISTER
 )
 
-DEFINE_GETTER_2(Schema, id, schema_id, const string&, js_new_string_from_std)
-DEFINE_GETTER_2(Schema, name, schema_name, const string&, js_new_string_from_std)
-DEFINE_GETTER  (Schema, config, Config*, QjsConfig::Wrap)
-DEFINE_GETTER_2(Schema, pageSize, page_size, int, JS_NewInt32)
-DEFINE_GETTER_2(Schema, selectKeys, select_keys, const string&, js_new_string_from_std)
+DEFINE_GETTER(Schema, id, js_new_string_from_std(ctx, obj->schema_id()))
+DEFINE_GETTER(Schema, name, js_new_string_from_std(ctx, obj->schema_name()))
+DEFINE_GETTER(Schema, config, QjsConfig::Wrap(ctx, obj->config()))
+DEFINE_GETTER(Schema, pageSize, JS_NewInt32(ctx, obj->page_size()))
+DEFINE_GETTER(Schema, selectKeys, js_new_string_from_std(ctx, obj->select_keys()))
 
 } // namespace rime

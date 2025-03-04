@@ -14,28 +14,22 @@ DEFINE_JS_CLASS_WITH_RAW_POINTER(
   )
 )
 
-DEFINE_GETTER_3(Segment, selectedIndex, selected_index, size_t, JS_NewInt32)
-DEFINE_SETTER_3(Segment, selectedIndex, selected_index, int32_t, JS_ToInt32)
+DEFINE_GETTER(Segment, selectedIndex, JS_NewInt32(ctx, obj->selected_index))
+DEFINE_SETTER(Segment, selectedIndex, int32_t, JS_ToInt32, obj->selected_index = value)
 
-DEFINE_GETTER_3(Segment, start, start, size_t, JS_NewInt32)
+DEFINE_GETTER(Segment, start, JS_NewInt32(ctx, obj->start))
 DEFINE_FORBIDDEN_SETTER(Segment, start)
 
-DEFINE_GETTER_3(Segment, end, end, size_t, JS_NewInt32)
+DEFINE_GETTER(Segment, end, JS_NewInt32(ctx, obj->end))
 DEFINE_FORBIDDEN_SETTER(Segment, end)
 
-DEFINE_GETTER_3(Segment, prompt, prompt, string, js_new_string_from_std)
+DEFINE_GETTER(Segment, prompt, js_new_string_from_std(ctx, obj->prompt))
 DEFINE_STRING_SETTER(Segment, prompt, obj->prompt = str)
 
-DEFINE_GETTER_2(Segment, selectedCandidate, GetSelectedCandidate, an<Candidate>, QjsCandidate::Wrap)
+DEFINE_GETTER(Segment, selectedCandidate, QjsCandidate::Wrap(ctx, obj->GetSelectedCandidate()))
 DEFINE_FORBIDDEN_SETTER(Segment, selectedCandidate)
 
-[[nodiscard]]
-JSValue QjsSegment::get_candidateSize(JSContext* ctx, JSValueConst this_val) {
-  if (auto obj = Unwrap(ctx, this_val)) {
-    return JS_NewInt32(ctx, obj->menu->candidate_count()); // <-- incompatible to DEFINE_GETTER_3
-  }
-  return JS_UNDEFINED;
-}
+DEFINE_GETTER(Segment, candidateSize, JS_NewInt32(ctx, obj->menu->candidate_count()))
 DEFINE_FORBIDDEN_SETTER(Segment, candidateSize)
 
 DEF_FUNC_WITH_ARGC(Segment, getCandidateAt, 1,

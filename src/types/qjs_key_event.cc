@@ -9,10 +9,10 @@ DEFINE_JS_CLASS_WITH_RAW_POINTER(
   NO_FUNCTION_TO_REGISTER
 )
 
-DEFINE_GETTER(KeyEvent, shift, bool, JS_NewBool)
-DEFINE_GETTER(KeyEvent, ctrl, bool, JS_NewBool)
-DEFINE_GETTER(KeyEvent, alt, bool, JS_NewBool)
-DEFINE_GETTER(KeyEvent, release, bool, JS_NewBool)
-DEFINE_GETTER(KeyEvent, repr, const string&, js_new_string_from_std)
+DEFINE_GETTER(KeyEvent, shift, JS_NewBool(ctx, obj->shift()))
+DEFINE_GETTER(KeyEvent, ctrl, JS_NewBool(ctx, obj->ctrl()))
+DEFINE_GETTER(KeyEvent, alt, JS_NewBool(ctx, obj->alt()))
+DEFINE_GETTER(KeyEvent, release, JS_NewBool(ctx, obj->release()))
+DEFINE_GETTER(KeyEvent, repr, js_new_string_from_std(ctx, obj->repr()))
 
 } // namespace rime

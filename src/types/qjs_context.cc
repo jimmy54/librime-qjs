@@ -38,19 +38,19 @@ DEFINE_JS_CLASS_WITH_RAW_POINTER(
 )
 
 
-DEFINE_GETTER(Context, input, const string&, js_new_string_from_std)
-DEFINE_GETTER_2(Context, caretPos, caret_pos, int, JS_NewInt32)
+DEFINE_GETTER(Context, input, js_new_string_from_std(ctx, obj->input()))
+DEFINE_GETTER(Context, caretPos, JS_NewInt32(ctx, obj->caret_pos()))
 
 DEFINE_STRING_SETTER(Context, input,
   obj->set_input(str);
 )
-DEFINE_SETTER_2(Context, caretPos, set_caret_pos, int32_t, JS_ToInt32)
+DEFINE_SETTER(Context, caretPos, int32_t, JS_ToInt32, obj->set_caret_pos(value))
 
 [[nodiscard]]
 JSValue QjsContext::get_preedit(JSContext* ctx, JSValueConst this_val) {
   if (auto obj = Unwrap(ctx, this_val)) {
     Preedit preedit = obj->GetPreedit();
-    return QjsPreedit::Wrap(ctx, &preedit); // <-- incompatible to DEFINE_GETTER_2
+    return QjsPreedit::Wrap(ctx, &preedit); // <-- incompatible to DEFINE_GETTER
   }
   return JS_UNDEFINED;
 }

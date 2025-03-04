@@ -16,9 +16,9 @@ DEFINE_JS_CLASS_WITH_RAW_POINTER(
   )
 )
 
-DEFINE_GETTER(Engine, schema, Schema*, QjsSchema::Wrap)
-DEFINE_GETTER(Engine, context, Context*, QjsContext::Wrap)
-DEFINE_GETTER_2(Engine, activeEngine, active_engine, Engine*, QjsEngine::Wrap)
+DEFINE_GETTER(Engine, schema, QjsSchema::Wrap(ctx, obj->schema()))
+DEFINE_GETTER(Engine, context, QjsContext::Wrap(ctx, obj->context()))
+DEFINE_GETTER(Engine, activeEngine, QjsEngine::Wrap(ctx, obj->active_engine()))
 
 DEF_FUNC_WITH_ARGC(Engine, commitText, 1,
   JSStringRAII param(JS_ToCString(ctx, argv[0]));
