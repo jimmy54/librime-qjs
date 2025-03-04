@@ -14,7 +14,7 @@ class QuickJSTranslation : public PrefetchTranslation {
   QuickJSTranslation(an<Translation> translation,
                      const JSValueRAII& filterFunc,
                      const JSValue& environment);
-  ~QuickJSTranslation() override;
+  ~QuickJSTranslation() override {};
 
  protected:
   bool Replenish() override { return replenished_; }

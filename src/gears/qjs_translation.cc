@@ -48,7 +48,4 @@ bool QuickJSTranslation::DoFilter(const JSValueRAII& filterFunc, const JSValue& 
   return true;
 }
 
-QuickJSTranslation::~QuickJSTranslation() {
-}
-
 }  // namespace rime

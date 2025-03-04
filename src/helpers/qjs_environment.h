@@ -19,13 +19,7 @@ public:
 
   // Add utility functions to the environment
   static void AddUtilityFunctions(JSContext* ctx, JSValue environment);
-
-  // Helper function to call init function from a module namespace
-  static bool CallInitFunction(JSContext* ctx, JSValue moduleNamespace, JSValue environment);
-
-  // Helper function to call finit function
-  static bool CallFinitFunction(JSContext* ctx, JSValue finitFunc, JSValue environment);
-
+  
 private:
   // Utility function to load file content
   static JSValue loadFile(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);

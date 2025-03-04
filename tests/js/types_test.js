@@ -53,6 +53,10 @@ function testEnvUtilities(env) {
   assert(info.includes('Process RSS Mem: '))
   assert(info.includes('QuickJS Mem: '))
 
+  // ensure engine.processKey would not crash the program
+  env.engine.processKey('Down')
+  env.engine.processKey('InvalidKey')
+
   assertEquals(env.popen(`echo 'libRime-qjs'`).trim(), 'libRime-qjs')
 
   assertEquals(env.fileExists('tests/js/types_test.js'), true)

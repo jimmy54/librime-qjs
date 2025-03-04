@@ -29,28 +29,6 @@ void QjsEnvironment::AddUtilityFunctions(JSContext* ctx, JSValue environment) {
   JS_SetPropertyStr(ctx, environment, "popen", JS_NewCFunction(ctx, popen, "popen", 1));
 }
 
-bool QjsEnvironment::CallInitFunction(JSContext* ctx, JSValue moduleNamespace, JSValue environment) {
-  JSValueRAII initFunc(JS_GetPropertyStr(ctx, moduleNamespace, "init"));
-  if (!JS_IsUndefined(initFunc)) {
-    JSValueRAII initResult(JS_Call(ctx, initFunc, JS_UNDEFINED, 1, &environment));
-    if (JS_IsException(initResult)) {
-      return false;
-    }
-    return true;
-  }
-  return true; // No init function is not an error
-}
-
-bool QjsEnvironment::CallFinitFunction(JSContext* ctx, JSValue finitFunc, JSValue environment) {
-  if (!JS_IsUndefined(finitFunc)) {
-    JSValueRAII finitResult(JS_Call(ctx, finitFunc, JS_UNDEFINED, 1, &environment));
-    if (JS_IsException(finitResult)) {
-      return false;
-    }
-  }
-  return true;
-}
-
 JSValue QjsEnvironment::loadFile(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
   if (argc < 1) {
     return JS_ThrowSyntaxError(ctx, "The absolutePath argument is required");

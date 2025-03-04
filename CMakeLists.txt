@@ -42,6 +42,7 @@ set(plugin_deps ${rime_library} ${rime_gears_library} quickjs PARENT_SCOPE)
 set(plugin_modules "qjs" PARENT_SCOPE)
 
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src SRC)
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/gears SRC_GEARS)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/types SRC_TYPES)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/helpers SRC_HELPERS)
 
@@ -49,13 +50,14 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/yas/include
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gears
     ${CMAKE_CURRENT_SOURCE_DIR}/src/types
     ${CMAKE_CURRENT_SOURCE_DIR}/src/helpers
     ${CMAKE_CURRENT_SOURCE_DIR}/tests/
 )
 
 # create a dynamic library
-add_library(librime-qjs-objs OBJECT ${SRC} ${SRC_TYPES} ${SRC_HELPERS})
+add_library(librime-qjs-objs OBJECT ${SRC} ${SRC_GEARS} ${SRC_TYPES} ${SRC_HELPERS})
 
 # Link QuickJS to librime-qjs
 target_link_libraries(librime-qjs-objs PRIVATE quickjs)
