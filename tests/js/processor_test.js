@@ -18,12 +18,12 @@ export function process(keyEvent, env) {
 
   const repr = keyEvent.repr
   if (repr === 'space') {
-    return 1 // Accept
+    return 'kAccepted'
   } else if (repr === 'Return') {
-    return 0 // Reject
+    return 'kRejected'
   }
 
-  return 2 // Noop
+  return 'kNoop'
 }
 
 function assertEquals(actual, expected, message) {

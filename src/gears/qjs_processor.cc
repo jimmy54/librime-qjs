@@ -19,14 +19,15 @@ ProcessResult QuickJSProcessor::ProcessKeyEvent(const KeyEvent& key_event) {
     return kNoop;
   }
 
-  int32_t result = 0;
-  JS_ToInt32(ctx, &result, jsResult);
-
-  switch (result) {
-  case 0: return kRejected;
-  case 1: return kAccepted;
-  case 2: return kNoop;
-  default:
+  // do not wrap it in JSStringRAII, because it would be freed by JSValueRAII jsResult
+  const char* result = JS_ToCString(ctx, jsResult);
+  if (strncmp(result, "kNoop", 5) == 0) {
+    return kNoop;
+  } else if (strncmp(result, "kAccepted", 9) == 0) {
+    return kAccepted;
+  } else if (strncmp(result, "kRejected", 9) == 0) {
+    return kRejected;
+  } else {
     LOG(ERROR) << "[qjs] " << name_space_ << "::ProcessKeyEvent unknown result: " << result;
     return kNoop;
   }
