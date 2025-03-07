@@ -1,4 +1,4 @@
-#include "qjs_config_list.h"
+#include "qjs_config_list.h" // IWYU pragma: keep
 #include "qjs_config_item.h"
 #include "qjs_config_value.h"
 
@@ -11,9 +11,9 @@ DEFINE_FUNCTION(ConfigList, size,
   return JS_NewInt32(ctx, obj->size());
 )
 DEFINE_FUNCTION_ARGC(ConfigList, get_item_at, 1,
-  int32_t index;
+  int index;
   JS_ToInt32(ctx, &index, argv[0]);
-  if (index < 0 || index >= obj->size()) return JS_NULL;
+  if (index < 0 || size_t(index) >= obj->size()) return JS_NULL;
 
   auto item = obj->GetAt(index);
   if (!item) return JS_NULL;
@@ -22,7 +22,7 @@ DEFINE_FUNCTION_ARGC(ConfigList, get_item_at, 1,
 DEFINE_FUNCTION_ARGC(ConfigList, get_value_at, 1,
   int32_t index;
   JS_ToInt32(ctx, &index, argv[0]);
-  if (index < 0 || index >= obj->size()) return JS_NULL;
+  if (index < 0 || size_t(index) >= obj->size()) return JS_NULL;
 
   auto value = obj->GetValueAt(index);
   if (!value) return JS_NULL;

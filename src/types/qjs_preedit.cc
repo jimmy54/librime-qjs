@@ -1,4 +1,4 @@
-#include "qjs_preedit.h"
+#include "qjs_preedit.h" // IWYU pragma: keep
 
 namespace rime {
 

@@ -1,5 +1,5 @@
 #include <rime/menu.h>
-#include "qjs_segment.h"
+#include "qjs_segment.h" // IWYU pragma: keep
 #include "qjs_candidate.h"
 
 namespace rime {
@@ -18,7 +18,7 @@ DEFINE_GETTER(Segment, candidateSize, JS_NewInt32(ctx, obj->menu->candidate_coun
 DEFINE_FUNCTION_ARGC(Segment, getCandidateAt, 1,
   int32_t index;
   JS_ToInt32(ctx, &index, argv[0]);
-  if (index < 0 || index >= obj->menu->candidate_count()) return JS_NULL;
+  if (index < 0 || size_t(index) >= obj->menu->candidate_count()) return JS_NULL;
 
   return QjsCandidate::Wrap(ctx, obj->menu->GetCandidateAt(index));
 )

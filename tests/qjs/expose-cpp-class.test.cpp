@@ -99,7 +99,7 @@ static JSValue js_myclass_set_name(JSContext* ctx, JSValueConst this_val, int ar
 
 // Define the class
 static JSClassDef js_myclass_class = {
-    "MyClass",
+    .class_name = "MyClass",
     .finalizer = js_myclass_finalizer,
 };
 

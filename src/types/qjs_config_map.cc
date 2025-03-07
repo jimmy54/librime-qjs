@@ -1,4 +1,4 @@
-#include "qjs_config_map.h"
+#include "qjs_config_map.h" // IWYU pragma: keep
 #include "qjs_config_item.h"
 #include "qjs_config_value.h"
 

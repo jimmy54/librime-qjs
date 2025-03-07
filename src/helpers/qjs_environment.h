@@ -4,11 +4,8 @@
 #include <rime/engine.h>
 #include "quickjs.h"
 #include "jsvalue_raii.h"
-#include "qjs_helper.h"
-#include "qjs_engine.h"
 
 #include <string>
-#include <filesystem>
 
 namespace rime {
 
@@ -19,7 +16,7 @@ public:
 
   // Add utility functions to the environment
   static void AddUtilityFunctions(JSContext* ctx, JSValue environment);
-  
+
 private:
   // Utility function to load file content
   static JSValue loadFile(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);

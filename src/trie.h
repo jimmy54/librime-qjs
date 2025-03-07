@@ -2,13 +2,12 @@
 #define MARISA_TRIES_WITH_STRING_H
 
 #include <marisa.h>
+#include <cstddef>
 #include <iostream>
 #include <string>
 #include <string_view>
 #include <vector>
-#include <cstdint>
 #include <fstream>
-#include <sstream>
 #include <stdexcept>
 #include <filesystem>
 #include <optional>
@@ -150,7 +149,7 @@ public:
         std::vector<std::pair<std::string, std::string>> items(entrySize);
         std::ifstream infile(txtPath);
         std::string line;
-        int idx = 0;
+        size_t idx = 0;
         while (std::getline(infile, line)) {
             if (!line.empty() && line[0] == '#') continue;
 

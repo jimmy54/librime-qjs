@@ -1,4 +1,4 @@
-#include "qjs_key_event.h"
+#include "qjs_key_event.h" // IWYU pragma: keep
 
 namespace rime {
 

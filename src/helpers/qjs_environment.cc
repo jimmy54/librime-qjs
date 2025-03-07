@@ -5,6 +5,8 @@
 #include <iostream>
 
 #include "qjs_environment.h"
+#include "qjs_helper.h"
+#include "qjs_engine.h"
 #include "jsstring_raii.h"
 #include "process_memory.h"
 

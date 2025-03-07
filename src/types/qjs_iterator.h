@@ -88,7 +88,7 @@ private:
     }
 
     static constexpr JSClassDef class_def_{
-        "JSIteratorWrapper",
+        .class_name = "JSIteratorWrapper",
         .finalizer = finalizer
     };
 

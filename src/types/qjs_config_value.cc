@@ -1,4 +1,4 @@
-#include "qjs_config_value.h"
+#include "qjs_config_value.h" // IWYU pragma: keep
 
 namespace rime {
 

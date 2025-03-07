@@ -19,7 +19,7 @@ public:
 
 };
 
-static JSValue js_new_string_from_std(JSContext* ctx, const std::string& str) {
+static inline JSValue js_new_string_from_std(JSContext* ctx, const std::string& str) {
   return JS_NewString(ctx, str.c_str());
 }
 

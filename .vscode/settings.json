@@ -1,0 +1,32 @@
+{
+    "cmake.configureSettings": {
+        "CMAKE_C_COMPILER": "/usr/local/opt/llvm/bin/clang",
+        "CMAKE_CXX_COMPILER": "/usr/local/opt/llvm/bin/clang++",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": true
+    },
+    "cmake.configureOnOpen": true,
+    "clangd.path": "/opt/local/libexec/llvm-17/bin/clangd",
+    "clangd.arguments": [
+        "--compile-commands-dir=${workspaceFolder}/build",
+        "--background-index=1",
+        "--clang-tidy=1",
+        "--completion-style=detailed",
+        "--header-insertion=iwyu",
+        "--all-scopes-completion=1",
+        "--background-index-priority=low",
+        "--completion-parse=auto",
+        "--debug-origin=0",
+        "--fallback-style=LLVM",
+        "--function-arg-placeholders=1",
+        "--header-insertion-decorators=1",
+        "--import-insertions=0",
+        "--include-ineligible-results=0",
+        "--limit-references=1000",
+        "--limit-results=100",
+        "--ranking-model=decision_forest",
+        "--rename-file-limit=50",
+        "--parse-forwarding-functions=0",
+        "--pch-storage=disk",
+        "--use-dirty-headers=0"
+    ]
+}

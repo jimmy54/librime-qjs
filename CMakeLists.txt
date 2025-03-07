@@ -1,6 +1,13 @@
 # CMakeLists.txt
 
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.12)
+
+# Add at the top of your CMakeLists.txt, before project()
+set(CMAKE_C_COMPILER "/opt/local/libexec/llvm-17/bin/clang")
+set(CMAKE_CXX_COMPILER "/opt/local/libexec/llvm-17/bin/clang++")
+
+# Enable compilation database for clangd
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Set the project name and version
 project(LibrimeQjs VERSION 0.1)
@@ -10,6 +17,9 @@ add_definitions(-DRIME_QJS_VERSION="${PROJECT_VERSION}")
 # Specify C++17 standard
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
+
+# Additional LLVM-specific settings
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
 
 # Add _GNU_SOURCE definition for Boost.Stacktrace
 add_definitions(-D_GNU_SOURCE)

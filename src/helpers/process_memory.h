@@ -39,8 +39,9 @@ void getMemoryUsage(size_t& vm_usage, size_t& resident_set) {
 
 #elif __APPLE__
 #include <mach/mach.h>
+#include <unistd.h>  // For getpid()
 
-void getMemoryUsage(size_t& vm_usage, size_t& resident_set) {
+inline void getMemoryUsage(size_t& vm_usage, size_t& resident_set) {
     vm_usage = 0;
     resident_set = 0;
 
@@ -48,7 +49,7 @@ void getMemoryUsage(size_t& vm_usage, size_t& resident_set) {
     struct task_basic_info t_info;
     mach_msg_type_number_t t_info_count = TASK_BASIC_INFO_COUNT;
 
-    if (task_for_pid(current_task(), getpid(), &task) != KERN_SUCCESS) {
+    if (task_for_pid(current_task(), ::getpid(), &task) != KERN_SUCCESS) {
         std::cerr << "Failed to get task for process" << std::endl;
         return;
     }

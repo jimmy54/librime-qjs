@@ -1,0 +1,56 @@
+# documentation: https://clangd.llvm.org/config
+# Installation: `sudo port install clang-17`
+# VSCode Extension: https://marketplace.visualstudio.com/items?itemName=llvm-vs-code-extensions.vscode-clangd
+
+CompileFlags:
+  Add:
+    # Add compiler flags
+    - "-Wall"
+    - "-Wextra"
+    - "-Werror"
+    # Add macro definitions
+    - "-DGLOG_EXPORT=__attribute__((visibility(\"default\")))"
+    - "-DGLOG_NO_EXPORT=__attribute__((visibility(\"default\")))"
+    - "-DGLOG_DEPRECATED=__attribute__((deprecated))"
+    # Add include paths
+    - "-Isrc/**"
+    - "-Itests/**"
+    - "-Ithirdparty/quickjs/**"
+    - "-Ithirdparty/yas/include"
+    - "-I../../src"
+    - "-I../../src/rime"
+    - "-I../../build/src"
+    - "-I../../include"
+    - "-I../../include/**"
+    - "-I../../include/glog"
+    - "-I../../deps/boost-1.84.0"
+
+Diagnostics:
+  # Suppress diagnostics from headers
+  Suppress:
+    - header-included-from-*
+    - unused-parameter        # unused parameter when overriding a virtual function from libRime
+    # - unknown-type-name
+    # - unknown-pragma
+    # - missing-includes
+    # - unused-includes
+
+  # Disable specific diagnostic categories
+  # UnusedIncludes: None      # Disable unused include warnings
+  # MissingIncludes: None     # Disable missing include errors
+
+Index:
+  Background: Build  # Enable background indexing, Build or Skip
+  StandardLibrary: false  # Don't index standard library headers
+
+InlayHints:
+  BlockEnd: Yes
+  Designators: No
+  Enabled: Yes
+  ParameterNames: No
+  DeducedTypes: Yes
+  # DefaultArguments: Yes  # aviable in Clangd-20
+  TypeNameLimit: 0
+
+Hover:
+  ShowAKA: Yes

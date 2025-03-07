@@ -4,7 +4,7 @@
 #include "quickjs.h"
 #include "jsvalue_raii.h"
 #include "qjs_helper.h"
-#include "qjs_environment.h"
+#include "qjs_engine.h"
 
 #include <string>
 
@@ -24,7 +24,7 @@ protected:
   QjsModule(const std::string& name_space,
             Engine* engine,
             const char* main_func_name);
-            
+
   virtual ~QjsModule();
 
   bool isLoaded_ = false;

@@ -1,4 +1,4 @@
-#include "qjs_config.h"
+#include "qjs_config.h" // IWYU pragma: keep
 #include "qjs_config_list.h"
 #include <filesystem>
 #include <string>
