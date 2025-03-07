@@ -13,7 +13,8 @@ ProcessResult QuickJSProcessor::ProcessKeyEvent(const KeyEvent& key_event) {
   }
 
   auto ctx = QjsHelper::getInstance().getContext();
-  JSValue args[] = { QjsKeyEvent::Wrap(ctx, const_cast<KeyEvent*>(&key_event)), environment_.get() };
+  JSValueRAII jsKeyEvt(QjsKeyEvent::Wrap(ctx, const_cast<KeyEvent*>(&key_event)));
+  JSValue args[] = { jsKeyEvt.get(), environment_.get() };
   JSValueRAII jsResult(JS_Call(ctx, mainFunc_, JS_UNDEFINED, 2, args));
   if (JS_IsException(jsResult)) {
     return kNoop;

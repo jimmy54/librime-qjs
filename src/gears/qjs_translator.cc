@@ -28,7 +28,8 @@ an<Translation> QuickJSTranslator::Query(const string& input,
 
   auto ctx = QjsHelper::getInstance().getContext();
   JSValueRAII jsInput(JS_NewString(ctx, input.c_str()));
-  JSValue args[] = { jsInput.get(), QjsSegment::Wrap(ctx, const_cast<Segment*>(&segment)), environment_.get() };
+  JSValueRAII jsSegment(QjsSegment::Wrap(ctx, const_cast<Segment*>(&segment)));
+  JSValue args[] = { jsInput.get(), jsSegment.get(), environment_.get() };
   JSValueRAII resultArray(JS_Call(ctx, mainFunc_, JS_UNDEFINED, 3, args));
   if (JS_IsException(resultArray)) {
     return translation;
