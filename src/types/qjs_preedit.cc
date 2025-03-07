@@ -2,8 +2,7 @@
 
 namespace rime {
 
-
-DEFINE_GETTER(Preedit, text, js_new_string_from_std(ctx, obj->text))
+DEFINE_GETTER(Preedit, text, jsNewStringFromStd(ctx, obj->text))
 DEFINE_GETTER(Preedit, caretPos, JS_NewInt64(ctx, obj->caret_pos))
 DEFINE_GETTER(Preedit, selectStart, JS_NewInt64(ctx, obj->sel_start))
 DEFINE_GETTER(Preedit, selectEnd, JS_NewInt64(ctx, obj->sel_end))

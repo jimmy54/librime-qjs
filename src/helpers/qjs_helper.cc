@@ -3,7 +3,8 @@
 #include <sstream>
 #include <fstream>
 
-std::string QjsHelper::basePath = "";
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
+std::string QjsHelper::basePath;
 
 QjsHelper& QjsHelper::getInstance() {
     static QjsHelper instance;
@@ -37,11 +38,11 @@ JSValue QjsHelper::loadJsModuleToGlobalThis(JSContext* ctx, const char* fileName
 }
 
 void QjsHelper::exposeLogToJsConsole(JSContext* ctx) {
-    JSValue global_obj = JS_GetGlobalObject(ctx);
+    JSValue globalObj = JS_GetGlobalObject(ctx);
     JSValue console = JS_NewObject(ctx);
     JS_SetPropertyStr(ctx, console, "log", JS_NewCFunction(ctx, jsLog, "log", 1));
-    JS_SetPropertyStr(ctx, global_obj, "console", console);
-    JS_FreeValue(ctx, global_obj);
+    JS_SetPropertyStr(ctx, globalObj, "console", console);
+    JS_FreeValue(ctx, globalObj);
 }
 
 std::string QjsHelper::loadFile(const char* absolutePath) {
@@ -67,7 +68,7 @@ std::string QjsHelper::readJsCode(JSContext* ctx, const char* fileName) {
 
 JSValue QjsHelper::loadJsModule(JSContext* ctx, const char* fileName) {
     std::string code = readJsCode(ctx, fileName);
-    if (code == "") {
+    if (code.empty()) {
         return JS_ThrowReferenceError(ctx, "Could not open %s", fileName);
     }
 
@@ -77,22 +78,22 @@ JSValue QjsHelper::loadJsModule(JSContext* ctx, const char* fileName) {
     if (JS_IsException(funcObj)) {
         JSValue exception = JS_GetException(ctx);
         JSValue message = JS_GetPropertyStr(ctx, exception, "message");
-        const char* message_str = JS_ToCString(ctx, message);
-        LOG(ERROR) << "Module evaluation failed: " << message_str;
+        const char* messageStr = JS_ToCString(ctx, message);
+        LOG(ERROR) << "Module evaluation failed: " << messageStr;
 
-        JS_FreeCString(ctx, message_str);
+        JS_FreeCString(ctx, messageStr);
         JS_FreeValue(ctx, message);
         JS_FreeValue(ctx, exception);
     }
     return funcObj;
 }
 
-JSValue QjsHelper::jsLog(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
+JSValue QjsHelper::jsLog(JSContext* ctx, JSValueConst thisVal, int argc, JSValueConst* argv) {
     std::ostringstream oss;
     for (int i = 0; i < argc; i++) {
         const char* str = JS_ToCString(ctx, argv[i]);
-        if (str) {
-            oss << (i ? " " : "") << str;
+        if (str != nullptr) {
+            oss << (i != 0 ? " " : "") << str;
             JS_FreeCString(ctx, str);
         }
     }

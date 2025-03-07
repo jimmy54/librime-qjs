@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
+#include "jsvalue_raii.h"
 #include "qjs_translation.h"
-#include "qjs_candidate.h"
 #include "qjs_helper.h"
 #include <rime/candidate.h>
 #include <rime/translation.h>
@@ -10,25 +10,27 @@
 using namespace rime;
 class QuickJSTranslationTest : public ::testing::Test {
 protected:
-    an<Translation> CreateMockTranslation() {
+    static an<Translation> createMockTranslation() {
         auto translation = New<FakeTranslation>();
-        translation->Append(New<SimpleCandidate>("mock", 0, 1, "text1", "comment1"));
-        translation->Append(New<SimpleCandidate>("mock", 0, 1, "text2", "comment2"));
-        translation->Append(New<SimpleCandidate>("mock", 0, 1, "text3", "comment3"));
+        translation->append(New<SimpleCandidate>("mock", 0, 1, "text1", "comment1"));
+        translation->append(New<SimpleCandidate>("mock", 0, 1, "text2", "comment2"));
+        translation->append(New<SimpleCandidate>("mock", 0, 1, "text3", "comment3"));
         return translation;
     }
 };
 
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
 TEST_F(QuickJSTranslationTest, Initialize) {
-    auto translation = CreateMockTranslation();
-    auto qjs_translation = New<QuickJSTranslation>(translation, JSValueRAII(JS_UNDEFINED), JS_UNDEFINED);
-    EXPECT_TRUE(qjs_translation->exhausted());
-    EXPECT_FALSE(qjs_translation->Next());
-    EXPECT_EQ(qjs_translation->Peek(), nullptr);
+    auto translation = createMockTranslation();
+    auto qjsTranslation = New<QuickJSTranslation>(translation, JS_UNDEFINED, JS_UNDEFINED);
+    EXPECT_TRUE(qjsTranslation->exhausted());
+    EXPECT_FALSE(qjsTranslation->Next());
+    EXPECT_EQ(qjsTranslation->Peek(), nullptr);
 }
 
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
 TEST_F(QuickJSTranslationTest, FilterCandidates) {
-    auto translation = CreateMockTranslation();
+    auto translation = createMockTranslation();
     const char* jsCode = R"(
         function filterCandidates(candidates, env) {
             console.log(`filterCandidates: ${candidates.length}`)
@@ -37,7 +39,7 @@ TEST_F(QuickJSTranslationTest, FilterCandidates) {
         }
     )";
 
-    auto ctx = QjsHelper::getInstance().getContext();
+    auto *ctx = QjsHelper::getInstance().getContext();
     JSValueRAII result(JS_Eval(ctx, jsCode, strlen(jsCode), "<input>", JS_EVAL_TYPE_GLOBAL));
     JSValueRAII global(JS_GetGlobalObject(ctx));
     JSValueRAII filterFunc(JS_GetPropertyStr(ctx, global, "filterCandidates"));
@@ -45,22 +47,23 @@ TEST_F(QuickJSTranslationTest, FilterCandidates) {
     JSValueRAII env(JS_NewObject(ctx));
     JS_SetPropertyStr(ctx, env, "expectingText", JS_NewString(ctx, "text2"));
 
-    auto qjs_translation = New<QuickJSTranslation>(translation, filterFunc, env);
-    auto candidate = qjs_translation->Peek();
+    auto qjsTranslation = New<QuickJSTranslation>(translation, filterFunc, env);
+    auto candidate = qjsTranslation->Peek();
 
     ASSERT_TRUE(candidate != nullptr);
     EXPECT_EQ(candidate->text(), "text2");
-    ASSERT_TRUE(qjs_translation->Next());
-    EXPECT_TRUE(qjs_translation->exhausted());
-    candidate = qjs_translation->Peek();
+    ASSERT_TRUE(qjsTranslation->Next());
+    EXPECT_TRUE(qjsTranslation->exhausted());
+    candidate = qjsTranslation->Peek();
     ASSERT_TRUE(candidate == nullptr);
-    ASSERT_FALSE(qjs_translation->Next());
+    ASSERT_FALSE(qjsTranslation->Next());
 }
 
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
 TEST_F(QuickJSTranslationTest, EmptyTranslation) {
     auto translation = New<FakeTranslation>();
-    auto qjs_translation = New<QuickJSTranslation>(translation, JSValueRAII(JS_UNDEFINED), JS_UNDEFINED);
-    EXPECT_TRUE(qjs_translation->exhausted());
-    EXPECT_FALSE(qjs_translation->Next());
-    EXPECT_EQ(qjs_translation->Peek(), nullptr);
+    auto qjsTranslation = New<QuickJSTranslation>(translation, JS_UNDEFINED, JS_UNDEFINED);
+    EXPECT_TRUE(qjsTranslation->exhausted());
+    EXPECT_FALSE(qjsTranslation->Next());
+    EXPECT_EQ(qjsTranslation->Peek(), nullptr);
 }

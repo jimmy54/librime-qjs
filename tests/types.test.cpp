@@ -13,9 +13,10 @@
 using namespace rime;
 
 class QuickJSTypesTest : public ::testing::Test {
-protected:
+private:
     TrieDataHelper trieDataHelper_ = TrieDataHelper("./tests", "dummy_dict.txt");
 
+protected:
     void SetUp() override {
         QjsHelper::basePath = "tests/js";
         trieDataHelper_.createDummyTextFile();
@@ -27,19 +28,22 @@ protected:
     }
 };
 
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
 TEST_F(QuickJSTypesTest, WrapUnwrapRimeGears) {
-    auto ctx = QjsHelper::getInstance().getContext();
+    auto *ctx = QjsHelper::getInstance().getContext();
 
-    auto engine = Engine::Create();
+    auto *engine = Engine::Create();
     // engine->ApplySchema(&schema); // ApplySchema 会触发回调函数，导致 segfault
     // engine->schema()->schema_id() = .default, engine->schema()->schema_name() = .default
     ASSERT_TRUE(engine->schema() != nullptr);
-    auto config = engine->schema()->config();
+    auto *config = engine->schema()->config();
     ASSERT_TRUE(config != nullptr);
     config->SetBool("key1", true);
     config->SetBool("key2", false);
-    config->SetInt("key3", 666);
-    config->SetDouble("key4", 0.999);
+    constexpr int A_INT_NUMBER = 666;
+    config->SetInt("key3", A_INT_NUMBER);
+    constexpr double A_DOUBLE_NUMBER = 0.999;
+    config->SetDouble("key4", A_DOUBLE_NUMBER);
     config->SetString("key5", "string");
 
     auto list = New<ConfigList>();
@@ -48,11 +52,11 @@ TEST_F(QuickJSTypesTest, WrapUnwrapRimeGears) {
     list->Append(New<ConfigValue>("item3"));
     config->SetItem("list", list);
 
-    auto context = engine->context();
+    auto *context = engine->context();
     ASSERT_TRUE(context != nullptr);
     context->set_input("hello");
 
-    auto env = QjsEnvironment::Create(ctx, engine, "namespace");
+    auto env = QjsEnvironment::create(ctx, engine, "namespace");
     auto candidate = New<SimpleCandidate>("mock", 0, 1, "text", "comment");
     JS_SetPropertyStr(ctx, env, "candidate", QjsCandidate::Wrap(ctx, candidate));
 
@@ -71,7 +75,6 @@ TEST_F(QuickJSTypesTest, WrapUnwrapRimeGears) {
     ASSERT_EQ(retCandidate->text(), "new text");
     ASSERT_EQ(retCandidate.get(), candidate.get());
 
-    Config* retConfig = retEngine->schema()->config();
     string greet;
     bool success = retEngine->schema()->config()->GetString("greet", &greet);
     ASSERT_TRUE(success);

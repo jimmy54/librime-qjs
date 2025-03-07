@@ -41,26 +41,26 @@ void getMemoryUsage(size_t& vm_usage, size_t& resident_set) {
 #include <mach/mach.h>
 #include <unistd.h>  // For getpid()
 
-inline void getMemoryUsage(size_t& vm_usage, size_t& resident_set) {
-    vm_usage = 0;
-    resident_set = 0;
+inline void getMemoryUsage(size_t& vmUsage, size_t& residentSet) {
+    vmUsage = 0;
+    residentSet = 0;
 
     task_t task = MACH_PORT_NULL;
-    struct task_basic_info t_info;
-    mach_msg_type_number_t t_info_count = TASK_BASIC_INFO_COUNT;
+    struct task_basic_info tInfo{};
+    mach_msg_type_number_t tInfoCount = TASK_BASIC_INFO_COUNT;
 
     if (task_for_pid(current_task(), ::getpid(), &task) != KERN_SUCCESS) {
-        std::cerr << "Failed to get task for process" << std::endl;
+        std::cerr << "Failed to get task for process\n";
         return;
     }
 
-    if (task_info(task, TASK_BASIC_INFO, (task_info_t)&t_info, &t_info_count) != KERN_SUCCESS) {
-        std::cerr << "Failed to get task info" << std::endl;
+    if (task_info(task, TASK_BASIC_INFO, reinterpret_cast<task_info_t>(&tInfo), &tInfoCount) != KERN_SUCCESS) {
+        std::cerr << "Failed to get task info\n";
         return;
     }
 
-    vm_usage = t_info.virtual_size;      // Virtual memory size
-    resident_set = t_info.resident_size; // Resident set size
+    vmUsage = tInfo.virtual_size;      // Virtual memory size
+    residentSet = tInfo.resident_size; // Resident set size
 }
 
 #else

@@ -5,7 +5,8 @@
 namespace rime {
 
 static JSValue makeCandidate(JSContext* ctx, JSValueConst newTarget, int argc, JSValueConst* argv) {
-  if (argc < 5) {
+  constexpr int MIN_ARGC_NEW_CANDIDATE = 5;
+  if (argc < MIN_ARGC_NEW_CANDIDATE) {
     return JS_ThrowSyntaxError(ctx, "new Candidate(...) expects 5 or 6 arguments");
   }
 
@@ -15,20 +16,20 @@ static JSValue makeCandidate(JSContext* ctx, JSValueConst newTarget, int argc, J
   NUMERIC_ASSIGNMENT_FROM_JS_ARGV(end, 2, int64_t, JS_ToInt64)
   STRING_ASSIGNMENT_FROM_JS_ARGV(text, 3)
   STRING_ASSIGNMENT_FROM_JS_ARGV(comment, 4)
-  if (argc >= 6) {
+  if (argc > MIN_ARGC_NEW_CANDIDATE) {
     NUMERIC_ASSIGNMENT_FROM_JS_ARGV(quality, 5, int32_t, JS_ToInt32)
   }
 
   return QjsCandidate::Wrap(ctx, obj);
 }
 
-DEFINE_GETTER(Candidate, text, js_new_string_from_std(ctx, obj->text()))
-DEFINE_GETTER(Candidate, comment, js_new_string_from_std(ctx, obj->comment()))
-DEFINE_GETTER(Candidate, type, js_new_string_from_std(ctx, obj->type()))
+DEFINE_GETTER(Candidate, text, jsNewStringFromStd(ctx, obj->text()))
+DEFINE_GETTER(Candidate, comment, jsNewStringFromStd(ctx, obj->comment()))
+DEFINE_GETTER(Candidate, type, jsNewStringFromStd(ctx, obj->type()))
 DEFINE_GETTER(Candidate, start, JS_NewInt64(ctx, obj->start()))
 DEFINE_GETTER(Candidate, end, JS_NewInt64(ctx, obj->end()))
 DEFINE_GETTER(Candidate, quality, JS_NewInt32(ctx, obj->quality()))
-DEFINE_GETTER(Candidate, preedit, js_new_string_from_std(ctx, obj->preedit()))
+DEFINE_GETTER(Candidate, preedit, jsNewStringFromStd(ctx, obj->preedit()))
 
 DEFINE_STRING_SETTER(Candidate, text,
   if (auto simpleCandidate = dynamic_cast<SimpleCandidate*>(obj.get())) {

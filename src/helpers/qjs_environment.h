@@ -12,23 +12,23 @@ namespace rime {
 class QjsEnvironment {
 public:
   // Create and initialize a JavaScript environment object
-  static JSValueRAII Create(JSContext* ctx, Engine* engine, const std::string& name_space);
+  static JSValueRAII create(JSContext* ctx, Engine* engine, const std::string& nameSpace);
 
   // Add utility functions to the environment
-  static void AddUtilityFunctions(JSContext* ctx, JSValue environment);
+  static void addUtilityFunctions(JSContext* ctx, JSValue environment);
 
 private:
   // Utility function to load file content
-  static JSValue loadFile(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
+  static JSValue loadFile(JSContext* ctx, JSValueConst thisVal, int argc, JSValueConst* argv);
 
   // Utility function to check if file exists
-  static JSValue fileExists(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
+  static JSValue fileExists(JSContext* ctx, JSValueConst thisVal, int argc, JSValueConst* argv);
 
   // Utility function to get the Rime infomation
-  static JSValue getRimeInfo(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
+  static JSValue getRimeInfo(JSContext* ctx, JSValueConst thisVal, int argc, JSValueConst* argv);
 
   // Utility function to execute commands
-  static JSValue popen(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
+  static JSValue popen(JSContext* ctx, JSValueConst thisVal, int argc, JSValueConst* argv);
 };
 
 } // namespace rime

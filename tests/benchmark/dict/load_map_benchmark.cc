@@ -16,35 +16,40 @@
 // #define RUN_BENCHMARK_WITH_REAL_DATA
 
 #ifndef RUN_BENCHMARK_WITH_REAL_DATA
-std::string txtPath_ = "./tests/benchmark/dict/dummy_dict.txt";
+constexpr const char* TXT_PATH = "./tests/benchmark/dict/dummy_dict.txt";
 #else
-std::string txtPath_ = "/Users/hj/Library/Rime/lua/data/cedict_fixed.u8";
+constexpr const char* TXT_PATH = "/Users/hj/Library/Rime/lua/data/cedict_fixed.u8";
 #endif
 
-std::string folder_ = "./tests/benchmark/dict/";
+constexpr const char* FOLDER = "./tests/benchmark/dict/";
 
 class GlobalEnvironment : public testing::Environment {
-public:
+ public:
   void SetUp() override {
-    std::cout << "Creating a dummy text file: " << txtPath_ << std::endl;
+    std::cout << "Creating a dummy text file: " << TXT_PATH << '\n';
 
-    std::ofstream test_dict(txtPath_);
-    test_dict << "点头\t[diǎn tóu]to nod\n";
-    test_dict << "点头之交\t[diǎn tóu zhī jiāo]nodding acquaintance\n";
-    test_dict << "点头咂嘴\t[diǎn tóu zā zuǐ]to approve by nodding one's head and smacking one's lips (idiom)\n";
-    test_dict << "点头哈腰\t[diǎn tóu hā yāo]to nod one's head and bow (idiom); bowing and scraping/unctuous fawning\n";
-    test_dict << "点头招呼\t[diǎn tóu zhāo hū]beckon\n";
-    test_dict << "点题\t[diǎn tí]to bring out the main theme/to make the point/to bring out the substance concisely\n";
-    test_dict << "点餐\t[diǎn cān](at a restaurant) to order a meal/(of a waiter) to take an order\n";
-    test_dict << "点鬼火\t[diǎn guǐ huǒ]to stir up trouble in secret/to instigate\n";
-    test_dict << "点点\t[diǎn diǎn]Diandian (Chinese microblogging and social networking website)||[diǎn diǎn]point/speck\n";
-    test_dict << "点点滴滴\t[diǎn diǎn dī dī]bit by bit/dribs and drabs/the little details/every aspect\n";
-    test_dict.close();
+    std::ofstream testDict(TXT_PATH);
+    testDict << "点头\t[diǎn tóu]to nod\n";
+    testDict << "点头之交\t[diǎn tóu zhī jiāo]nodding acquaintance\n";
+    testDict << "点头咂嘴\t[diǎn tóu zā zuǐ]to approve by nodding one's head "
+                "and smacking one's lips (idiom)\n";
+    testDict << "点头哈腰\t[diǎn tóu hā yāo]to nod one's head and bow (idiom); "
+                "bowing and scraping/unctuous fawning\n";
+    testDict << "点头招呼\t[diǎn tóu zhāo hū]beckon\n";
+    testDict << "点题\t[diǎn tí]to bring out the main theme/to make the "
+                "point/to bring out the substance concisely\n";
+    testDict << "点餐\t[diǎn cān](at a restaurant) to order a meal/(of a "
+                "waiter) to take an order\n";
+    testDict
+        << "点鬼火\t[diǎn guǐ huǒ]to stir up trouble in secret/to instigate\n";
+    testDict << "点点\t[diǎn diǎn]Diandian (Chinese microblogging and social "
+                "networking website)||[diǎn diǎn]point/speck\n";
+    testDict << "点点滴滴\t[diǎn diǎn dī dī]bit by bit/dribs and drabs/the "
+                "little details/every aspect\n";
+    testDict.close();
   }
 
-  void TearDown() override {
-    std::remove(txtPath_.c_str());
-  }
+  void TearDown() override { std::remove(TXT_PATH); }
 };
 
 void checkMapData(const std::unordered_map<std::string, std::string>& map) {
@@ -53,28 +58,38 @@ void checkMapData(const std::unordered_map<std::string, std::string>& map) {
   val = map.at("点头");
   ASSERT_EQ(val, "[diǎn tóu]to nod");
   val = map.at("点点滴滴");
-  ASSERT_EQ(val, "[diǎn diǎn dī dī]bit by bit/dribs and drabs/the little details/every aspect");
+  ASSERT_EQ(val,
+            "[diǎn diǎn dī dī]bit by bit/dribs and drabs/the little "
+            "details/every aspect");
   val = map.at("点点");
-  ASSERT_EQ(val, "[diǎn diǎn]Diandian (Chinese microblogging and social networking website)||[diǎn diǎn]point/speck");
+  ASSERT_EQ(val,
+            "[diǎn diǎn]Diandian (Chinese microblogging and social networking "
+            "website)||[diǎn diǎn]point/speck");
 
   auto notFound = map.find("abc");
   ASSERT_EQ(notFound, map.end());
   notFound = map.find("");
   ASSERT_EQ(notFound, map.end());
 }
+
+// Helper function to check a single key-value pair in the trie
+void checkTrieEntry(rime::Trie& trie,
+                    const std::string& key,
+                    const std::string& expectedValue) {
+  auto val = trie.find(key);
+  ASSERT_TRUE(val.has_value());
+  ASSERT_EQ(val.value(), expectedValue);
+}
+
 void checkTrieData(rime::Trie& trie) {
-  auto val = trie.find("点头之交");
-  ASSERT_TRUE(val.has_value());
-  ASSERT_EQ(val.value(), "[diǎn tóu zhī jiāo]nodding acquaintance");
-  val = trie.find("点头");
-  ASSERT_TRUE(val.has_value());
-  ASSERT_EQ(val.value(), "[diǎn tóu]to nod");
-  val = trie.find("点点滴滴");
-  ASSERT_TRUE(val.has_value());
-  ASSERT_EQ(val.value(), "[diǎn diǎn dī dī]bit by bit/dribs and drabs/the little details/every aspect");
-  val = trie.find("点点");
-  ASSERT_TRUE(val.has_value());
-  ASSERT_EQ(val.value(), "[diǎn diǎn]Diandian (Chinese microblogging and social networking website)||[diǎn diǎn]point/speck");
+  checkTrieEntry(trie, "点头之交", "[diǎn tóu zhī jiāo]nodding acquaintance");
+  checkTrieEntry(trie, "点头", "[diǎn tóu]to nod");
+  checkTrieEntry(trie, "点点滴滴",
+                 "[diǎn diǎn dī dī]bit by bit/dribs and drabs/the little "
+                 "details/every aspect");
+  checkTrieEntry(trie, "点点",
+                 "[diǎn diǎn]Diandian (Chinese microblogging and social "
+                 "networking website)||[diǎn diǎn]point/speck");
 
   auto notFound = trie.find("abc");
   ASSERT_FALSE(notFound.has_value());
@@ -82,33 +97,38 @@ void checkTrieData(rime::Trie& trie) {
   ASSERT_TRUE(emptyKey.has_value());
 }
 
-std::unordered_map<std::string, std::string> loadTextToMap(const std::string& filePath, size_t dictSize) {
+std::unordered_map<std::string, std::string> loadTextToMap(
+    const std::string& filePath,
+    size_t dictSize) {
   std::unordered_map<std::string, std::string> map;
   map.reserve(dictSize);
 
   std::ifstream infile(filePath);
   std::string line;
   while (std::getline(infile, line)) {
-    if (!line.empty() && line[0] == '#') continue;
+    if (!line.empty() && line[0] == '#') {
+      continue;
+    }
 
-    size_t tab_pos = line.find('\t');
-    if (tab_pos != std::string::npos) {
+    size_t tabPos = line.find('\t');
+    if (tabPos != std::string::npos) {
       auto lineView = std::string_view(line);
-      std::string_view key_view = lineView.substr(0, tab_pos);
-      std::string_view value_view = lineView.substr(tab_pos + 1);
-      if (value_view.back() == '\r') {
-        value_view.remove_suffix(1);
+      std::string_view keyView = lineView.substr(0, tabPos);
+      std::string_view valueView = lineView.substr(tabPos + 1);
+      if (valueView.back() == '\r') {
+        valueView.remove_suffix(1);
       }
 
-      std::string key{ key_view };
-      std::string value{ value_view };
+      std::string key{keyView};
+      std::string value{valueView};
       map.insert_or_assign(std::move(key), std::move(value));
     }
   }
   return map;
 }
 
-void saveMapWithYas(const std::string& filename, const std::unordered_map<std::string, std::string>& map) {
+void saveMapWithYas(const std::string& filename,
+                    const std::unordered_map<std::string, std::string>& map) {
   yas::mem_ostream os;
   yas::binary_oarchive<yas::mem_ostream> oa(os);
   oa(map);
@@ -118,7 +138,8 @@ void saveMapWithYas(const std::string& filename, const std::unordered_map<std::s
   fout.write(reinterpret_cast<const char*>(buf.data.get()), buf.size);
 }
 
-std::unordered_map<std::string, std::string> loadMapWithYas(const std::string& filename) {
+std::unordered_map<std::string, std::string> loadMapWithYas(
+    const std::string& filename) {
   std::ifstream fin(filename, std::ios::binary | std::ios::ate);
   std::streamsize size = fin.tellg();
   fin.seekg(0, std::ios::beg);
@@ -134,33 +155,28 @@ std::unordered_map<std::string, std::string> loadMapWithYas(const std::string& f
   return map;
 }
 
-size_t dictSize_ = 119000;
+constexpr size_t DICT_SIZE = 119000;
 
 TEST(LoadMapDictBenchmark, LoadToTrie) {
-  { // warm up
+  {  // warm up
     rime::Trie trie;
-    trie.loadTextFile(txtPath_, dictSize_);
+    trie.loadTextFile(TXT_PATH, DICT_SIZE);
 
-    auto map = loadTextToMap(txtPath_, dictSize_);
+    auto map = loadTextToMap(TXT_PATH, DICT_SIZE);
   }
 
   rime::Trie trie;
   PRINT_DURATION(MAGENTA, "Plain text to Trie: \t",
-    trie.loadTextFile(txtPath_, dictSize_)
-  );
+                 trie.loadTextFile(TXT_PATH, DICT_SIZE));
   checkTrieData(trie);
 
-  auto trieFile = folder_ + "dict_map.trie";
-  RESAVE_FILE(trieFile,
-    PRINT_DURATION(YELLOW, "Trie serialization: \t",
-      trie.saveToBinaryFile(trieFile)
-    )
-  );
+  auto trieFile = std::string(FOLDER) + "dict_map.trie";
+  RESAVE_FILE(trieFile, PRINT_DURATION(YELLOW, "Trie serialization: \t",
+                                       trie.saveToBinaryFile(trieFile)));
 
   rime::Trie trie2;
   PRINT_DURATION(MAGENTA, "Trie deserialization: \t",
-    trie2.loadBinaryFileMmap(trieFile)
-  );
+                 trie2.loadBinaryFileMmap(trieFile));
   checkTrieData(trie2);
   std::remove(trieFile.c_str());
 }
@@ -168,44 +184,35 @@ TEST(LoadMapDictBenchmark, LoadToTrie) {
 TEST(LoadMapDictBenchmark, LoadTextFileAndLookup) {
   std::unordered_map<std::string, std::string> map;
   PRINT_DURATION(MAGENTA, "Plain text to Map: \t",
-    map = loadTextToMap(txtPath_, dictSize_)
-  );
+                 map = loadTextToMap(TXT_PATH, DICT_SIZE));
   checkMapData(map);
 
   MmapStringMap mmap;
-  auto mmapFile = folder_ + "dict_map.mmap";
-  RESAVE_FILE(mmapFile,
-    PRINT_DURATION(YELLOW, "Mmap serialization: \t",
-      mmap.save(mmapFile, map)
-    )
-  );
+  auto mmapFile = std::string(FOLDER) + "dict_map.mmap";
+  RESAVE_FILE(mmapFile, PRINT_DURATION(YELLOW, "Mmap serialization: \t",
+                                       mmap.save(mmapFile, map)));
 
-  auto yasFile = folder_ + "dict_map.yas";
-  RESAVE_FILE(yasFile,
-    PRINT_DURATION(YELLOW, "YAS serialization: \t",
-      saveMapWithYas(yasFile, map)
-    )
-  );
+  auto yasFile = std::string(FOLDER) + "dict_map.yas";
+  RESAVE_FILE(yasFile, PRINT_DURATION(YELLOW, "YAS serialization: \t",
+                                      saveMapWithYas(yasFile, map)));
 }
 
 TEST(LoadMapDictBenchmark, LoadMmap) {
   MmapStringMap mmap;
   std::unordered_map<std::string, std::string> map;
 
-  auto mmapFile = folder_ + "dict_map.mmap";
+  auto mmapFile = std::string(FOLDER) + "dict_map.mmap";
   PRINT_DURATION(MAGENTA, "Mmap deserialization: \t",
-    map = mmap.load(mmapFile)
-  );
+                 map = mmap.load(mmapFile));
   checkMapData(map);
   std::remove(mmapFile.c_str());
 }
 
 TEST(LoadMapDictBenchmark, LoadYas) {
-  auto yasFile = folder_ + "dict_map" + ".yas";
+  auto yasFile = std::string(FOLDER) + "dict_map" + ".yas";
   std::unordered_map<std::string, std::string> map;
   PRINT_DURATION(MAGENTA, "Mmap deserialization: \t",
-    map = loadMapWithYas(yasFile)
-  );
+                 map = loadMapWithYas(yasFile));
   checkMapData(map);
   std::remove(yasFile.c_str());
 }

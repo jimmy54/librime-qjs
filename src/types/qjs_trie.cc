@@ -54,7 +54,7 @@ DEFINE_FUNCTION_ARGC(Trie, find, 1,
 
 DEFINE_FUNCTION_ARGC(Trie, prefixSearch, 1,
   JSStringRAII prefix(JS_ToCString(ctx, argv[0]));
-  auto matches = obj->prefix_search(std::string(prefix));
+  auto matches = obj->prefixSearch(std::string(prefix));
 
   JSValue jsArray = JS_NewArray(ctx);
   for (size_t i = 0; i < matches.size(); ++i) {

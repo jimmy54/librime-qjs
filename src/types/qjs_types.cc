@@ -1,4 +1,4 @@
-#include "qjs_types.h"
+#include <cstddef>
 #include "qjs_trie.h"
 #include "qjs_segment.h"
 #include "qjs_candidate.h"
@@ -33,48 +33,49 @@
 
 namespace rime {
 
-void init_qjs_types(JSContext* ctx) {
+void initQjsTypes(JSContext* ctx) {
   LOG(INFO) << "registering rime types to the quickjs engine...";
 
   JS_SetModuleLoaderFunc(JS_GetRuntime(ctx), nullptr, QjsHelper::jsModuleLoader, nullptr);
   // Do not trigger GC when heap size is less than 16MB
   // default: rt->malloc_gc_threshold = 256 * 1024
-  JS_SetGCThreshold(JS_GetRuntime(ctx), 16 * 1024 * 1024);
+  constexpr size_t SIXTEEN_MEGABYTES = 16L * 1024 * 1024;
+  JS_SetGCThreshold(JS_GetRuntime(ctx), SIXTEEN_MEGABYTES);
   QjsHelper::exposeLogToJsConsole(ctx);
 
-  // Register all types
-  QjsTrie().Register(ctx);
-  QjsSegment().Register(ctx);
-  QjsCandidate().Register(ctx);
-  // QjsTranslation().Register(ctx);
-  QjsKeyEvent().Register(ctx);
-  QjsContext().Register(ctx);
-  QjsPreedit().Register(ctx);
-  QjsSchema().Register(ctx);
-  QjsConfig().Register(ctx);
-  QjsEngine().Register(ctx);
-  // QjsMenu().Register(ctx);
-  // QjsMemory().Register(ctx);
-  // QjsDictionary().Register(ctx);
-  // QjsComposition().Register(ctx);
-  // QjsCode().Register(ctx);
-  // QjsProcessor().Register(ctx);
-  // QjsFilter().Register(ctx);
-  // QjsSegmentation().Register(ctx);
-  // QjsKeySequence().Register(ctx);
-  QjsConfigItem().Register(ctx);
-  QjsConfigValue().Register(ctx);
-  QjsConfigList().Register(ctx);
-  QjsConfigMap().Register(ctx);
-  // QjsSegmentor().Register(ctx);
-  // QjsTranslator().Register(ctx);
-  // QjsNotifier().Register(ctx);
-  // QjsSwitcher().Register(ctx);
-  // QjsReverseDb().Register(ctx);
-  // QjsUserDb().Register(ctx);
-  // QjsDictEntry().Register(ctx);
-  // QjsSimpleCandidate().Register(ctx);
-  // Register other types...
+  // expose all types
+  QjsTrie().expose(ctx);
+  QjsSegment().expose(ctx);
+  QjsCandidate().expose(ctx);
+  // QjsTranslation().expose(ctx);
+  QjsKeyEvent().expose(ctx);
+  QjsContext().expose(ctx);
+  QjsPreedit().expose(ctx);
+  QjsSchema().expose(ctx);
+  QjsConfig().expose(ctx);
+  QjsEngine().expose(ctx);
+  // QjsMenu().expose(ctx);
+  // QjsMemory().expose(ctx);
+  // QjsDictionary().expose(ctx);
+  // QjsComposition().expose(ctx);
+  // QjsCode().expose(ctx);
+  // QjsProcessor().expose(ctx);
+  // QjsFilter().expose(ctx);
+  // QjsSegmentation().expose(ctx);
+  // QjsKeySequence().expose(ctx);
+  QjsConfigItem().expose(ctx);
+  QjsConfigValue().expose(ctx);
+  QjsConfigList().expose(ctx);
+  QjsConfigMap().expose(ctx);
+  // QjsSegmentor().expose(ctx);
+  // QjsTranslator().expose(ctx);
+  // QjsNotifier().expose(ctx);
+  // QjsSwitcher().expose(ctx);
+  // QjsReverseDb().expose(ctx);
+  // QjsUserDb().expose(ctx);
+  // QjsDictEntry().expose(ctx);
+  // QjsSimpleCandidate().expose(ctx);
+  // expose other types...
 }
 
 } // namespace rime

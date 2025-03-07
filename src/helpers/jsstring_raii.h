@@ -8,23 +8,29 @@
 namespace rime {
 
 class JSStringRAII {
-public:
-    explicit JSStringRAII(const char *str) : str_(str) {}
+ public:
+  explicit JSStringRAII(const char* str) : str_(str) {}
 
-    ~JSStringRAII() {
-        auto ctx = QjsHelper::getInstance().getContext();
-        if (str_) {
-            JS_FreeCString(ctx, str_);
-        }
+  JSStringRAII(const JSStringRAII&) = default;
+  JSStringRAII(JSStringRAII&&) = delete;
+  JSStringRAII& operator=(const JSStringRAII&) = default;
+  JSStringRAII& operator=(JSStringRAII&&) = delete;
+
+  ~JSStringRAII() {
+    auto* ctx = QjsHelper::getInstance().getContext();
+    if (str_ != nullptr) {
+      JS_FreeCString(ctx, str_);
     }
+  }
 
-    operator std::string() const { return std::string(str_); }
+  operator std::string() const { return {str_}; }
 
-    const char* c_str() const { return str_; }
-private:
-    const char *str_{nullptr};
+  [[nodiscard]] const char* cStr() const { return str_; }
+
+ private:
+  const char* str_{nullptr};
 };
 
-} // namespace rime
+}  // namespace rime
 
-#endif // RIME_QJS_JSSTRING_RAII_H_
+#endif  // RIME_QJS_JSSTRING_RAII_H_

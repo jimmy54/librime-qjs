@@ -11,7 +11,7 @@ public:
   explicit QuickJSProcessor(const Ticket& ticket)
     : Processor(ticket), QjsModule(name_space_, engine_, "process") {}
 
-  virtual ProcessResult ProcessKeyEvent(const KeyEvent& key_event);
+   ProcessResult ProcessKeyEvent(const KeyEvent& keyEvent) override;
 };
 
 } // namespace rime

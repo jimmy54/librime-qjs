@@ -1,8 +1,5 @@
 #include <gtest/gtest.h>
-#include "qjs_types.h"
 #include "qjs_processor.h"
-#include "qjs_key_event.h"
-#include "qjs_engine.h"
 #include <rime/key_event.h>
 #include <rime/engine.h>
 #include <rime/schema.h>
@@ -16,19 +13,24 @@ protected:
     void SetUp() override {
         QjsHelper::basePath = "tests/js";
     }
+
+    static void addSegment(Engine* engine, const std::string& prompt) {
+        Segment segment(0, static_cast<int>(prompt.length()));
+        segment.prompt = prompt;
+        engine->context()->composition().AddSegment(segment);
+    }
 };
 
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
 TEST_F(QuickJSProcessorTest, ProcessKeyEvent) {
-    auto engine = Engine::Create();
+    auto *engine = Engine::Create();
     ASSERT_TRUE(engine->schema() != nullptr);
 
-    auto config = engine->schema()->config();
+    auto *config = engine->schema()->config();
     ASSERT_TRUE(config != nullptr);
     config->SetString("greet", "hello from c++");
 
-    Segment segment(0, 10);
-    segment.prompt = "prompt";
-    engine->context()->composition().AddSegment(segment);
+    addSegment(engine, "prompt");
 
     Ticket ticket(engine, "processor", "qjs_processor@processor_test");
     auto processor = New<QuickJSProcessor>(ticket);
@@ -46,13 +48,12 @@ TEST_F(QuickJSProcessorTest, ProcessKeyEvent) {
     EXPECT_EQ(processor->ProcessKeyEvent(noopEvent), kNoop);
 }
 
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
 TEST_F(QuickJSProcessorTest, NonExistentModule) {
-    auto engine = Engine::Create();
+    auto *engine = Engine::Create();
     ASSERT_TRUE(engine->schema() != nullptr);
 
-    Segment segment(0, 10);
-    segment.prompt = "prompt";
-    engine->context()->composition().AddSegment(segment);
+    addSegment(engine, "prompt");
 
     // Create a ticket with a non-existent module
     Ticket ticket(engine, "processor", "qjs_processor@non_existent");
@@ -63,17 +64,16 @@ TEST_F(QuickJSProcessorTest, NonExistentModule) {
     EXPECT_EQ(processor->ProcessKeyEvent(event), kNoop);
 }
 
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
 TEST_F(QuickJSProcessorTest, ModuleInitialization) {
-    auto engine = Engine::Create();
+    auto *engine = Engine::Create();
     ASSERT_TRUE(engine->schema() != nullptr);
 
-    auto config = engine->schema()->config();
+    auto *config = engine->schema()->config();
     ASSERT_TRUE(config != nullptr);
     config->SetString("init_test", "test_value");
 
-    Segment segment(0, 10);
-    segment.prompt = "prompt";
-    engine->context()->composition().AddSegment(segment);
+    addSegment(engine, "prompt");
 
     Ticket ticket(engine, "processor", "qjs_processor@processor_test");
     auto processor = New<QuickJSProcessor>(ticket);

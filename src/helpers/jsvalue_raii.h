@@ -11,17 +11,17 @@ class JSValueRAII {
 public:
     explicit JSValueRAII(JSValue val) : val_(val) {
         if (JS_IsException(val)) {
-            auto ctx = QjsHelper::getInstance().getContext();
+            auto *ctx = QjsHelper::getInstance().getContext();
             JSValue exception = JS_GetException(ctx);
             const char *message = JS_ToCString(ctx, exception);
             LOG(ERROR) << "[qjs] JS exception: " << message;
             JS_FreeCString(ctx, message);  // Free the C string
 
             JSValue stack = JS_GetPropertyStr(ctx, exception, "stack");
-            const char *stack_trace = JS_ToCString(ctx, stack);
-            if (stack_trace) {
-                LOG(ERROR) << "[qjs] JS stack trace: " << stack_trace;
-                JS_FreeCString(ctx, stack_trace);  // Free the C string
+            const char *stackTrace = JS_ToCString(ctx, stack);
+            if (stackTrace != nullptr) {
+                LOG(ERROR) << "[qjs] JS stack trace: " << stackTrace;
+                JS_FreeCString(ctx, stackTrace);  // Free the C string
             } else {
                 LOG(ERROR) << "[qjs] JS stack trace is null.";
             }
@@ -32,7 +32,7 @@ public:
     }
 
     ~JSValueRAII() {
-        auto ctx = QjsHelper::getInstance().getContext();
+        auto *ctx = QjsHelper::getInstance().getContext();
         JS_FreeValue(ctx, val_);
     }
 
@@ -44,7 +44,7 @@ public:
     // Move assignment
     JSValueRAII& operator=(JSValueRAII&& other) noexcept {
         if (this != &other) {
-            auto ctx = QjsHelper::getInstance().getContext();
+            auto *ctx = QjsHelper::getInstance().getContext();
             JS_FreeValue(ctx, val_);
             val_ = other.val_;
             other.val_ = JS_UNDEFINED;
@@ -57,7 +57,7 @@ public:
     JSValueRAII& operator=(const JSValueRAII&) = delete;
 
     operator JSValue() const { return val_; }
-    JSValue get() const { return val_; }
+    [[nodiscard]] JSValue get() const { return val_; }
     JSValue* getPtr() { return &val_; }
 
 private:

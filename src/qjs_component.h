@@ -30,6 +30,13 @@ public:
     DLOG(INFO) << "Filter ComponentWrapper destroyed";
   }
 
+  // Delete copy constructor and assignment operator
+  ComponentWrapper(const ComponentWrapper&) = delete;
+  ComponentWrapper& operator=(const ComponentWrapper&) = delete;
+  // Delete move constructor and assignment operator
+  ComponentWrapper(ComponentWrapper&&) = delete;
+  ComponentWrapper& operator=(ComponentWrapper&&) = delete;
+
   virtual an<Translation> Apply(an<Translation> translation,
                                 CandidateList* candidates) {
     return actual_->Apply(translation, candidates);
@@ -50,6 +57,13 @@ public:
   virtual ~ComponentWrapper() {
     DLOG(INFO) << "Translator ComponentWrapper destroyed";
   }
+
+  // Delete copy constructor and assignment operator
+  ComponentWrapper(const ComponentWrapper&) = delete;
+  ComponentWrapper& operator=(const ComponentWrapper&) = delete;
+  // Delete move constructor and assignment operator
+  ComponentWrapper(ComponentWrapper&&) = delete;
+  ComponentWrapper& operator=(ComponentWrapper&&) = delete;
 
   virtual an<Translation> Query(const string& input,
                                 const Segment& segment) {
@@ -72,8 +86,15 @@ public:
     DLOG(INFO) << "Processor ComponentWrapper destroyed";
   }
 
-  virtual ProcessResult ProcessKeyEvent(const KeyEvent& key_event) {
-    return actual_->ProcessKeyEvent(key_event);
+  // Delete copy constructor and assignment operator
+  ComponentWrapper(const ComponentWrapper&) = delete;
+  ComponentWrapper& operator=(const ComponentWrapper&) = delete;
+  // Delete move constructor and assignment operator
+  ComponentWrapper(ComponentWrapper&&) = delete;
+  ComponentWrapper& operator=(ComponentWrapper&&) = delete;
+
+   ProcessResult ProcessKeyEvent(const KeyEvent& keyEvent) override {
+    return actual_->ProcessKeyEvent(keyEvent);
   }
 
   an<T_ACTUAL> actual_;
@@ -82,8 +103,9 @@ public:
 template<typename T_ACTUAL, typename T_BASE>
 class QuickJSComponent : public T_BASE::Component {
 public:
-  QuickJSComponent() {}
+  QuickJSComponent() = default;
 
+  // NOLINTNEXTLINE(readability-identifier-naming)
   ComponentWrapper<T_ACTUAL, T_BASE>* Create(const Ticket& a) {
     if (!components_.count(a.name_space)) {
       LOG(INFO) << "[qjs] creating component '" << a.name_space << "'.";

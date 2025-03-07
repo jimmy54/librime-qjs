@@ -1,8 +1,5 @@
 #include <gtest/gtest.h>
-#include "qjs_types.h"
 #include "qjs_filter.h"
-#include "qjs_candidate.h"
-#include "qjs_engine.h"
 #include <rime/candidate.h>
 #include <rime/translation.h>
 #include <rime/engine.h>
@@ -21,16 +18,17 @@ protected:
     }
 };
 
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
 TEST_F(QuickJSFilterTest, ApplyFilter) {
-    auto ctx = QjsHelper::getInstance().getContext();
+    auto *ctx = QjsHelper::getInstance().getContext();
     QjsHelper::exposeLogToJsConsole(ctx);
 
-    auto engine = Engine::Create();
+    auto *engine = Engine::Create();
     // engine->ApplySchema(&schema); // ApplySchema 会触发回调函数，导致 segfault
     // engine->schema()->schema_id() = .default, engine->schema()->schema_name() = .default
     ASSERT_TRUE(engine->schema() != nullptr);
 
-    auto config = engine->schema()->config();
+    auto *config = engine->schema()->config();
     ASSERT_TRUE(config != nullptr);
     config->SetString("greet", "hello from c++");
     config->SetString("expectingText", "text2");
@@ -40,9 +38,9 @@ TEST_F(QuickJSFilterTest, ApplyFilter) {
     auto filter = New<QuickJSFilter>(ticket);
 
     auto translation = New<FakeTranslation>();
-    translation->Append(New<SimpleCandidate>("mock", 0, 1, "text1", "comment1"));
-    translation->Append(New<SimpleCandidate>("mock", 0, 1, "text2", "comment2"));
-    translation->Append(New<SimpleCandidate>("mock", 0, 1, "text3", "comment3"));
+    translation->append(New<SimpleCandidate>("mock", 0, 1, "text1", "comment1"));
+    translation->append(New<SimpleCandidate>("mock", 0, 1, "text2", "comment2"));
+    translation->append(New<SimpleCandidate>("mock", 0, 1, "text3", "comment3"));
 
     CandidateList candidates;
     auto filtered = filter->Apply(translation, &candidates);

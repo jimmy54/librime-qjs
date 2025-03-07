@@ -4,7 +4,7 @@
 
 namespace rime {
 
-DEFINE_GETTER(Context, input, js_new_string_from_std(ctx, obj->input()))
+DEFINE_GETTER(Context, input, jsNewStringFromStd(ctx, obj->input()))
 DEFINE_GETTER(Context, caretPos, JS_NewInt32(ctx, obj->caret_pos()))
 
 DEFINE_STRING_SETTER(Context, input,
@@ -12,24 +12,25 @@ DEFINE_STRING_SETTER(Context, input,
 )
 DEFINE_SETTER(Context, caretPos, int32_t, JS_ToInt32, obj->set_caret_pos(value))
 
-static JSValue get_preedit(JSContext* ctx, JSValueConst this_val) {
-  if (auto obj = QjsContext::Unwrap(ctx, this_val)) {
+static JSValue get_preedit(JSContext* ctx, JSValueConst thisVal) {
+  if (auto *obj = QjsContext::Unwrap(ctx, thisVal)) {
     Preedit preedit = obj->GetPreedit();
     return QjsPreedit::Wrap(ctx, &preedit); // <-- incompatible to DEFINE_GETTER
   }
   return JS_UNDEFINED;
 }
 
-static JSValue get_lastSegment(JSContext* ctx, JSValueConst this_val) {
-  if (auto obj = QjsContext::Unwrap(ctx, this_val)) {
+static JSValue get_lastSegment(JSContext* ctx, JSValueConst thisVal) {
+  if (auto *obj = QjsContext::Unwrap(ctx, thisVal)) {
     if (obj->composition().empty()) {
       DLOG(ERROR) << "no segment available in context->composition()";
       return JS_NULL;
-    } else {
-      // must be set as reference here, otherwise fetching its prompt would crash the program
-      Segment& segment = obj->composition().back();
-      return QjsSegment::Wrap(ctx, &segment);
     }
+
+    // must be set as reference [Segment&] here, otherwise fetching its prompt would crash the program
+    Segment& segment = obj->composition().back();
+    return QjsSegment::Wrap(ctx, &segment);
+
   }
   return JS_UNDEFINED;
 }

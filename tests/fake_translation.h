@@ -8,7 +8,7 @@ using namespace rime;
 
 class FakeTranslation : public Translation {
 public:
-    FakeTranslation() : Translation() {
+    FakeTranslation() {
         set_exhausted(true);
     }
     bool Next() override {
@@ -23,7 +23,7 @@ public:
         return candidates_[iter_];
     }
 
-    void Append(an<Candidate> candidate) {
+    void append(const an<Candidate>& candidate) {
         candidates_.push_back(candidate);
         set_exhausted(iter_ >= candidates_.size());
     }

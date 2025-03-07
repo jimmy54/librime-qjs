@@ -7,42 +7,45 @@
 using namespace rime;
 
 class MockFilter : public Filter {
-public:
-  explicit MockFilter(const Ticket& ticket): Filter(ticket) {
+ public:
+  MockFilter(const MockFilter&) = default;
+  MockFilter(MockFilter&&) = delete;
+  MockFilter& operator=(const MockFilter&) = default;
+  MockFilter& operator=(MockFilter&&) = delete;
+
+  explicit MockFilter(const Ticket& ticket) : Filter(ticket) {
     LOG(INFO) << "MockFilter created with ticket: " << ticket.name_space;
   };
-  virtual ~MockFilter() {
-    LOG(INFO) << "MockFilter destroyed";
-  }
-  void setEngine(Engine* engine) {
-    this->engine_ = engine;
-  }
+  virtual ~MockFilter() { LOG(INFO) << "MockFilter destroyed"; }
+  void setEngine(Engine* engine) { this->engine_ = engine; }
   virtual an<Translation> Apply(an<Translation> translation,
                                 CandidateList* candidates) {
     return translation;
   }
 };
 
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 TEST(QuickJSComponentTest, ShareComponentAcrossRimeSessions) {
   QuickJSComponent<MockFilter, Filter> component;
 
   Ticket ticket(nullptr, "test_namespace", "test");
   auto* instance1 = component.Create(ticket);
   auto actualInstance1 = instance1->actual_;
-  delete instance1; // Rime session 1 ends
+  delete instance1;  // Rime session 1 ends
 
   auto* instance2 = component.Create(ticket);
   ASSERT_EQ(actualInstance1, instance2->actual_)
-    << "delete instance1 should not destroy the actual filter instance";
-  delete instance2; // Rime session 2 ends
+      << "delete instance1 should not destroy the actual filter instance";
+  delete instance2;  // Rime session 2 ends
 
   Ticket ticket2(nullptr, "test_namespace", "test");
   auto* instance3 = component.Create(ticket2);
   ASSERT_EQ(actualInstance1, instance3->actual_)
-    << "delete instance1 should not destroy the actual filter instance";
-  delete instance3; // Rime session 3 ends
+      << "delete instance1 should not destroy the actual filter instance";
+  delete instance3;  // Rime session 3 ends
 }
 
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 TEST(QuickJSComponentTest, CreateComponent) {
   QuickJSComponent<MockFilter, Filter> component;
 
@@ -52,18 +55,18 @@ TEST(QuickJSComponentTest, CreateComponent) {
 
   auto* instance2 = component.Create(ticket);
   ASSERT_EQ(instance1->actual_, instance2->actual_)
-    << "should return the same actual filter with the same ticket";
+      << "should return the same actual filter with the same ticket";
 
   Ticket ticket2(nullptr, "test_namespace", "test");
   auto* instance3 = component.Create(ticket2);
   ASSERT_EQ(instance1->actual_, instance3->actual_)
-    << "should return the same actual filter with the same ticket namespace";
+      << "should return the same actual filter with the same ticket namespace";
 
   Ticket ticket3(nullptr, "test_namespace2", "test");
   auto* instance4 = component.Create(ticket3);
   ASSERT_NE(nullptr, instance4);
   ASSERT_NE(instance1->actual_, instance4->actual_)
-    << "should create a new instance with a different ticket namespace";
+      << "should create a new instance with a different ticket namespace";
 
   delete instance1;
   delete instance2;

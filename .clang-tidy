@@ -1,0 +1,53 @@
+---
+Checks: '-*,
+  bugprone-*,
+  clang-analyzer-*,
+  cppcoreguidelines-*,
+  modernize-*,
+  performance-*,
+  portability-*,
+  readability-*,
+  -fuchsia-*,
+  -google-*,
+  -zircon-*,
+  -abseil-*,
+  -llvm-*,
+  -modernize-use-trailing-return-type,
+  -modernize-avoid-c-arrays,
+  -readability-identifier-length,
+  -cppcoreguidelines-pro-bounds-pointer-arithmetic,
+  -cppcoreguidelines-pro-type-vararg,
+  -cppcoreguidelines-pro-type-reinterpret-cast,
+  -cppcoreguidelines-owning-memory,
+  -cppcoreguidelines-avoid-c-arrays,
+  -bugprone-easily-swappable-parameters'
+
+WarningsAsErrors: ''
+
+HeaderFilterRegex: '.*'
+
+AnalyzeTemporaryDtors: false
+
+FormatStyle: file
+
+# If you need to specify system include paths
+SystemHeaders: false  # Set to false if you want to ignore system headers
+
+CheckOptions:
+  readability-identifier-naming.ClassCase: CamelCase
+  readability-identifier-naming.ConstexprVariableCase: UPPER_CASE
+  readability-identifier-naming.EnumCase: CamelCase
+  readability-identifier-naming.FunctionCase: camelBack
+  readability-identifier-naming.GlobalConstantCase: UPPER_CASE
+  readability-identifier-naming.NamespaceCase: lower_case
+  readability-identifier-naming.StructCase: CamelCase
+  readability-identifier-naming.VariableCase: camelBack
+  readability-identifier-naming.ParameterCase: camelBack
+  readability-identifier-naming.PrivateMemberCase: camelBack
+  readability-identifier-naming.PrivateMemberSuffix: '_'
+  readability-identifier-naming.ProtectedMemberCase: camelBack
+  readability-identifier-naming.ProtectedMemberSuffix: '_'
+  cppcoreguidelines-special-member-functions.AllowSoleDefaultDtor: true
+  modernize-use-nullptr.NullMacros: 'NULL,nullptr'
+  readability-magic-numbers.IgnoredIntegerValues: '1,2,3,4,5,6'
+  readability-magic-numbers.IgnoredFloatingPointValues: '0.0,1.0,100.0'

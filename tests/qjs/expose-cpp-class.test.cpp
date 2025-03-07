@@ -1,20 +1,22 @@
 #include <string>
 #include <sstream>
+#include <utility>
 #include <gtest/gtest.h>
+#include "qjs_macros.h"
 #include "quickjs.h"
 #include "qjs_helper.h"
 
 class MyClass {
 public:
-    MyClass(const std::string& name) : name_(name) {}
+    MyClass(std::string  name) : name_(std::move(name)) {}
 
-    std::string sayHello() const {
+    [[nodiscard]] std::string sayHello() const {
         std::stringstream ss;
         ss << "Hello, " << name_ << "!";
         return ss.str();
     }
 
-    std::string getName() const {
+    [[nodiscard]] std::string getName() const {
         return name_;
     }
 
@@ -26,30 +28,30 @@ private:
     std::string name_;
 };
 
-static JSClassID js_myclass_class_id;
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
+static JSClassID jsMyclassClassId;
 
 // C++ Class Instance Finalizer (called when the object is GC'd)
-static void js_myclass_finalizer(JSRuntime* rt, JSValue val) {
-    MyClass* instance = static_cast<MyClass*>(JS_GetOpaque(val, js_myclass_class_id));
-    if (instance) {  // Add null check
-        delete instance;
-    }
+static void jsMyclassFinalizer(JSRuntime* rt, JSValue val) {
+    auto* instance = static_cast<MyClass*>(JS_GetOpaque(val, jsMyclassClassId));
+    delete instance;
+
 }
 
 // Constructor for MyClass
-static JSValue js_myclass_constructor(JSContext* ctx, JSValueConst new_target, int argc, JSValueConst* argv) {
+static JSValue jsMyclassConstructor(JSContext* ctx, JSValueConst newTarget, int argc, JSValueConst* argv) {
     const char* name = nullptr;
 
     if (argc > 0 && JS_IsString(argv[0])) {
         name = JS_ToCString(ctx, argv[0]);
     }
 
-    if (!name) {
+    if (name == nullptr) {
         return JS_ThrowTypeError(ctx, "Expected a string as the first argument");
     }
 
-    MyClass* instance = new MyClass(name);
-    JSValue obj = JS_NewObjectClass(ctx, js_myclass_class_id);  // Use the class ID here
+    auto* instance = new MyClass(name);
+    JSValue obj = JS_NewObjectClass(ctx, static_cast<int>(jsMyclassClassId));  // Use the class ID here
     if (JS_IsException(obj)) {
         delete instance;
         return obj;
@@ -61,9 +63,9 @@ static JSValue js_myclass_constructor(JSContext* ctx, JSValueConst new_target, i
 }
 
 // Method: sayHello
-static JSValue js_myclass_say_hello(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
-    MyClass* instance = static_cast<MyClass*>(JS_GetOpaque(this_val, js_myclass_class_id));
-    if (!instance) {
+static JSValue jsMyclassSayHello(JSContext* ctx, JSValueConst thisVal, int argc, JSValueConst* argv) {
+    auto* instance = static_cast<MyClass*>(JS_GetOpaque(thisVal, jsMyclassClassId));
+    if (instance == nullptr) {
         return JS_ThrowTypeError(ctx, "Invalid MyClass instance");
     }
 
@@ -71,9 +73,9 @@ static JSValue js_myclass_say_hello(JSContext* ctx, JSValueConst this_val, int a
 }
 
 // Method: getName
-static JSValue js_myclass_get_name(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
-    MyClass* instance = static_cast<MyClass*>(JS_GetOpaque(this_val, js_myclass_class_id));
-    if (!instance) {
+static JSValue jsMyclassGetName(JSContext* ctx, JSValueConst thisVal, int argc, JSValueConst* argv) {
+    auto* instance = static_cast<MyClass*>(JS_GetOpaque(thisVal, jsMyclassClassId));
+    if (instance == nullptr) {
         return JS_ThrowTypeError(ctx, "Invalid MyClass instance");
     }
 
@@ -81,14 +83,14 @@ static JSValue js_myclass_get_name(JSContext* ctx, JSValueConst this_val, int ar
 }
 
 // Method: setName
-static JSValue js_myclass_set_name(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
-    MyClass* instance = static_cast<MyClass*>(JS_GetOpaque(this_val, js_myclass_class_id));
-    if (!instance) {
+static JSValue jsMyclassSetName(JSContext* ctx, JSValueConst thisVal, int argc, JSValueConst* argv) {
+    auto* instance = static_cast<MyClass*>(JS_GetOpaque(thisVal, jsMyclassClassId));
+    if (instance == nullptr) {
         return JS_ThrowTypeError(ctx, "Invalid MyClass instance");
     }
 
     const char* name = JS_ToCString(ctx, argv[0]);
-    if (!name) {
+    if (name == nullptr) {
         return JS_ThrowTypeError(ctx, "Expected a string");
     }
 
@@ -97,53 +99,52 @@ static JSValue js_myclass_set_name(JSContext* ctx, JSValueConst this_val, int ar
     return JS_UNDEFINED;
 }
 
-// Define the class
-static JSClassDef js_myclass_class = {
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
+static JSClassDef jsMyclassClass = {
     .class_name = "MyClass",
-    .finalizer = js_myclass_finalizer,
+    .finalizer = jsMyclassFinalizer,
 };
 
 // Export the class and methods
-static const JSCFunctionListEntry js_myclass_proto_funcs[] = {
-    JS_CFUNC_DEF("sayHello", 0, js_myclass_say_hello),
-    JS_CFUNC_DEF("getName", 0, js_myclass_get_name),
-    JS_CFUNC_DEF("setName", 1, js_myclass_set_name),
+static const JSCFunctionListEntry JS_MYCLASS_PROTO_FUNCS[] = {
+    JS_CFUNC_DEF("sayHello", 0, jsMyclassSayHello),
+    JS_CFUNC_DEF("getName", 0, jsMyclassGetName),
+    JS_CFUNC_DEF("setName", 1, jsMyclassSetName),
 };
 
-void register_myclass(JSContext* ctx) {
-    auto rt = JS_GetRuntime(ctx);
-    JS_NewClassID(rt, &js_myclass_class_id);
-    JS_NewClass(rt, js_myclass_class_id, &js_myclass_class);
+void registerMyclass(JSContext* ctx) {
+    auto *rt = JS_GetRuntime(ctx);
+    JS_NewClassID(rt, &jsMyclassClassId);
+    JS_NewClass(rt, jsMyclassClassId, &jsMyclassClass);
 
     JSValue proto = JS_NewObject(ctx);
     JS_DupValue(ctx, proto); // Duplicate the reference for safety
 
-    JS_SetPropertyFunctionList(ctx, proto, js_myclass_proto_funcs, sizeof(js_myclass_proto_funcs) / sizeof(js_myclass_proto_funcs[0]));
+    JS_SetPropertyFunctionList(ctx, proto, static_cast<const JSCFunctionListEntry*>(JS_MYCLASS_PROTO_FUNCS), countof(JS_MYCLASS_PROTO_FUNCS));
 
-    JSValue constructor = JS_NewCFunction2(ctx, js_myclass_constructor, "MyClass", 1, JS_CFUNC_constructor, 0);
+    JSValue constructor = JS_NewCFunction2(ctx, jsMyclassConstructor, "MyClass", 1, JS_CFUNC_constructor, 0);
     JS_DupValue(ctx, constructor); // Duplicate the reference for safety
     JS_SetConstructor(ctx, constructor, proto);
-    JS_SetClassProto(ctx, js_myclass_class_id, proto);
+    JS_SetClassProto(ctx, jsMyclassClassId, proto);
 
     // Expose to the global object
-    auto global_obj = JS_GetGlobalObject(ctx);
-    JS_SetPropertyStr(ctx, global_obj, "MyClass", constructor);
+    auto globalObj = JS_GetGlobalObject(ctx);
+    JS_SetPropertyStr(ctx, globalObj, "MyClass", constructor);
 
-    JS_FreeValue(ctx, global_obj);
+    JS_FreeValue(ctx, globalObj);
     JS_FreeValue(ctx, proto);
     JS_FreeValue(ctx, constructor);
 }
 
 class QuickJSExposeClassTest : public ::testing::Test {
 protected:
-    JSContext* ctx;
-
     void SetUp() override {
-        ctx = QjsHelper::getInstance().getContext();
-        register_myclass(ctx);
+        auto* ctx = QjsHelper::getInstance().getContext();
+        registerMyclass(ctx);
     }
 };
 
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
 TEST_F(QuickJSExposeClassTest, TestExposeClassToQuickJS) {
     const char* script = R"(
         function testExposedCppClass() {
@@ -157,9 +158,10 @@ TEST_F(QuickJSExposeClassTest, TestExposeClassToQuickJS) {
         testExposedCppClass();  // Execute immediately to avoid reference issues
     )";
 
+    auto* ctx = QjsHelper::getInstance().getContext();
     JSValue result = JS_Eval(ctx, script, strlen(script), "<input>", JS_EVAL_TYPE_GLOBAL);
     // Handle the result
-    const char* result_str = JS_ToCString(ctx, result);
-    EXPECT_STREQ(result_str, "Hello, QuickJS! Hello, Trae!");
-    JS_FreeCString(ctx, result_str);
+    const char* resultStr = JS_ToCString(ctx, result);
+    EXPECT_STREQ(resultStr, "Hello, QuickJS! Hello, Trae!");
+    JS_FreeCString(ctx, resultStr);
 }

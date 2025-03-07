@@ -1,8 +1,5 @@
 #pragma once
 
-#include <cstdio>
-#include <fstream>
-
 #define PRINT_DURATION(color, title, statements) \
 {                                                                              \
     auto start = std::chrono::high_resolution_clock::now();                    \
@@ -18,7 +15,7 @@
               << duration.count()                                              \
               << " ms"                                                         \
               << RESET                                                         \
-                << std::endl;                                                  \
+              << '\n';                                                         \
 }
 
 #define RESAVE_FILE(path, statements) \

@@ -7,7 +7,7 @@ namespace rime {
 DEFINE_GETTER(Segment, selectedIndex, JS_NewInt32(ctx, obj->selected_index))
 DEFINE_SETTER(Segment, selectedIndex, int32_t, JS_ToInt32, obj->selected_index = value)
 
-DEFINE_GETTER(Segment, prompt, js_new_string_from_std(ctx, obj->prompt))
+DEFINE_GETTER(Segment, prompt, jsNewStringFromStd(ctx, obj->prompt))
 DEFINE_STRING_SETTER(Segment, prompt, obj->prompt = str)
 
 DEFINE_GETTER(Segment, start, JS_NewInt32(ctx, obj->start))

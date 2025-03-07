@@ -12,8 +12,7 @@ public:
   explicit QuickJSTranslator(const Ticket& ticket)
     : Translator(ticket) , QjsModule(name_space_, engine_, "translate") {}
 
-  virtual an<Translation> Query(const string& input,
-                                const Segment& segment);
+   an<Translation> Query(const string& input, const Segment& segment) override;
 };
 
 } // namespace rime

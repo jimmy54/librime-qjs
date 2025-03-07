@@ -14,12 +14,12 @@ public:
   explicit QuickJSFilter(const Ticket& ticket)
     : Filter(ticket), QjsModule(name_space_, engine_, "filter") {}
 
-  virtual an<Translation> Apply(an<Translation> translation, CandidateList* candidates) {
-    if (!isLoaded_) {
+   an<Translation> Apply(an<Translation> translation, CandidateList* candidates) override {
+    if (!isLoaded()) {
       return translation;
     }
 
-    return New<QuickJSTranslation>(translation, mainFunc_, environment_);
+    return New<QuickJSTranslation>(translation, getMainFunc(), getEnvironment());
   }
 };
 

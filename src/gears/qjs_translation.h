@@ -2,16 +2,19 @@
 #define RIME_QJS_TRANSLATION_H_
 
 #include <rime/translation.h>
-
-#include "jsvalue_raii.h"
 #include "quickjs.h"
 
 namespace rime {
 
 class QuickJSTranslation : public PrefetchTranslation {
  public:
+  QuickJSTranslation(const QuickJSTranslation&) = default;
+  QuickJSTranslation(QuickJSTranslation&&) = delete;
+  QuickJSTranslation& operator=(const QuickJSTranslation&) = default;
+  QuickJSTranslation& operator=(QuickJSTranslation&&) = delete;
+
   QuickJSTranslation(an<Translation> translation,
-                     const JSValueRAII& filterFunc,
+                     const JSValue& filterFunc,
                      const JSValue& environment);
   ~QuickJSTranslation() override {};
 
@@ -19,7 +22,7 @@ class QuickJSTranslation : public PrefetchTranslation {
   bool Replenish() override { return replenished_; }
 
  private:
-  bool DoFilter(const JSValueRAII& filterFunc, const JSValue& environment);
+  bool DoFilter(const JSValue& filterFunc, const JSValue& environment);
   bool replenished_ = false;
 };
 

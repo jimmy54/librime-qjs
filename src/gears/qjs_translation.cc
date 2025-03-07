@@ -1,22 +1,24 @@
 #include "qjs_translation.h"
+#include "jsvalue_raii.h"
 #include "qjs_candidate.h"
+#include "quickjs.h"
 
 #include <rime/translation.h>
+
+#include <utility>
 
 namespace rime {
 
 QuickJSTranslation::QuickJSTranslation(an<Translation> translation,
-                                       const JSValueRAII& filterFunc,
+                                       const JSValue& filterFunc,
                                        const JSValue& environment)
-    : PrefetchTranslation(translation) {
-
+    : PrefetchTranslation(std::move(translation)), replenished_(true) {
   DoFilter(filterFunc, environment);
-  replenished_ = true;
   set_exhausted(cache_.empty());
 }
 
-bool QuickJSTranslation::DoFilter(const JSValueRAII& filterFunc, const JSValue& environment) {
-  auto ctx = QjsHelper::getInstance().getContext();
+bool QuickJSTranslation::DoFilter(const JSValue& filterFunc, const JSValue& environment) {
+  auto *ctx = QjsHelper::getInstance().getContext();
   JSValueRAII jsArray(JS_NewArray(ctx));
   size_t idx = 0;
   while (auto candidate = translation_->exhausted() ? nullptr : translation_->Peek()) {
@@ -27,13 +29,14 @@ bool QuickJSTranslation::DoFilter(const JSValueRAII& filterFunc, const JSValue& 
     return true;
   }
 
-  JSValueRAII resultArray(JS_Call(ctx, filterFunc, JS_UNDEFINED, 2, (JSValueConst[]){jsArray, environment}));
+  JSValueConst args[] = {jsArray, environment};
+  JSValueRAII resultArray(JS_Call(ctx, filterFunc, JS_UNDEFINED, countof(args), static_cast<JSValue*>(args)));
   if (JS_IsException(resultArray)) {
     return false;
   }
 
   JSValueRAII lengthVal(JS_GetPropertyStr(ctx, resultArray, "length"));
-  uint32_t length;
+  uint32_t length = 0;
   JS_ToUint32(ctx, &length, lengthVal);
 
   for (uint32_t i = 0; i < length; i++) {

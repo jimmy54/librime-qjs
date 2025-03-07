@@ -10,6 +10,8 @@ class QjsHelper {
 public:
     static QjsHelper& getInstance();
 
+    QjsHelper(QjsHelper&&) = delete;
+    QjsHelper& operator=(QjsHelper&&) = delete;
     QjsHelper(const QjsHelper&) = delete;
     QjsHelper& operator=(const QjsHelper&) = delete;
 
@@ -20,31 +22,31 @@ public:
 
     static std::string loadFile(const char* absolutePath);
 
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
     static std::string basePath;
 
     // Getters for runtime and context
-    JSRuntime* getRuntime() const { return rt; }
-    JSContext* getContext() const { return ctx; }
+    [[nodiscard]] JSRuntime* getRuntime() const { return rt_; }
+    [[nodiscard]] JSContext* getContext() const { return ctx_; }
 
 private:
-    QjsHelper() {
-        rt = JS_NewRuntime();
-        ctx = JS_NewContext(rt);
+    QjsHelper() : rt_(JS_NewRuntime()), ctx_(JS_NewContext(rt_)) {
         // LOG(INFO) << "new QjsHelper instance ctx = " << ctx << "\n"
         //          << "Stacktrace:\n" << boost::stacktrace::stacktrace();
     }
     ~QjsHelper() {
-        JS_FreeContext(ctx);
-        JS_FreeRuntime(rt);
+        JS_FreeContext(ctx_);
+        JS_FreeRuntime(rt_);
     }
 
     // Private non-static members
-    JSRuntime *rt{nullptr};
-    JSContext *ctx{nullptr};
+    JSRuntime *rt_{nullptr};
+    JSContext *ctx_{nullptr};
+
 
     static std::string readJsCode(JSContext* ctx, const char* fileName);
     static JSValue loadJsModule(JSContext* ctx, const char* fileName);
-    static JSValue jsLog(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv);
+    static JSValue jsLog(JSContext* ctx, JSValueConst thisVal, int argc, JSValueConst* argv);
 };
 
 #endif

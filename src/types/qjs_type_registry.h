@@ -11,15 +11,15 @@ class QjsTypeRegistry {
 public:
   virtual ~QjsTypeRegistry() = default;
 
-  // Register the type with QuickJS runtime
-  virtual void Register(JSContext* ctx) = 0;
+  // expose the type to QuickJS runtime
+  virtual void expose(JSContext* ctx) = 0;
 
   // Get the class name for this type
-  virtual const char* GetClassName() const = 0;
+  [[nodiscard]] virtual const char* getClassName() const = 0;
 
 };
 
-static inline JSValue js_new_string_from_std(JSContext* ctx, const std::string& str) {
+static inline JSValue jsNewStringFromStd(JSContext* ctx, const std::string& str) {
   return JS_NewString(ctx, str.c_str());
 }
 

@@ -1,5 +1,4 @@
 #include <quickjs.h>
-#include <string>
 #include <string_view>
 #include <vector>
 #include <memory>
@@ -9,35 +8,37 @@
 #include "qjs_helper.h"
 #include "qjs_iterator.h"
 
+using std::move;
+
 using namespace rime;
 
 class VectorIterator: public AbstractIterator {
 public:
     explicit VectorIterator(JSContext* context, std::vector<int>& vec) : context_{context}, vec_{vec} {}
 
-    bool next() {
+    bool next() override {
         return current_ < vec_.size();
     }
 
-    JSValue peek() {
+    JSValue peek() override {
         int value = next() ? vec_[current_++] : -1;
         return JS_NewInt32(context_, value);
     }
 
 private:
     JSContext* context_{nullptr};
-    std::vector<int>& vec_;
+    std::vector<int> vec_;
     size_t current_{0};
 };
 
-template<>
-JSClassID JSIteratorWrapper<VectorIterator>::class_id_ = 0;  // Initialize with 0
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
+template<> JSClassID JSIteratorWrapper<VectorIterator>::classId = 0;  // Initialize with 0
 
 class QuickJSGeneratorTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        context_ = QjsHelper::getInstance().getContext();
-        wrapper_ = std::make_unique<JSIteratorWrapper<VectorIterator>>(context_);
+        auto *context = QjsHelper::getInstance().getContext();
+        wrapper_ = std::make_unique<JSIteratorWrapper<VectorIterator>>(context);
     }
 
     void TearDown() override {
@@ -45,19 +46,24 @@ protected:
         wrapper_.reset();
     }
 
-    JSContext* context_{nullptr};
+    std::unique_ptr<JSIteratorWrapper<VectorIterator>>& getWrapper() {
+      return wrapper_;
+    }
+private:
     std::unique_ptr<JSIteratorWrapper<VectorIterator>> wrapper_;
 };
 
-// Update the test to remove context_ parameter from JSValueRAII construction
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
 TEST_F(QuickJSGeneratorTest, TestVectorIterator) {
+    // NOLINTNEXTLINE(readability-magic-numbers, cppcoreguidelines-avoid-magic-numbers)
     std::vector<int> numbers{1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-    auto* vecIterator = new VectorIterator(context_, numbers);
-    JSValueRAII iterator(wrapper_->createIterator(vecIterator));
+    auto *context = QjsHelper::getInstance().getContext();
+    auto* vecIterator = new VectorIterator(context, numbers);
+    JSValueRAII iterator(getWrapper()->createIterator(vecIterator));
     // vecIterator is now managed by the shared_ptr, don't delete it manually
     ASSERT_FALSE(JS_IsException(iterator));
 
-    constexpr std::string_view script = R"(
+    constexpr std::string_view SCRIPT = R"(
         function* filterEvenNumbers(iter) {
             while (iter.next()) {
                 const num = iter.peek();
@@ -68,36 +74,36 @@ TEST_F(QuickJSGeneratorTest, TestVectorIterator) {
         }
     )";
 
-    JSValueRAII result(JS_Eval(context_, script.data(), script.size(), "<input>", JS_EVAL_TYPE_GLOBAL));
+    JSValueRAII result(JS_Eval(context, SCRIPT.data(), SCRIPT.size(), "<input>", JS_EVAL_TYPE_GLOBAL));
     ASSERT_FALSE(JS_IsException(result));
 
-    JSValueRAII global(JS_GetGlobalObject(context_));
-    JSValueRAII filter_func(JS_GetPropertyStr(context_, global, "filterEvenNumbers"));
-    ASSERT_FALSE(JS_IsException(filter_func));
+    JSValueRAII global(JS_GetGlobalObject(context));
+    JSValueRAII filterFunc(JS_GetPropertyStr(context, global, "filterEvenNumbers"));
+    ASSERT_FALSE(JS_IsException(filterFunc));
 
     // Update the JS_Call line to use getPtr() instead of taking address of get()
-    JSValueRAII generator(JS_Call(context_, filter_func, JS_UNDEFINED, 1, iterator.getPtr()));
+    JSValueRAII generator(JS_Call(context, filterFunc, JS_UNDEFINED, 1, iterator.getPtr()));
     ASSERT_FALSE(JS_IsException(generator));
 
-    JSValueRAII next_method(JS_GetPropertyStr(context_, generator, "next"));
+    JSValueRAII nextMethod(JS_GetPropertyStr(context, generator, "next"));
 
-    std::vector<int> filtered_numbers;
+    std::vector<int> filteredNumbers;
     while (true) {
-        JSValueRAII next_result(JS_Call(context_, next_method, generator, 0, nullptr));
-        if (JS_IsException(next_result)) {
+        JSValueRAII nextResult(JS_Call(context, nextMethod, generator, 0, nullptr));
+        if (JS_IsException(nextResult)) {
             break;
         }
 
-        JSValueRAII done(JS_GetPropertyStr(context_, next_result, "done"));
-        if (JS_ToBool(context_, done)) {
+        JSValueRAII done(JS_GetPropertyStr(context, nextResult, "done"));
+        if (JS_ToBool(context, done) != 0) {
             break;
         }
 
-        JSValueRAII value(JS_GetPropertyStr(context_, next_result, "value"));
-        int32_t num;
-        JS_ToInt32(context_, &num, value);
-        filtered_numbers.push_back(num);
+        JSValueRAII value(JS_GetPropertyStr(context, nextResult, "value"));
+        int32_t num = 0;
+        JS_ToInt32(context, &num, value);
+        filteredNumbers.push_back(num);
     }
 
-    ASSERT_EQ(filtered_numbers, (std::vector<int>{2, 4, 6, 8, 10}));
+    ASSERT_EQ(filteredNumbers, (std::vector<int>{2, 4, 6, 8, 10}));
 }
