@@ -3,14 +3,14 @@
 cmake_minimum_required(VERSION 3.12)
 
 # Add at the top of your CMakeLists.txt, before project()
-set(CMAKE_C_COMPILER "/opt/local/libexec/llvm-17/bin/clang")
-set(CMAKE_CXX_COMPILER "/opt/local/libexec/llvm-17/bin/clang++")
+set(CMAKE_C_COMPILER "/opt/local/libexec/llvm-20/bin/clang")
+set(CMAKE_CXX_COMPILER "/opt/local/libexec/llvm-20/bin/clang++")
 
 # Enable compilation database for clangd and clang-tidy
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 ### Disable clang-tidy during build, since it reports plenty of unrelated issues outside our codebase
-# set(CMAKE_CXX_CLANG_TIDY "/opt/local/libexec/llvm-17/bin/clang-tidy")
+# set(CMAKE_CXX_CLANG_TIDY "/opt/local/libexec/llvm-20/bin/clang-tidy")
 
 # Set the project name and version
 project(LibrimeQjs VERSION 0.1)

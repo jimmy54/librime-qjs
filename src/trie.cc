@@ -98,7 +98,7 @@ void Trie::loadTextFile(const std::string& txtPath, size_t entrySize) {
   build(items);
 }
 
-void Trie::saveToBinaryFile(std::string_view filePath) const {
+void Trie::saveToBinaryFile(const std::string& filePath) const {
   std::ofstream file(filePath, std::ios::binary);
   if (!file) {
     throw std::runtime_error("Failed to open file for writing");

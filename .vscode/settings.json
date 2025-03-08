@@ -5,7 +5,7 @@
         "CMAKE_EXPORT_COMPILE_COMMANDS": true
     },
     "cmake.configureOnOpen": true,
-    "clangd.path": "/opt/local/libexec/llvm-17/bin/clangd",
+    "clangd.path": "/opt/local/libexec/llvm-20/bin/clangd",
     "clangd.arguments": [
         "--compile-commands-dir=${workspaceFolder}/build",
         "--background-index=1",

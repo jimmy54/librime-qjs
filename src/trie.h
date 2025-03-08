@@ -96,7 +96,7 @@ private:
  public:
   void loadBinaryFileMmap(std::string_view filePath);
   void loadTextFile(const std::string& txtPath, size_t entrySize);
-  void saveToBinaryFile(std::string_view filePath) const;
+  void saveToBinaryFile(const std::string& filePath) const;
   void add(const std::string& key, const std::string& value);
   void build(const std::vector<std::pair<std::string, std::string>>& items);
 

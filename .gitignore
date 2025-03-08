@@ -17,6 +17,8 @@ tests/**/*.trie
 thirdparty
 src/types/others
 
+compile_commands.json
+
 .vscode
 .editorconfig
 
