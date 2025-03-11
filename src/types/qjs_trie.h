@@ -6,4 +6,4 @@
 
 DECLARE_JS_CLASS_WITH_SHARED_POINTER(Trie)
 
-#endif // RIME_QJS_TRIE_H_
+#endif  // RIME_QJS_TRIE_H_

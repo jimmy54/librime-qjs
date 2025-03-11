@@ -2,10 +2,11 @@
 #define RIME_QJS_ENVIRONMENT_H_
 
 #include <rime/engine.h>
-#include "quickjs.h"
-#include "jsvalue_raii.h"
 
 #include <string>
+
+#include "jsvalue_raii.h"
+#include "quickjs.h"
 
 namespace rime {
 
@@ -31,6 +32,6 @@ private:
   static JSValue popen(JSContext* ctx, JSValueConst thisVal, int argc, JSValueConst* argv);
 };
 
-} // namespace rime
+}  // namespace rime
 
 #endif  // RIME_QJS_ENVIRONMENT_H_

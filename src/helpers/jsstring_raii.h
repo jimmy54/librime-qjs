@@ -3,12 +3,13 @@
 
 #include <glog/logging.h>
 #include <quickjs.h>
+
 #include "qjs_helper.h"
 
 namespace rime {
 
 class JSStringRAII {
- public:
+public:
   JSStringRAII(const char* str) : str_(str) {}
 
   JSStringRAII(const JSStringRAII&) = default;
@@ -27,7 +28,7 @@ class JSStringRAII {
 
   [[nodiscard]] const char* cStr() const { return str_; }
 
- private:
+private:
   const char* str_{nullptr};
 };
 

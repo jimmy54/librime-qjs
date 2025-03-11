@@ -1,11 +1,12 @@
 #include "qjs_translation.h"
-#include "jsvalue_raii.h"
-#include "qjs_candidate.h"
-#include "quickjs.h"
 
 #include <rime/translation.h>
 
 #include <utility>
+
+#include "jsvalue_raii.h"
+#include "qjs_candidate.h"
+#include "quickjs.h"
 
 namespace rime {
 
@@ -18,8 +19,10 @@ QuickJSTranslation::QuickJSTranslation(an<Translation> translation,
   set_exhausted(cache_.empty());
 }
 
-bool QuickJSTranslation::DoFilter(const JSValue& filterObj, const JSValue& filterFunc, const JSValue& environment) {
-  auto *ctx = QjsHelper::getInstance().getContext();
+bool QuickJSTranslation::DoFilter(const JSValue& filterObj,
+                                  const JSValue& filterFunc,
+                                  const JSValue& environment) {
+  auto* ctx = QjsHelper::getInstance().getContext();
   JSValueRAII jsArray(JS_NewArray(ctx));
   size_t idx = 0;
   while (auto candidate = translation_->exhausted() ? nullptr : translation_->Peek()) {
@@ -31,7 +34,7 @@ bool QuickJSTranslation::DoFilter(const JSValue& filterObj, const JSValue& filte
   }
 
   JSValueConst args[] = {jsArray, environment};
-  JSValueRAII resultArray(JS_Call(ctx, filterFunc, filterObj, countof(args), static_cast<JSValue*>(args)));
+  JSValueRAII resultArray = JS_Call(ctx, filterFunc, filterObj, 2, static_cast<JSValue*>(args));
   if (JS_IsException(resultArray)) {
     return false;
   }

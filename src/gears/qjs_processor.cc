@@ -1,10 +1,11 @@
 #include "qjs_processor.h"
-#include "qjs_key_event.h"
-#include "jsvalue_raii.h"
-#include "quickjs.h"
 
-#include <rime/translation.h>
 #include <rime/gear/translator_commons.h>
+#include <rime/translation.h>
+
+#include "jsvalue_raii.h"
+#include "qjs_key_event.h"
+#include "quickjs.h"
 
 namespace rime {
 
@@ -13,11 +14,11 @@ ProcessResult QuickJSProcessor::ProcessKeyEvent(const KeyEvent& keyEvent) {
     return kNoop;
   }
 
-  auto *ctx = QjsHelper::getInstance().getContext();
+  auto* ctx = QjsHelper::getInstance().getContext();
   // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
   JSValueRAII jsKeyEvt(QjsKeyEvent::Wrap(ctx, const_cast<KeyEvent*>(&keyEvent)));
-  JSValue args[] = { jsKeyEvt.get(), getEnvironment() };
-  JSValueRAII jsResult(JS_Call(ctx, getMainFunc(), getInstance(), countof(args), static_cast<JSValue*>(args)));
+  JSValue args[] = {jsKeyEvt.get(), getEnvironment()};
+  JSValueRAII jsResult = JS_Call(ctx, getMainFunc(), getInstance(), 2, static_cast<JSValue*>(args));
   if (JS_IsException(jsResult)) {
     return kNoop;
   }
@@ -35,7 +36,6 @@ ProcessResult QuickJSProcessor::ProcessKeyEvent(const KeyEvent& keyEvent) {
   }
   LOG(ERROR) << "[qjs] " << name_space_ << "::ProcessKeyEvent unknown result: " << result;
   return kNoop;
-
 }
 
 }  // namespace rime

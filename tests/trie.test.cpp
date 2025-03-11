@@ -1,20 +1,22 @@
+#include "trie.h"
+
 #include <gtest/gtest.h>
 
-#include "trie.h"
 #include "trie_data_helper.h"
 
 class TrieTest : public ::testing::Test {
- private:
+private:
   TrieDataHelper trieDataHelper_ = TrieDataHelper("./tests", "dummy_dict.txt");
 
- protected:
+protected:
   TrieDataHelper getTrieDataHelper() { return trieDataHelper_; }
   void SetUp() override { trieDataHelper_.createDummyTextFile(); }
 
   void TearDown() override { trieDataHelper_.cleanupDummyFiles(); }
 };
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables,
+// readability-function-cognitive-complexity)
 TEST_F(TrieTest, LoadTextFileAndLookup) {
   rime::Trie trie;
   auto helper = getTrieDataHelper();

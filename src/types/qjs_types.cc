@@ -1,14 +1,15 @@
 #include <cstddef>
-#include "qjs_trie.h"
-#include "qjs_segment.h"
+
 #include "qjs_candidate.h"
+#include "qjs_segment.h"
+#include "qjs_trie.h"
 // #include "qjs_translation.h"
-#include "qjs_key_event.h"
+#include "qjs_config.h"
 #include "qjs_context.h"
+#include "qjs_engine.h"
+#include "qjs_key_event.h"
 #include "qjs_preedit.h"
 #include "qjs_schema.h"
-#include "qjs_config.h"
-#include "qjs_engine.h"
 // #include "qjs_menu.h"
 // #include "qjs_memory.h"
 // #include "qjs_dictionary.h"
@@ -19,9 +20,9 @@
 // #include "qjs_segmentation.h"
 // #include "qjs_key_sequence.h"
 #include "qjs_config_item.h"
-#include "qjs_config_value.h"
 #include "qjs_config_list.h"
 #include "qjs_config_map.h"
+#include "qjs_config_value.h"
 // #include "qjs_translator.h"
 // #include "qjs_notifier.h"
 // #include "qjs_switcher.h"
@@ -78,4 +79,4 @@ void initQjsTypes(JSContext* ctx) {
   // expose other types...
 }
 
-} // namespace rime
+}  // namespace rime

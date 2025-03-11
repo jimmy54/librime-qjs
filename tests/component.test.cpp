@@ -2,12 +2,13 @@
 #include <rime/filter.h>
 #include <rime/gear/filter_commons.h>
 #include <rime/ticket.h>
+
 #include "qjs_component.h"
 
 using namespace rime;
 
 class MockFilter : public Filter {
- public:
+public:
   MockFilter(const MockFilter&) = default;
   MockFilter(MockFilter&&) = delete;
   MockFilter& operator=(const MockFilter&) = default;
@@ -18,8 +19,7 @@ class MockFilter : public Filter {
   };
   virtual ~MockFilter() { LOG(INFO) << "MockFilter destroyed"; }
   void setEngine(Engine* engine) { this->engine_ = engine; }
-  virtual an<Translation> Apply(an<Translation> translation,
-                                CandidateList* candidates) {
+  virtual an<Translation> Apply(an<Translation> translation, CandidateList* candidates) {
     return translation;
   }
 };

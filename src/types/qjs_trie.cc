@@ -6,7 +6,7 @@ static JSValue makeTrie(JSContext* ctx, JSValueConst newTarget, int argc, JSValu
   return QjsTrie::Wrap(ctx, std::make_shared<Trie>());
 }
 
-DEFINE_FUNCTION_ARGC(Trie, loadTextFile, 2,
+DEFINE_FUNCTION_ARGC(Trie, loadTextFile, 2, {
   JSStringRAII str(JS_ToCString(ctx, argv[0]));
   std::string absolutePath(str);
   int32_t size;
@@ -20,9 +20,9 @@ DEFINE_FUNCTION_ARGC(Trie, loadTextFile, 2,
   }
 
   return JS_UNDEFINED;
-)
+})
 
-DEFINE_FUNCTION_ARGC(Trie, loadBinaryFile, 1,
+DEFINE_FUNCTION_ARGC(Trie, loadBinaryFile, 1, {
   JSStringRAII str(JS_ToCString(ctx, argv[0]));
   std::string absolutePath(str);
   try {
@@ -32,9 +32,9 @@ DEFINE_FUNCTION_ARGC(Trie, loadBinaryFile, 1,
     return JS_ThrowPlainError(ctx, "%s", e.what());
   }
   return JS_UNDEFINED;
-)
+})
 
-DEFINE_FUNCTION_ARGC(Trie, saveToBinaryFile, 1,
+DEFINE_FUNCTION_ARGC(Trie, saveToBinaryFile, 1, {
   JSStringRAII str(JS_ToCString(ctx, argv[0]));
   std::string absolutePath(str);
   try {
@@ -44,15 +44,15 @@ DEFINE_FUNCTION_ARGC(Trie, saveToBinaryFile, 1,
     return JS_ThrowPlainError(ctx, "%s", e.what());
   }
   return JS_UNDEFINED;
-)
+})
 
-DEFINE_FUNCTION_ARGC(Trie, find, 1,
+DEFINE_FUNCTION_ARGC(Trie, find, 1, {
   JSStringRAII key(JS_ToCString(ctx, argv[0]));
   auto result = obj->find(std::string(key));
   return result.has_value() ? JS_NewString(ctx, result.value().c_str()) : JS_NULL;
-)
+})
 
-DEFINE_FUNCTION_ARGC(Trie, prefixSearch, 1,
+DEFINE_FUNCTION_ARGC(Trie, prefixSearch, 1, {
   JSStringRAII prefix(JS_ToCString(ctx, argv[0]));
   auto matches = obj->prefixSearch(std::string(prefix));
 
@@ -64,20 +64,17 @@ DEFINE_FUNCTION_ARGC(Trie, prefixSearch, 1,
     JS_SetPropertyUint32(ctx, jsArray, i, jsObject);
   }
   return jsArray;
-)
+})
 
 DEFINE_JS_CLASS_WITH_SHARED_POINTER(
-  Trie,
-  DEFINE_CONSTRUCTOR(Trie, makeTrie, 0),
-  NO_PROPERTY_TO_REGISTER,
-  NO_GETTER_TO_REGISTER,
-  DEFINE_FUNCTIONS(
-    JS_CFUNC_DEF("loadTextFile", 2, loadTextFile),
-    JS_CFUNC_DEF("loadBinaryFile", 1, loadBinaryFile),
-    JS_CFUNC_DEF("saveToBinaryFile", 1, saveToBinaryFile),
-    JS_CFUNC_DEF("find", 1, find),
-    JS_CFUNC_DEF("prefixSearch", 1, prefixSearch)
-  )
-)
+    Trie,
+    DEFINE_CONSTRUCTOR(Trie, makeTrie, 0),
+    NO_PROPERTY_TO_REGISTER,
+    NO_GETTER_TO_REGISTER,
+    DEFINE_FUNCTIONS(JS_CFUNC_DEF("loadTextFile", 2, loadTextFile),
+                     JS_CFUNC_DEF("loadBinaryFile", 1, loadBinaryFile),
+                     JS_CFUNC_DEF("saveToBinaryFile", 1, saveToBinaryFile),
+                     JS_CFUNC_DEF("find", 1, find),
+                     JS_CFUNC_DEF("prefixSearch", 1, prefixSearch)))
 
-} // namespace rime
+}  // namespace rime

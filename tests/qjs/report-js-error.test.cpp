@@ -1,6 +1,7 @@
-#include <quickjs.h>
-#include <string>
 #include <gtest/gtest.h>
+#include <quickjs.h>
+
+#include <string>
 
 #include "qjs_helper.h"
 
@@ -15,11 +16,12 @@ std::string trim(const std::string& str) {
 }
 
 class QuickJSErrorTest : public ::testing::Test {
- protected:
+protected:
   void SetUp() override { QjsHelper::basePath = "tests/qjs/js"; }
 };
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables,
+// readability-function-cognitive-complexity)
 TEST_F(QuickJSErrorTest, TestJsRuntimeError) {
   JSContext* ctx = QjsHelper::getInstance().getContext();
   JSValue module = QjsHelper::loadJsModuleToGlobalThis(ctx, "runtime-error.js");
@@ -40,8 +42,7 @@ TEST_F(QuickJSErrorTest, TestJsRuntimeError) {
   JSValue stack = JS_GetPropertyStr(ctx, exception, "stack");
   const char* stackTrace = JS_ToCString(ctx, stack);
   std::string trimmedStackTrace = trim(stackTrace);
-  ASSERT_STREQ(trimmedStackTrace.c_str(),
-               "at <anonymous> (runtime-error.js:7:19)");
+  ASSERT_STREQ(trimmedStackTrace.c_str(), "at <anonymous> (runtime-error.js:7:19)");
   JS_FreeCString(ctx, stackTrace);
   JS_FreeValue(ctx, stack);
 

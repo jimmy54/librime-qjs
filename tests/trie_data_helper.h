@@ -1,14 +1,16 @@
 #ifndef RIME_TRIEDATAHELPER_H_
 #define RIME_TRIEDATAHELPER_H_
 
-#include <iostream>
-#include <fstream>
-#include <string>
 #include <gtest/gtest.h>
+
+#include <fstream>
+#include <iostream>
+#include <string>
+
 #include "trie.h"
 
 class TrieDataHelper {
- public:
+public:
   TrieDataHelper(const char* folder, const char* dummyFileName) {
     if (dummyFileName == nullptr) {
       return;
@@ -28,9 +30,7 @@ class TrieDataHelper {
   static void testExistingWords(rime::Trie& trie) {
     auto result1 = trie.find("accord");
     ASSERT_TRUE(result1.has_value());
-    EXPECT_EQ(
-        result1.value(),
-        "[ә'kɒ:d]; n. 一致, 调和, 协定\\n vt. 给与, 使一致\\n vi. 相符合");
+    EXPECT_EQ(result1.value(), "[ә'kɒ:d]; n. 一致, 调和, 协定\\n vt. 给与, 使一致\\n vi. 相符合");
 
     auto result2 = trie.find("accordion");
     ASSERT_TRUE(result2.has_value());
@@ -60,10 +60,9 @@ class TrieDataHelper {
 
     std::ofstream testDict(txtPath_);
     testDict << "accord	[ә'kɒ:d]; n. 一致, 调和, 协定\\n vt. 给与, "
-                 "使一致\\n vi. 相符合\n";
+                "使一致\\n vi. 相符合\n";
     testDict << "accordance	[ә'kɒ:dәns]; n. 一致, 和谐\n";
-    testDict
-        << "according	[ә'kɒ:diŋ]; a. 相符的, 根据...而定的\\n adv. 相应地\n";
+    testDict << "according	[ә'kɒ:diŋ]; a. 相符的, 根据...而定的\\n adv. 相应地\n";
     testDict << "accordingly	[ә'kɒ:diŋli]; adv. 相应地, 因此, 于是\n";
     testDict << "accordion	[ә'kɒ:djәn]; n. 手风琴\\n a. 可折叠的\n";
     testDict << "accordionist	[ә'kɒ:djәnist]; n. 手风琴师\n";

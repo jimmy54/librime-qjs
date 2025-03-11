@@ -1,9 +1,13 @@
 #include "qjs_helper.h"
+
+#include <glog/logging.h>
+
+#include <cstddef>
+#include <fstream>
+#include <sstream>
+
 #include "jsvalue_raii.h"
 #include "quickjs.h"
-#include <glog/logging.h>
-#include <sstream>
-#include <fstream>
 
 using namespace rime;
 
@@ -15,15 +19,12 @@ QjsHelper& QjsHelper::getInstance() {
   return instance;
 }
 
-JSModuleDef* QjsHelper::jsModuleLoader(JSContext* ctx,
-                                       const char* fileName,
-                                       void* opaque) {
+JSModuleDef* QjsHelper::jsModuleLoader(JSContext* ctx, const char* fileName, void* opaque) {
   JSValue funcObj = loadJsModule(ctx, fileName);
   return reinterpret_cast<JSModuleDef*>(JS_VALUE_GET_PTR(funcObj));
 }
 
-JSValue QjsHelper::loadJsModuleToNamespace(JSContext* ctx,
-                                           const char* fileName) {
+JSValue QjsHelper::loadJsModuleToNamespace(JSContext* ctx, const char* fileName) {
   JSValue funcObj = loadJsModule(ctx, fileName);
   if (JS_IsException(funcObj)) {
     return funcObj;
@@ -39,11 +40,9 @@ JSValue QjsHelper::loadJsModuleToNamespace(JSContext* ctx,
   return JS_GetModuleNamespace(ctx, md);
 }
 
-JSValue QjsHelper::loadJsModuleToGlobalThis(JSContext* ctx,
-                                            const char* fileName) {
+JSValue QjsHelper::loadJsModuleToGlobalThis(JSContext* ctx, const char* fileName) {
   std::string jsCode = readJsCode(ctx, fileName);
-  return JS_Eval(ctx, jsCode.c_str(), jsCode.size(), fileName,
-                 JS_EVAL_TYPE_MODULE);
+  return JS_Eval(ctx, jsCode.c_str(), jsCode.size(), fileName, JS_EVAL_TYPE_MODULE);
 }
 
 void QjsHelper::exposeLogToJsConsole(JSContext* ctx) {
@@ -60,16 +59,14 @@ std::string QjsHelper::loadFile(const char* absolutePath) {
     LOG(ERROR) << "Failed to open file at: " << absolutePath;
     return "";
   }
-  std::string content((std::istreambuf_iterator<char>(stream)),
-                      std::istreambuf_iterator<char>());
+  std::string content((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
   return content;
 }
 
 std::string QjsHelper::readJsCode(JSContext* ctx, const char* fileName) {
   if (basePath.empty()) {
     LOG(ERROR) << "basePath is empty in loading js file: " << fileName;
-    JS_ThrowReferenceError(ctx, "basePath is empty in loading js file: %s",
-                           fileName);
+    JS_ThrowReferenceError(ctx, "basePath is empty in loading js file: %s", fileName);
     return "";
   }
   std::string fullPath = basePath + "/" + fileName;
@@ -82,8 +79,8 @@ JSValue QjsHelper::loadJsModule(JSContext* ctx, const char* fileName) {
     return JS_ThrowReferenceError(ctx, "Could not open %s", fileName);
   }
 
-  JSValue funcObj = JS_Eval(ctx, code.c_str(), code.size(), fileName,
-                            JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_COMPILE_ONLY);
+  int flags = JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_COMPILE_ONLY;
+  JSValue funcObj = JS_Eval(ctx, code.c_str(), code.size(), fileName, flags);
 
   if (JS_IsException(funcObj)) {
     JSValue exception = JS_GetException(ctx);
@@ -98,10 +95,7 @@ JSValue QjsHelper::loadJsModule(JSContext* ctx, const char* fileName) {
   return funcObj;
 }
 
-JSValue QjsHelper::jsLog(JSContext* ctx,
-                         JSValueConst thisVal,
-                         int argc,
-                         JSValueConst* argv) {
+JSValue QjsHelper::jsLog(JSContext* ctx, JSValueConst thisVal, int argc, JSValueConst* argv) {
   std::ostringstream oss;
   for (int i = 0; i < argc; i++) {
     const char* str = JS_ToCString(ctx, argv[i]);
@@ -115,8 +109,8 @@ JSValue QjsHelper::jsLog(JSContext* ctx,
 }
 
 JSValue QjsHelper::getMethodByNameInClass(JSContext* ctx,
-                          JSValue classObj,
-                          const char* methodName) {
+                                          JSValue classObj,
+                                          const char* methodName) {
   JSValueRAII proto = JS_GetPropertyStr(ctx, classObj, "prototype");
   if (JS_IsException(proto)) {
     return JS_UNDEFINED;
@@ -132,18 +126,17 @@ JSValue QjsHelper::getMethodByNameInClass(JSContext* ctx,
 }
 
 JSValue QjsHelper::getExportedClassByNameInModule(JSContext* ctx,
-                          JSValue moduleObj,
-                          const char* className) {
+                                                  JSValue moduleObj,
+                                                  const char* className) {
   JSPropertyEnum* props;
   uint32_t propCount;  // Get all enumerable properties from namespace
   int flags = JS_GPN_STRING_MASK | JS_GPN_SYMBOL_MASK | JS_GPN_ENUM_ONLY;
-  if (JS_GetOwnPropertyNames(ctx, &props, &propCount, moduleObj, flags) ==
-      0) {
+  if (JS_GetOwnPropertyNames(ctx, &props, &propCount, moduleObj, flags) == 0) {
+    size_t n = strlen(className);
     for (uint32_t i = 0; i < propCount; i++) {
       JSValue propVal = JS_GetProperty(ctx, moduleObj, props[i].atom);
       const char* propName = JS_AtomToCString(ctx, props[i].atom);
-      bool isMatched = !JS_IsException(propVal)
-        && strncmp(propName, className, strlen(className)) == 0;
+      bool isMatched = !JS_IsException(propVal) && strncmp(propName, className, n) == 0;
 
       JS_FreeCString(ctx, propName);
       JS_FreeAtom(ctx, props[i].atom);
@@ -162,13 +155,12 @@ JSValue QjsHelper::getExportedClassByNameInModule(JSContext* ctx,
 }
 
 JSValue QjsHelper::getExportedClassHavingMethodNameInModule(JSContext* ctx,
-                          JSValue moduleObj,
-                          const char* methodName) {
+                                                            JSValue moduleObj,
+                                                            const char* methodName) {
   JSPropertyEnum* props;
   uint32_t propCount;  // Get all enumerable properties from namespace
   int flags = JS_GPN_STRING_MASK | JS_GPN_SYMBOL_MASK | JS_GPN_ENUM_ONLY;
-  if (JS_GetOwnPropertyNames(ctx, &props, &propCount, moduleObj, flags) ==
-      0) {
+  if (JS_GetOwnPropertyNames(ctx, &props, &propCount, moduleObj, flags) == 0) {
     for (uint32_t i = 0; i < propCount; i++) {
       JSValue propVal = JS_GetProperty(ctx, moduleObj, props[i].atom);
       const char* propName = JS_AtomToCString(ctx, props[i].atom);

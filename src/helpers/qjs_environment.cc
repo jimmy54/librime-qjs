@@ -1,23 +1,30 @@
-#include <rime_api.h>
+#include "qjs_environment.h"
+
 #include <quickjs.h>
+#include <rime_api.h>
+
 #include <cstddef>
-#include <sstream>
 #include <cstdio>
 #include <iostream>
+#include <sstream>
 
-#include "qjs_environment.h"
-#include "qjs_helper.h"
-#include "qjs_engine.h"
 #include "jsstring_raii.h"
 #include "process_memory.h"
+#include "qjs_engine.h"
+#include "qjs_helper.h"
+
+#define SET_FUNCTION_TO_ENVIRONMENT_PROPERTY(funcName, argc) \
+  JS_SetPropertyStr(ctx, environment, #funcName, JS_NewCFunction(ctx, funcName, #funcName, argc));
 
 namespace rime {
 
 JSValueRAII QjsEnvironment::create(JSContext* ctx, Engine* engine, const std::string& nameSpace) {
-  JSValueRAII environment(JS_NewObject(ctx)); // do not free its properties/methods manually
+  JSValueRAII environment(JS_NewObject(ctx));  // do not free its properties/methods manually
   JS_SetPropertyStr(ctx, environment, "engine", QjsEngine::Wrap(ctx, engine));
   JS_SetPropertyStr(ctx, environment, "namespace", JS_NewString(ctx, nameSpace.c_str()));
-  JS_SetPropertyStr(ctx, environment, "userDataDir", JS_NewString(ctx, QjsHelper::basePath.c_str()));
+
+  auto jsUserDataDir = JS_NewString(ctx, QjsHelper::basePath.c_str());
+  JS_SetPropertyStr(ctx, environment, "userDataDir", jsUserDataDir);
 
   // Add utility functions
   addUtilityFunctions(ctx, environment);
@@ -26,13 +33,16 @@ JSValueRAII QjsEnvironment::create(JSContext* ctx, Engine* engine, const std::st
 }
 
 void QjsEnvironment::addUtilityFunctions(JSContext* ctx, JSValue environment) {
-  JS_SetPropertyStr(ctx, environment, "loadFile", JS_NewCFunction(ctx, loadFile, "loadFile", 1));
-  JS_SetPropertyStr(ctx, environment, "fileExists", JS_NewCFunction(ctx, fileExists, "fileExists", 1));
-  JS_SetPropertyStr(ctx, environment, "getRimeInfo", JS_NewCFunction(ctx, getRimeInfo, "getRimeInfo", 0));
-  JS_SetPropertyStr(ctx, environment, "popen", JS_NewCFunction(ctx, popen, "popen", 1));
+  SET_FUNCTION_TO_ENVIRONMENT_PROPERTY(loadFile, 1);
+  SET_FUNCTION_TO_ENVIRONMENT_PROPERTY(fileExists, 1);
+  SET_FUNCTION_TO_ENVIRONMENT_PROPERTY(getRimeInfo, 0);
+  SET_FUNCTION_TO_ENVIRONMENT_PROPERTY(popen, 1);
 }
 
-JSValue QjsEnvironment::loadFile(JSContext* ctx, JSValueConst thisVal, int argc, JSValueConst* argv) {
+JSValue QjsEnvironment::loadFile(JSContext* ctx,
+                                 JSValueConst thisVal,
+                                 int argc,
+                                 JSValueConst* argv) {
   if (argc < 1) {
     return JS_ThrowSyntaxError(ctx, "The absolutePath argument is required");
   }
@@ -50,14 +60,16 @@ JSValue QjsEnvironment::loadFile(JSContext* ctx, JSValueConst thisVal, int argc,
 
 static std::string formatMemoryUsage(size_t usage) {
   constexpr size_t KILOBYTE = 1024;
-  return usage > KILOBYTE * KILOBYTE
-    ? std::to_string(usage / KILOBYTE / KILOBYTE) + "M" // in MB
-    : std::to_string(usage / KILOBYTE) + "K"; // in KB
+  return usage > KILOBYTE * KILOBYTE ? std::to_string(usage / KILOBYTE / KILOBYTE) + "M"  // in MB
+                                     : std::to_string(usage / KILOBYTE) + "K";            // in KB
 }
 
-JSValue QjsEnvironment::getRimeInfo(JSContext* ctx, JSValueConst thisVal, int argc, JSValueConst* argv) {
+JSValue QjsEnvironment::getRimeInfo(JSContext* ctx,
+                                    JSValueConst thisVal,
+                                    int argc,
+                                    JSValueConst* argv) {
   size_t vmUsage = 0;
-  size_t residentSet = 0; // memory usage in bytes
+  size_t residentSet = 0;  // memory usage in bytes
   getMemoryUsage(vmUsage, residentSet);
 
   JSMemoryUsage qjsMemStats;
@@ -72,7 +84,10 @@ JSValue QjsEnvironment::getRimeInfo(JSContext* ctx, JSValueConst thisVal, int ar
   return JS_NewString(ctx, ss.str().c_str());
 }
 
-JSValue QjsEnvironment::fileExists(JSContext* ctx, JSValueConst thisVal, int argc, JSValueConst* argv) {
+JSValue QjsEnvironment::fileExists(JSContext* ctx,
+                                   JSValueConst thisVal,
+                                   int argc,
+                                   JSValueConst* argv) {
   if (argc < 1) {
     return JS_ThrowSyntaxError(ctx, "The absolutePath argument is required");
   }
@@ -110,7 +125,7 @@ JSValue QjsEnvironment::popen(JSContext* ctx, JSValueConst thisVal, int argc, JS
   char buffer[READ_BUFFER_SIZE];
   std::string result;
   while (fgets(static_cast<char*>(buffer), sizeof(buffer), pipe) != nullptr) {
-      result += static_cast<char*>(buffer);
+    result += static_cast<char*>(buffer);
   }
 
   // Close the pipe
@@ -124,4 +139,4 @@ JSValue QjsEnvironment::popen(JSContext* ctx, JSValueConst thisVal, int argc, JS
   return JS_NewString(ctx, result.c_str());
 }
 
-} // namespace rime
+}  // namespace rime

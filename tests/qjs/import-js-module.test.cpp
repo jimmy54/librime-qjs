@@ -1,18 +1,20 @@
-#include <quickjs.h>
-#include <string>
 #include <gtest/gtest.h>
+#include <quickjs.h>
 
-#include "qjs_helper.h"
+#include <string>
+
 #include "jsvalue_raii.h"
+#include "qjs_helper.h"
 
 using namespace rime;
 
 class QuickJSModuleTest : public testing::Test {
- protected:
+protected:
   void SetUp() override { QjsHelper::basePath = "tests/qjs/js"; }
 };
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables,
+// readability-function-cognitive-complexity)
 TEST_F(QuickJSModuleTest, ImportJsModuleFromAnotherJsFile) {
   auto* ctx = QjsHelper::getInstance().getContext();
   JSValueRAII module(QjsHelper::loadJsModuleToGlobalThis(ctx, "main.js"));
@@ -38,11 +40,11 @@ TEST_F(QuickJSModuleTest, ImportJsModuleFromAnotherJsFile) {
   JS_FreeCString(ctx, str);
 }
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, // readability-function-cognitive-complexity)
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, //
+// readability-function-cognitive-complexity)
 TEST_F(QuickJSModuleTest, ImportJsModuleToNamespace) {
   auto* ctx = QjsHelper::getInstance().getContext();
-  JSValueRAII moduleNamespace(
-      QjsHelper::loadJsModuleToNamespace(ctx, "lib.js"));
+  JSValueRAII moduleNamespace(QjsHelper::loadJsModuleToNamespace(ctx, "lib.js"));
   ASSERT_FALSE(JS_IsException(moduleNamespace));
 
   // Get the greet function from the namespace
@@ -51,8 +53,7 @@ TEST_F(QuickJSModuleTest, ImportJsModuleToNamespace) {
 
   JSValueRAII arg(JS_NewString(ctx, "QuickJS"));
   JSValue args[] = {arg.get()};
-  JSValueRAII result(
-      JS_Call(ctx, greetFunc, JS_UNDEFINED, 1, static_cast<JSValue*>(args)));
+  JSValueRAII result(JS_Call(ctx, greetFunc, JS_UNDEFINED, 1, static_cast<JSValue*>(args)));
   ASSERT_FALSE(JS_IsException(result));
 
   // Verify the result
@@ -62,11 +63,11 @@ TEST_F(QuickJSModuleTest, ImportJsModuleToNamespace) {
   JS_FreeCString(ctx, str);
 }
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables,
+// readability-function-cognitive-complexity)
 TEST_F(QuickJSModuleTest, FindImportedClass) {
   auto* ctx = QjsHelper::getInstance().getContext();
-  JSValueRAII moduleNamespace =
-      QjsHelper::loadJsModuleToNamespace(ctx, "lib.js");
+  JSValueRAII moduleNamespace = QjsHelper::loadJsModuleToNamespace(ctx, "lib.js");
   ASSERT_FALSE(JS_IsException(moduleNamespace));
 
   JSValueRAII myClass = QjsHelper::getExportedClassByNameInModule(ctx, moduleNamespace, "MyClass");
@@ -74,9 +75,10 @@ TEST_F(QuickJSModuleTest, FindImportedClass) {
   ASSERT_FALSE(JS_IsUndefined(myClass));
 
   JSValueRAII classHavingMethodName =
-    QjsHelper::getExportedClassHavingMethodNameInModule(ctx, moduleNamespace, "myMethod");
+      QjsHelper::getExportedClassHavingMethodNameInModule(ctx, moduleNamespace, "myMethod");
   ASSERT_FALSE(JS_IsException(classHavingMethodName));
-  // ASSERT_EQ(myClass.getPtr(), classHavingMethodName.getPtr()); // <-- this is not true, because the class is not the same object.
+  // ASSERT_EQ(myClass.getPtr(), classHavingMethodName.getPtr()); // <-- this is
+  // not true, because the class is not the same object.
 
   for (auto clazz : {myClass.get(), classHavingMethodName.get()}) {
     JSValueRAII proto = JS_GetPropertyStr(ctx, clazz, "prototype");
@@ -99,5 +101,4 @@ TEST_F(QuickJSModuleTest, FindImportedClass) {
     JS_ToInt32(ctx, &intResult, myMethodResult);
     ASSERT_EQ(intResult, A_NAMED_INT + 1);
   }
-
 }

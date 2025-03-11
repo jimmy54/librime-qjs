@@ -1,17 +1,17 @@
 #include <gtest/gtest.h>
+
+#include <cstdio>
 #include <fstream>
 #include <string>
-#include <cstdio>
 #include <string_view>
+#include <yas/binary_iarchive.hpp>
+#include <yas/binary_oarchive.hpp>
 #include <yas/serialize.hpp>
 #include <yas/std_types.hpp>
-#include <yas/binary_oarchive.hpp>
-#include <yas/binary_iarchive.hpp>
 
 #include "benchmark_helper.h"
-
-#include "trie.h"
 #include "map.h"
+#include "trie.h"
 
 // #define RUN_BENCHMARK_WITH_REAL_DATA
 
@@ -24,7 +24,7 @@ constexpr const char* TXT_PATH = "/Users/hj/Library/Rime/lua/data/cedict_fixed.u
 constexpr const char* FOLDER = "./tests/benchmark/dict/";
 
 class GlobalEnvironment : public testing::Environment {
- public:
+public:
   void SetUp() override {
     std::cout << "Creating a dummy text file: " << TXT_PATH << '\n';
 
@@ -40,8 +40,7 @@ class GlobalEnvironment : public testing::Environment {
                 "point/to bring out the substance concisely\n";
     testDict << "点餐\t[diǎn cān](at a restaurant) to order a meal/(of a "
                 "waiter) to take an order\n";
-    testDict
-        << "点鬼火\t[diǎn guǐ huǒ]to stir up trouble in secret/to instigate\n";
+    testDict << "点鬼火\t[diǎn guǐ huǒ]to stir up trouble in secret/to instigate\n";
     testDict << "点点\t[diǎn diǎn]Diandian (Chinese microblogging and social "
                 "networking website)||[diǎn diǎn]point/speck\n";
     testDict << "点点滴滴\t[diǎn diǎn dī dī]bit by bit/dribs and drabs/the "
@@ -73,9 +72,7 @@ void checkMapData(const std::unordered_map<std::string, std::string>& map) {
 }
 
 // Helper function to check a single key-value pair in the trie
-void checkTrieEntry(rime::Trie& trie,
-                    const std::string& key,
-                    const std::string& expectedValue) {
+void checkTrieEntry(rime::Trie& trie, const std::string& key, const std::string& expectedValue) {
   auto val = trie.find(key);
   ASSERT_TRUE(val.has_value());
   ASSERT_EQ(val.value(), expectedValue);
@@ -97,9 +94,8 @@ void checkTrieData(rime::Trie& trie) {
   ASSERT_TRUE(emptyKey.has_value());
 }
 
-std::unordered_map<std::string, std::string> loadTextToMap(
-    const std::string& filePath,
-    size_t dictSize) {
+std::unordered_map<std::string, std::string> loadTextToMap(const std::string& filePath,
+                                                           size_t dictSize) {
   std::unordered_map<std::string, std::string> map;
   map.reserve(dictSize);
 
@@ -138,8 +134,7 @@ void saveMapWithYas(const std::string& filename,
   fout.write(reinterpret_cast<const char*>(buf.data.get()), buf.size);
 }
 
-std::unordered_map<std::string, std::string> loadMapWithYas(
-    const std::string& filename) {
+std::unordered_map<std::string, std::string> loadMapWithYas(const std::string& filename) {
   std::ifstream fin(filename, std::ios::binary | std::ios::ate);
   std::streamsize size = fin.tellg();
   fin.seekg(0, std::ios::beg);
@@ -166,35 +161,31 @@ TEST(LoadMapDictBenchmark, LoadToTrie) {
   }
 
   rime::Trie trie;
-  PRINT_DURATION(MAGENTA, "Plain text to Trie: \t",
-                 trie.loadTextFile(TXT_PATH, DICT_SIZE));
+  PRINT_DURATION(MAGENTA, "Plain text to Trie: \t", trie.loadTextFile(TXT_PATH, DICT_SIZE));
   checkTrieData(trie);
 
   auto trieFile = std::string(FOLDER) + "dict_map.trie";
-  RESAVE_FILE(trieFile, PRINT_DURATION(YELLOW, "Trie serialization: \t",
-                                       trie.saveToBinaryFile(trieFile)));
+  RESAVE_FILE(trieFile,
+              PRINT_DURATION(YELLOW, "Trie serialization: \t", trie.saveToBinaryFile(trieFile)));
 
   rime::Trie trie2;
-  PRINT_DURATION(MAGENTA, "Trie deserialization: \t",
-                 trie2.loadBinaryFileMmap(trieFile));
+  PRINT_DURATION(MAGENTA, "Trie deserialization: \t", trie2.loadBinaryFileMmap(trieFile));
   checkTrieData(trie2);
   std::remove(trieFile.c_str());
 }
 
 TEST(LoadMapDictBenchmark, LoadTextFileAndLookup) {
   std::unordered_map<std::string, std::string> map;
-  PRINT_DURATION(MAGENTA, "Plain text to Map: \t",
-                 map = loadTextToMap(TXT_PATH, DICT_SIZE));
+  PRINT_DURATION(MAGENTA, "Plain text to Map: \t", map = loadTextToMap(TXT_PATH, DICT_SIZE));
   checkMapData(map);
 
   MmapStringMap mmap;
   auto mmapFile = std::string(FOLDER) + "dict_map.mmap";
-  RESAVE_FILE(mmapFile, PRINT_DURATION(YELLOW, "Mmap serialization: \t",
-                                       mmap.save(mmapFile, map)));
+  RESAVE_FILE(mmapFile, PRINT_DURATION(YELLOW, "Mmap serialization: \t", mmap.save(mmapFile, map)));
 
   auto yasFile = std::string(FOLDER) + "dict_map.yas";
-  RESAVE_FILE(yasFile, PRINT_DURATION(YELLOW, "YAS serialization: \t",
-                                      saveMapWithYas(yasFile, map)));
+  RESAVE_FILE(yasFile,
+              PRINT_DURATION(YELLOW, "YAS serialization: \t", saveMapWithYas(yasFile, map)));
 }
 
 TEST(LoadMapDictBenchmark, LoadMmap) {
@@ -202,8 +193,7 @@ TEST(LoadMapDictBenchmark, LoadMmap) {
   std::unordered_map<std::string, std::string> map;
 
   auto mmapFile = std::string(FOLDER) + "dict_map.mmap";
-  PRINT_DURATION(MAGENTA, "Mmap deserialization: \t",
-                 map = mmap.load(mmapFile));
+  PRINT_DURATION(MAGENTA, "Mmap deserialization: \t", map = mmap.load(mmapFile));
   checkMapData(map);
   std::remove(mmapFile.c_str());
 }
@@ -211,8 +201,7 @@ TEST(LoadMapDictBenchmark, LoadMmap) {
 TEST(LoadMapDictBenchmark, LoadYas) {
   auto yasFile = std::string(FOLDER) + "dict_map" + ".yas";
   std::unordered_map<std::string, std::string> map;
-  PRINT_DURATION(MAGENTA, "Mmap deserialization: \t",
-                 map = loadMapWithYas(yasFile));
+  PRINT_DURATION(MAGENTA, "Mmap deserialization: \t", map = loadMapWithYas(yasFile));
   checkMapData(map);
   std::remove(yasFile.c_str());
 }
@@ -229,9 +218,12 @@ int main(int argc, char** argv) {
 
 // Benchmark of loading the cn2en dictionary
 // +=============================================================================================================+
-// | Option               | Load from Text | Save to Binary | Load from Binary |  Hardware                       |
+// | Option               | Load from Text | Save to Binary | Load from Binary |
+// Hardware |
 // +----------------------+----------------+----------------+------------------+---------------------------------+
-// | Trie (with mmap)     |  210 ms        |  50 ms         |  15 ms           | MBP 2015, 2.4 GHz Intel Core i7 |
-// | unordered_map + mmap |  110 ms        |  45 ms         |  50 ms           | MBP 2015, 2.4 GHz Intel Core i7 |
-// | unordered_map + YAS  |  110 ms        |  53 ms         |  70 ms           | MBP 2015, 2.4 GHz Intel Core i7 |
+// | Trie (with mmap)     |  210 ms        |  50 ms         |  15 ms           |
+// MBP 2015, 2.4 GHz Intel Core i7 | | unordered_map + mmap |  110 ms        |
+// 45 ms         |  50 ms           | MBP 2015, 2.4 GHz Intel Core i7 | |
+// unordered_map + YAS  |  110 ms        |  53 ms         |  70 ms | MBP
+// 2015, 2.4 GHz Intel Core i7 |
 // +=============================================================================================================+

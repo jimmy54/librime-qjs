@@ -8,6 +8,6 @@ namespace rime {
 // Initialize all QuickJS type bindings
 void initQjsTypes(JSContext* ctx);
 
-} // namespace rime
+}  // namespace rime
 
-#endif // RIME_QJS_TYPES_H_
+#endif  // RIME_QJS_TYPES_H_

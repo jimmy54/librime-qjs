@@ -4,21 +4,22 @@
 #include <rime/common.h>
 #include <rime/component.h>
 #include <rime/filter.h>
-#include <rime/ticket.h>
 #include <rime/gear/filter_commons.h>
-#include <rime/translator.h>
 #include <rime/gear/translator_commons.h>
 #include <rime/processor.h>
+#include <rime/ticket.h>
+#include <rime/translator.h>
+
 #include <map>
 
 namespace rime {
 
 // Primary template declaration
-template<typename T_ACTUAL, typename T_BASE>
+template <typename T_ACTUAL, typename T_BASE>
 class ComponentWrapper;
 
 // Specialization for Filter
-template<typename T_ACTUAL>
+template <typename T_ACTUAL>
 class ComponentWrapper<T_ACTUAL, Filter> : public Filter {
 public:
   explicit ComponentWrapper(const Ticket& ticket, an<T_ACTUAL>& actual)
@@ -26,9 +27,7 @@ public:
     DLOG(INFO) << "Filter ComponentWrapper created with ticket: " << ticket.name_space;
   }
 
-  virtual ~ComponentWrapper() {
-    DLOG(INFO) << "Filter ComponentWrapper destroyed";
-  }
+  virtual ~ComponentWrapper() { DLOG(INFO) << "Filter ComponentWrapper destroyed"; }
 
   // Delete copy constructor and assignment operator
   ComponentWrapper(const ComponentWrapper&) = delete;
@@ -37,8 +36,7 @@ public:
   ComponentWrapper(ComponentWrapper&&) = delete;
   ComponentWrapper& operator=(ComponentWrapper&&) = delete;
 
-  virtual an<Translation> Apply(an<Translation> translation,
-                                CandidateList* candidates) {
+  virtual an<Translation> Apply(an<Translation> translation, CandidateList* candidates) {
     return actual_->Apply(translation, candidates);
   }
 
@@ -46,7 +44,7 @@ public:
 };
 
 // Specialization for Translator
-template<typename T_ACTUAL>
+template <typename T_ACTUAL>
 class ComponentWrapper<T_ACTUAL, Translator> : public Translator {
 public:
   explicit ComponentWrapper(const Ticket& ticket, an<T_ACTUAL>& actual)
@@ -54,9 +52,7 @@ public:
     DLOG(INFO) << "Translator ComponentWrapper created with ticket: " << ticket.name_space;
   }
 
-  virtual ~ComponentWrapper() {
-    DLOG(INFO) << "Translator ComponentWrapper destroyed";
-  }
+  virtual ~ComponentWrapper() { DLOG(INFO) << "Translator ComponentWrapper destroyed"; }
 
   // Delete copy constructor and assignment operator
   ComponentWrapper(const ComponentWrapper&) = delete;
@@ -65,8 +61,7 @@ public:
   ComponentWrapper(ComponentWrapper&&) = delete;
   ComponentWrapper& operator=(ComponentWrapper&&) = delete;
 
-  virtual an<Translation> Query(const string& input,
-                                const Segment& segment) {
+  virtual an<Translation> Query(const string& input, const Segment& segment) {
     return actual_->Query(input, segment);
   }
 
@@ -74,7 +69,7 @@ public:
 };
 
 // Specialization for Processor
-template<typename T_ACTUAL>
+template <typename T_ACTUAL>
 class ComponentWrapper<T_ACTUAL, Processor> : public Processor {
 public:
   explicit ComponentWrapper(const Ticket& ticket, an<T_ACTUAL>& actual)
@@ -82,9 +77,7 @@ public:
     DLOG(INFO) << "Processor ComponentWrapper created with ticket: " << ticket.name_space;
   }
 
-  virtual ~ComponentWrapper() {
-    DLOG(INFO) << "Processor ComponentWrapper destroyed";
-  }
+  virtual ~ComponentWrapper() { DLOG(INFO) << "Processor ComponentWrapper destroyed"; }
 
   // Delete copy constructor and assignment operator
   ComponentWrapper(const ComponentWrapper&) = delete;
@@ -93,14 +86,14 @@ public:
   ComponentWrapper(ComponentWrapper&&) = delete;
   ComponentWrapper& operator=(ComponentWrapper&&) = delete;
 
-   ProcessResult ProcessKeyEvent(const KeyEvent& keyEvent) override {
+  ProcessResult ProcessKeyEvent(const KeyEvent& keyEvent) override {
     return actual_->ProcessKeyEvent(keyEvent);
   }
 
   an<T_ACTUAL> actual_;
 };
 
-template<typename T_ACTUAL, typename T_BASE>
+template <typename T_ACTUAL, typename T_BASE>
 class QuickJSComponent : public T_BASE::Component {
 public:
   QuickJSComponent() = default;
@@ -122,6 +115,6 @@ private:
   std::map<string, an<T_ACTUAL>> components_;
 };
 
-} // namespace rime
+}  // namespace rime
 
 #endif  // RIME_QJS_COMPONENT_H_

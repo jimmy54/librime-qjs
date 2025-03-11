@@ -1,15 +1,15 @@
 #include "trie.h"
+
 #include <fstream>
 
 namespace rime {
 
-Trie::MappedFile::MappedFile(const std::string& path)
-    : fd_(open(path.c_str(), O_RDONLY)) {
+Trie::MappedFile::MappedFile(const std::string& path) : fd_(open(path.c_str(), O_RDONLY)) {
   if (fd_ == -1) {
     throw std::runtime_error("Failed to open file");
   }
 
-  struct stat sb {};
+  struct stat sb{};
   if (fstat(fd_, &sb) == -1) {
     close(fd_);
     throw std::runtime_error("Failed to get file size");
@@ -144,8 +144,7 @@ void Trie::add(const std::string& key, const std::string& value) {
   }
 }
 
-void Trie::build(
-    const std::vector<std::pair<std::string, std::string>>& items) {
+void Trie::build(const std::vector<std::pair<std::string, std::string>>& items) {
   marisa::Keyset keyset;
 
   // First, add all keys to the keyset
@@ -191,8 +190,7 @@ bool Trie::contains(std::string_view key) const {
   return trie_.lookup(agent);
 }
 
-std::vector<std::pair<std::string, std::string>> Trie::prefixSearch(
-    std::string_view prefix) const {
+std::vector<std::pair<std::string, std::string>> Trie::prefixSearch(std::string_view prefix) const {
   std::vector<std::pair<std::string, std::string>> results;
   marisa::Agent agent;
   agent.set_query(prefix.data(), prefix.length());

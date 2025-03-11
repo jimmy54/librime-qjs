@@ -2,13 +2,14 @@
 #define MARISA_TRIES_WITH_STRING_H
 
 #include <marisa.h>
+
 #include <cstddef>
+#include <filesystem>
 #include <iostream>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
-#include <filesystem>
-#include <optional>
 // mmap headers
 #include <fcntl.h>
 #include <sys/mman.h>
@@ -22,14 +23,14 @@ private:
   marisa::Trie trie_;
   std::vector<std::string> data_;
 
-  protected:
+protected:
   // RAII wrapper for mmap
   class MappedFile {
     void* data_ = nullptr;
     size_t size_ = 0;
     int fd_ = -1;
 
-   public:
+  public:
     MappedFile(const std::string& path);
     ~MappedFile();
 
@@ -54,8 +55,7 @@ private:
       return result;
     }
 
-    static void writeVectorData(std::ostream& out,
-                                  const std::vector<std::string>& data) {
+    static void writeVectorData(std::ostream& out, const std::vector<std::string>& data) {
       const size_t size = data.size();
       out.write(reinterpret_cast<const char*>(&size), sizeof(size));
       for (const auto& str : data) {
@@ -63,8 +63,7 @@ private:
       }
     }
 
-    static void readVectorData(std::istream& in,
-                                 std::vector<std::string>& data) {
+    static void readVectorData(std::istream& in, std::vector<std::string>& data) {
       size_t size = 0;
       in.read(reinterpret_cast<char*>(&size), sizeof(size));
       data.resize(size);
@@ -77,23 +76,23 @@ private:
   class ScopedTempFile {
     std::filesystem::path path_;
 
-   public:
-    explicit ScopedTempFile(const std::filesystem::path& base)
-        : path_(base.string() + ".temp") {}
+  public:
+    explicit ScopedTempFile(const std::filesystem::path& base) : path_(base.string() + ".temp") {}
     ~ScopedTempFile() { std::filesystem::remove(path_); }
 
     // Delete copy constructor and assignment operator
     ScopedTempFile(const ScopedTempFile&) = delete;
     ScopedTempFile& operator=(const ScopedTempFile&) = delete;
 
-    // Delete move constructor and assignment operator since we manage a filesystem resource
+    // Delete move constructor and assignment operator since we manage a
+    // filesystem resource
     ScopedTempFile(ScopedTempFile&&) = delete;
     ScopedTempFile& operator=(ScopedTempFile&&) = delete;
 
     [[nodiscard]] const std::filesystem::path& path() const { return path_; }
   };
 
- public:
+public:
   void loadBinaryFileMmap(std::string_view filePath);
   void loadTextFile(const std::string& txtPath, size_t entrySize);
   void saveToBinaryFile(const std::string& filePath) const;

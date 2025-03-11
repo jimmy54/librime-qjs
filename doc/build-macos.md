@@ -124,6 +124,11 @@ sudo cp ${qjs_dylib} ${rime_plugin_folder} && \
 - Fix the issues as best as you can.
 - [ ] TODO: add clang-tidy to the CI pipeline, and ignore the issues outside our codebase
 
+### Format with clang-format
+
+- clang-tidy is a part of the clang/llvm toolchain, check it's version: `clang-format --version`
+- format all the code: `./tools/format-code.sh`
+
 ### Verify the javascript code with qjs in command line
 
 - build the qjs executable: `(cd ./plugins/qjs/thirdparty/quickjs; cmake .; make)`
