@@ -126,8 +126,9 @@ sudo cp ${qjs_dylib} ${rime_plugin_folder} && \
 
 ### Format with clang-format
 
-- clang-tidy is a part of the clang/llvm toolchain, check it's version: `clang-format --version`
+- clang-format is a part of the clang/llvm toolchain, check it's version: `clang-format --version`
 - format all the code: `./tools/format-code.sh`
+- add the pre-commit hook to format the changed files automatically: `git config core.hooksPath .githooks`
 
 ### Verify the javascript code with qjs in command line
 
