@@ -24,10 +24,10 @@ class ComponentWrapper<T_ACTUAL, Filter> : public Filter {
 public:
   explicit ComponentWrapper(const Ticket& ticket, an<T_ACTUAL>& actual)
       : Filter(ticket), actual_(actual) {
-    DLOG(INFO) << "Filter ComponentWrapper created with ticket: " << ticket.name_space;
+    DLOG(INFO) << "[qjs] Filter ComponentWrapper created with ticket: " << ticket.name_space;
   }
 
-  virtual ~ComponentWrapper() { DLOG(INFO) << "Filter ComponentWrapper destroyed"; }
+  virtual ~ComponentWrapper() { DLOG(INFO) << "[qjs] Filter ComponentWrapper destroyed"; }
 
   // Delete copy constructor and assignment operator
   ComponentWrapper(const ComponentWrapper&) = delete;
@@ -49,10 +49,10 @@ class ComponentWrapper<T_ACTUAL, Translator> : public Translator {
 public:
   explicit ComponentWrapper(const Ticket& ticket, an<T_ACTUAL>& actual)
       : Translator(ticket), actual_(actual) {
-    DLOG(INFO) << "Translator ComponentWrapper created with ticket: " << ticket.name_space;
+    DLOG(INFO) << "[qjs] Translator ComponentWrapper created with ticket: " << ticket.name_space;
   }
 
-  virtual ~ComponentWrapper() { DLOG(INFO) << "Translator ComponentWrapper destroyed"; }
+  virtual ~ComponentWrapper() { DLOG(INFO) << "[qjs] Translator ComponentWrapper destroyed"; }
 
   // Delete copy constructor and assignment operator
   ComponentWrapper(const ComponentWrapper&) = delete;
@@ -74,7 +74,7 @@ class ComponentWrapper<T_ACTUAL, Processor> : public Processor {
 public:
   explicit ComponentWrapper(const Ticket& ticket, an<T_ACTUAL>& actual)
       : Processor(ticket), actual_(actual) {
-    DLOG(INFO) << "Processor ComponentWrapper created with ticket: " << ticket.name_space;
+    DLOG(INFO) << "[qjs] Processor ComponentWrapper created with ticket: " << ticket.name_space;
   }
 
   virtual ~ComponentWrapper() { DLOG(INFO) << "Processor ComponentWrapper destroyed"; }

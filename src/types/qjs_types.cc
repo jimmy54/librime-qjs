@@ -35,7 +35,7 @@
 namespace rime {
 
 void initQjsTypes(JSContext* ctx) {
-  LOG(INFO) << "registering rime types to the quickjs engine...";
+  LOG(INFO) << "[qjs] registering rime types to the quickjs engine...";
 
   JS_SetModuleLoaderFunc(JS_GetRuntime(ctx), nullptr, QjsHelper::jsModuleLoader, nullptr);
   // Do not trigger GC when heap size is less than 16MB

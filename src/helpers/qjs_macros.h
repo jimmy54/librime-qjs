@@ -141,7 +141,7 @@
   }                                                                                   \
                                                                                       \
   static void js_##class_name##_finalizer(JSRuntime* rt, JSValue val) {               \
-    DLOG(INFO) << "Calling js_" << #class_name "_finalizer."                          \
+    DLOG(INFO) << "[qjs] Calling js_" << #class_name "_finalizer."                    \
                << "The raw pointer is passed from the rime engine,"                   \
                << "so do not free it here.";                                          \
   }
@@ -174,7 +174,7 @@
     return nullptr;                                                                       \
   }                                                                                       \
   static void js_##class_name##_finalizer(JSRuntime* rt, JSValue val) {                   \
-    DLOG(INFO) << "Calling js_" << #class_name << "_finalizer.";                          \
+    DLOG(INFO) << "[qjs] Calling js_" << #class_name << "_finalizer.";                    \
     if (auto ptr = JS_GetOpaque(val, js_##class_name##_class_id)) {                       \
       auto ppObj = static_cast<std::shared_ptr<class_name>*>(ptr);                        \
       (*ppObj).reset();                                                                   \

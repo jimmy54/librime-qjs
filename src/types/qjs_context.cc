@@ -22,7 +22,7 @@ static JSValue get_preedit(JSContext* ctx, JSValueConst thisVal) {
 static JSValue get_lastSegment(JSContext* ctx, JSValueConst thisVal) {
   if (auto* obj = QjsContext::Unwrap(ctx, thisVal)) {
     if (obj->composition().empty()) {
-      DLOG(ERROR) << "no segment available in context->composition()";
+      LOG(ERROR) << "[qjs] no segment available in context->composition()";
       return JS_NULL;
     }
 

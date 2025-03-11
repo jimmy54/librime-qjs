@@ -131,9 +131,9 @@ JSValue QjsEnvironment::popen(JSContext* ctx, JSValueConst thisVal, int argc, JS
   // Close the pipe
   int status = pclose(pipe);
   if (status == 0) {
-    DLOG(INFO) << "Command output: " << result;
+    DLOG(INFO) << "[qjs] Command output: " << result;
   } else {
-    LOG(ERROR) << "Command failed with status: " << status;
+    LOG(ERROR) << "[qjs] Command failed with status: " << status;
     return JS_ThrowPlainError(ctx, "Command failed with status: %d", status);
   }
   return JS_NewString(ctx, result.c_str());
