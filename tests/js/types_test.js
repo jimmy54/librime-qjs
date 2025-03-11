@@ -53,6 +53,8 @@ function testEnvUtilities(env) {
   assert(info.includes('Process RSS Mem: '))
   assert(info.includes('QuickJS Mem: '))
 
+  console.error(`This is an error message.`)
+
   // ensure engine.processKey would not crash the program
   env.engine.processKey('Down')
   env.engine.processKey('InvalidKey')

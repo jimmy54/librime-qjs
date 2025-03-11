@@ -49,6 +49,7 @@ void QjsHelper::exposeLogToJsConsole(JSContext* ctx) {
   JSValue globalObj = JS_GetGlobalObject(ctx);
   JSValue console = JS_NewObject(ctx);
   JS_SetPropertyStr(ctx, console, "log", JS_NewCFunction(ctx, jsLog, "log", 1));
+  JS_SetPropertyStr(ctx, console, "error", JS_NewCFunction(ctx, jsError, "error", 1));
   JS_SetPropertyStr(ctx, globalObj, "console", console);
   JS_FreeValue(ctx, globalObj);
 }
@@ -95,7 +96,7 @@ JSValue QjsHelper::loadJsModule(JSContext* ctx, const char* fileName) {
   return funcObj;
 }
 
-JSValue QjsHelper::jsLog(JSContext* ctx, JSValueConst thisVal, int argc, JSValueConst* argv) {
+static std::string logToStringStream(JSContext* ctx, int argc, JSValueConst* argv) {
   std::ostringstream oss;
   for (int i = 0; i < argc; i++) {
     const char* str = JS_ToCString(ctx, argv[i]);
@@ -104,7 +105,16 @@ JSValue QjsHelper::jsLog(JSContext* ctx, JSValueConst thisVal, int argc, JSValue
       JS_FreeCString(ctx, str);
     }
   }
-  LOG(INFO) << "$qjs$ " << oss.str();
+  return oss.str();
+}
+
+JSValue QjsHelper::jsLog(JSContext* ctx, JSValueConst thisVal, int argc, JSValueConst* argv) {
+  LOG(INFO) << "$qjs$ " << logToStringStream(ctx, argc, argv);
+  return JS_UNDEFINED;
+}
+
+JSValue QjsHelper::jsError(JSContext* ctx, JSValueConst thisVal, int argc, JSValueConst* argv) {
+  LOG(ERROR) << "$qjs$ " << logToStringStream(ctx, argc, argv);
   return JS_UNDEFINED;
 }
 

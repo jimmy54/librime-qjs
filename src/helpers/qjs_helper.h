@@ -54,6 +54,7 @@ private:
   static std::string readJsCode(JSContext* ctx, const char* fileName);
   static JSValue loadJsModule(JSContext* ctx, const char* fileName);
   static JSValue jsLog(JSContext* ctx, JSValueConst thisVal, int argc, JSValueConst* argv);
+  static JSValue jsError(JSContext* ctx, JSValueConst thisVal, int argc, JSValueConst* argv);
 };
 
 #endif
