@@ -29,7 +29,7 @@ an<Translation> QuickJSTranslator::Query(const string& input, const Segment& seg
   // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
   JSValueRAII jsSegment(QjsSegment::Wrap(ctx, const_cast<Segment*>(&segment)));
   JSValue args[] = { jsInput.get(), jsSegment.get(), getEnvironment() };
-  JSValueRAII resultArray(JS_Call(ctx, getMainFunc(), JS_UNDEFINED, countof(args), static_cast<JSValue*>(args)));
+  JSValueRAII resultArray(JS_Call(ctx, getMainFunc(), getInstance(), countof(args), static_cast<JSValue*>(args)));
   if (JS_IsException(resultArray)) {
     return translation;
   }

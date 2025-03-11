@@ -10,14 +10,15 @@
 namespace rime {
 
 QuickJSTranslation::QuickJSTranslation(an<Translation> translation,
+                                       const JSValue& filterObj,
                                        const JSValue& filterFunc,
                                        const JSValue& environment)
     : PrefetchTranslation(std::move(translation)), replenished_(true) {
-  DoFilter(filterFunc, environment);
+  DoFilter(filterObj, filterFunc, environment);
   set_exhausted(cache_.empty());
 }
 
-bool QuickJSTranslation::DoFilter(const JSValue& filterFunc, const JSValue& environment) {
+bool QuickJSTranslation::DoFilter(const JSValue& filterObj, const JSValue& filterFunc, const JSValue& environment) {
   auto *ctx = QjsHelper::getInstance().getContext();
   JSValueRAII jsArray(JS_NewArray(ctx));
   size_t idx = 0;
@@ -30,7 +31,7 @@ bool QuickJSTranslation::DoFilter(const JSValue& filterFunc, const JSValue& envi
   }
 
   JSValueConst args[] = {jsArray, environment};
-  JSValueRAII resultArray(JS_Call(ctx, filterFunc, JS_UNDEFINED, countof(args), static_cast<JSValue*>(args)));
+  JSValueRAII resultArray(JS_Call(ctx, filterFunc, filterObj, countof(args), static_cast<JSValue*>(args)));
   if (JS_IsException(resultArray)) {
     return false;
   }

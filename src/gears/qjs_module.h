@@ -30,6 +30,9 @@ protected:
   [[nodiscard]] bool isLoaded() const {
     return isLoaded_;
   }
+  [[nodiscard]] JSValue getInstance() const {
+    return instance_.get();
+  }
   [[nodiscard]] JSValue getMainFunc() const {
     return mainFunc_.get();
   }
@@ -43,8 +46,10 @@ private:
 
   bool isLoaded_ = false;
 
+  JSValueRAII instance_{ JS_UNDEFINED };
   JSValueRAII mainFunc_{ JS_UNDEFINED };
-  JSValueRAII finitFunc_{ JS_UNDEFINED };
+  JSValueRAII finalizer_{ JS_UNDEFINED };
+  
   JSValueRAII environment_{ JS_UNDEFINED };
 };
 

@@ -9,7 +9,7 @@ namespace rime {
 
 class JSValueRAII {
 public:
-    explicit JSValueRAII(JSValue val) : val_(val) {
+    JSValueRAII(JSValue val) : val_(val) {
         if (JS_IsException(val)) {
             auto *ctx = QjsHelper::getInstance().getContext();
             JSValue exception = JS_GetException(ctx);
@@ -19,7 +19,7 @@ public:
 
             JSValue stack = JS_GetPropertyStr(ctx, exception, "stack");
             const char *stackTrace = JS_ToCString(ctx, stack);
-            if (stackTrace != nullptr) {
+            if (stackTrace != nullptr && *stackTrace != '\0') {
                 LOG(ERROR) << "[qjs] JS stack trace: " << stackTrace;
                 JS_FreeCString(ctx, stackTrace);  // Free the C string
             } else {

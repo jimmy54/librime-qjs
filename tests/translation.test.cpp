@@ -22,7 +22,7 @@ protected:
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
 TEST_F(QuickJSTranslationTest, Initialize) {
     auto translation = createMockTranslation();
-    auto qjsTranslation = New<QuickJSTranslation>(translation, JS_UNDEFINED, JS_UNDEFINED);
+    auto qjsTranslation = New<QuickJSTranslation>(translation, JS_UNDEFINED, JS_UNDEFINED, JS_UNDEFINED);
     EXPECT_TRUE(qjsTranslation->exhausted());
     EXPECT_FALSE(qjsTranslation->Next());
     EXPECT_EQ(qjsTranslation->Peek(), nullptr);
@@ -47,7 +47,7 @@ TEST_F(QuickJSTranslationTest, FilterCandidates) {
     JSValueRAII env(JS_NewObject(ctx));
     JS_SetPropertyStr(ctx, env, "expectingText", JS_NewString(ctx, "text2"));
 
-    auto qjsTranslation = New<QuickJSTranslation>(translation, filterFunc, env);
+    auto qjsTranslation = New<QuickJSTranslation>(translation, JS_UNDEFINED, filterFunc, env);
     auto candidate = qjsTranslation->Peek();
 
     ASSERT_TRUE(candidate != nullptr);
@@ -62,7 +62,7 @@ TEST_F(QuickJSTranslationTest, FilterCandidates) {
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
 TEST_F(QuickJSTranslationTest, EmptyTranslation) {
     auto translation = New<FakeTranslation>();
-    auto qjsTranslation = New<QuickJSTranslation>(translation, JS_UNDEFINED, JS_UNDEFINED);
+    auto qjsTranslation = New<QuickJSTranslation>(translation, JS_UNDEFINED, JS_UNDEFINED, JS_UNDEFINED);
     EXPECT_TRUE(qjsTranslation->exhausted());
     EXPECT_FALSE(qjsTranslation->Next());
     EXPECT_EQ(qjsTranslation->Peek(), nullptr);

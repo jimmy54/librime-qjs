@@ -17,7 +17,7 @@ ProcessResult QuickJSProcessor::ProcessKeyEvent(const KeyEvent& keyEvent) {
   // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
   JSValueRAII jsKeyEvt(QjsKeyEvent::Wrap(ctx, const_cast<KeyEvent*>(&keyEvent)));
   JSValue args[] = { jsKeyEvt.get(), getEnvironment() };
-  JSValueRAII jsResult(JS_Call(ctx, getMainFunc(), JS_UNDEFINED, countof(args), static_cast<JSValue*>(args)));
+  JSValueRAII jsResult(JS_Call(ctx, getMainFunc(), getInstance(), countof(args), static_cast<JSValue*>(args)));
   if (JS_IsException(jsResult)) {
     return kNoop;
   }

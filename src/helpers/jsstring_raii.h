@@ -9,7 +9,7 @@ namespace rime {
 
 class JSStringRAII {
  public:
-  explicit JSStringRAII(const char* str) : str_(str) {}
+  JSStringRAII(const char* str) : str_(str) {}
 
   JSStringRAII(const JSStringRAII&) = default;
   JSStringRAII(JSStringRAII&&) = delete;

@@ -19,7 +19,7 @@ public:
       return translation;
     }
 
-    return New<QuickJSTranslation>(translation, getMainFunc(), getEnvironment());
+    return New<QuickJSTranslation>(translation, getInstance(), getMainFunc(), getEnvironment());
   }
 };
 

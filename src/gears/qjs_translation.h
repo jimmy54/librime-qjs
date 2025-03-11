@@ -14,6 +14,7 @@ class QuickJSTranslation : public PrefetchTranslation {
   QuickJSTranslation& operator=(QuickJSTranslation&&) = delete;
 
   QuickJSTranslation(an<Translation> translation,
+                     const JSValue& filterObj,
                      const JSValue& filterFunc,
                      const JSValue& environment);
   ~QuickJSTranslation() override {};
@@ -22,7 +23,7 @@ class QuickJSTranslation : public PrefetchTranslation {
   bool Replenish() override { return replenished_; }
 
  private:
-  bool DoFilter(const JSValue& filterFunc, const JSValue& environment);
+  bool DoFilter(const JSValue& filterObj, const JSValue& filterFunc, const JSValue& environment);
   bool replenished_ = false;
 };
 

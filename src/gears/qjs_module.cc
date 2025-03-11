@@ -1,6 +1,7 @@
 #include "qjs_module.h"
 #include "qjs_environment.h"
 #include "jsvalue_raii.h"
+#include "qjs_helper.h"
 
 namespace rime {
 
@@ -15,39 +16,41 @@ QjsModule::QjsModule(const std::string& nameSpace,
     return;
   }
 
-  environment_ = QjsEnvironment::create(ctx, engine, nameSpace);
 
-  JSValueRAII initFunc(JS_GetPropertyStr(ctx, moduleNamespace, "init"));
-  if (!JS_IsUndefined(initFunc)) {
-    JSValueRAII initResult(JS_Call(ctx, initFunc, JS_UNDEFINED, 1, environment_.getPtr()));
-    if (JS_IsException(initResult)) {
-      LOG(ERROR) << "[qjs] Error running the init function in " << fileName;
-      return;
-    }
-    DLOG(INFO) << "[qjs]  init function executed successfully in " << fileName;
-
-  }
-
-  finitFunc_ = JSValueRAII(JS_GetPropertyStr(ctx, moduleNamespace, "finit"));
-
-  mainFunc_ = JSValueRAII(JS_GetPropertyStr(ctx, moduleNamespace, mainFuncName));
-  if (JS_IsUndefined(mainFunc_)) {
-    LOG(ERROR) << "[qjs] No `" << mainFuncName << "` function exported in " << fileName;
+  JSValueRAII jsClazz = QjsHelper::getExportedClassHavingMethodNameInModule(ctx, moduleNamespace, mainFuncName);
+  if (JS_IsUndefined(jsClazz)) {
+    LOG(ERROR) << "[qjs] No exported class having `" << mainFuncName << "` function in " << fileName;
     return;
   }
+
+  environment_ = QjsEnvironment::create(ctx, engine, nameSpace);
+
+  JSValueRAII proto = JS_GetPropertyStr(ctx, jsClazz, "prototype");
+  JSValueRAII constructor = JS_GetPropertyStr(ctx, proto, "constructor");
+  if (!JS_IsUndefined(constructor)) {
+    instance_ = JS_CallConstructor(ctx, constructor, 1, environment_.getPtr());
+    if (JS_IsException(instance_)) {
+      LOG(ERROR) << "[qjs] Error creating an instance of the exported class in " << fileName;
+      return;
+    }
+    DLOG(INFO) << "[qjs] constructor function executed successfully in " << fileName;
+  }
+
+  mainFunc_ = QjsHelper::getMethodByNameInClass(ctx, jsClazz, mainFuncName);
+  finalizer_ = QjsHelper::getMethodByNameInClass(ctx, jsClazz, "finalizer");
 
   isLoaded_ = true;
 }
 
 QjsModule::~QjsModule() {
-  if (JS_IsUndefined(finitFunc_)) {
-    DLOG(INFO) << "[qjs] ~" << namespace_ << " no `finit` function exported.";
+  if (JS_IsUndefined(finalizer_)) {
+    DLOG(INFO) << "[qjs] ~" << namespace_ << " no `finalizer` function exported.";
   } else {
-    DLOG(INFO) << "[qjs] running the finit function";
+    DLOG(INFO) << "[qjs] running the finalizer function of " << namespace_;
     auto *ctx = QjsHelper::getInstance().getContext();
-    JSValueRAII finitResult(JS_Call(ctx, finitFunc_, JS_UNDEFINED, 1, environment_.getPtr()));
-    if (JS_IsException(finitResult)) {
-      LOG(ERROR) << "[qjs] ~" << namespace_ << " Error running the finit function.";
+    JSValueRAII finalizerResult(JS_Call(ctx, finalizer_, instance_, 1, environment_.getPtr()));
+    if (JS_IsException(finalizerResult)) {
+      LOG(ERROR) << "[qjs] ~" << namespace_ << " Error running the finalizer function.";
     }
   }
 }
