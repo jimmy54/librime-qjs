@@ -22,12 +22,12 @@ static JSValue get_preedit(JSContext* ctx, JSValueConst thisVal) {
 static JSValue get_lastSegment(JSContext* ctx, JSValueConst thisVal) {
   if (auto* obj = QjsContext::Unwrap(ctx, thisVal)) {
     if (obj->composition().empty()) {
-      LOG(ERROR) << "[qjs] no segment available in context->composition()";
+      // The composition could be empty when there is not a menu listing.
+      // In the javascript plugins, it should check `context.hasMenu()` before fetching the segment.
       return JS_NULL;
     }
 
-    // must be set as reference [Segment&] here, otherwise fetching its prompt would crash the
-    // program
+    // must be set as reference [Segment&] here, otherwise fetching its prompt would crash the program
     Segment& segment = obj->composition().back();
     return QjsSegment::Wrap(ctx, &segment);
   }

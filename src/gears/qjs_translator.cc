@@ -18,13 +18,6 @@ an<Translation> QuickJSTranslator::Query(const string& input, const Segment& seg
     return translation;
   }
 
-  // TODO: the composition is always empty in the qjs processors, find the root cause and fix it.
-  // Temporary workaround: add the segment to the context and use it in the qjs processors.
-  if (engine_->context()->composition().empty()) {
-    DLOG(INFO) << "[qjs] adding segment to context for later usage in the qjs processors.";
-    engine_->context()->composition().AddSegment(segment);
-  }
-
   auto* ctx = QjsHelper::getInstance().getContext();
   JSValueRAII jsInput(JS_NewString(ctx, input.c_str()));
   // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
