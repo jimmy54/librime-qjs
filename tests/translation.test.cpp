@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <rime/candidate.h>
 #include <rime/translation.h>
+#include <vector>
 
 #include "fake_translation.h"
 #include "jsvalue_raii.h"
@@ -8,6 +9,7 @@
 #include "qjs_translation.h"
 
 using namespace rime;
+
 class QuickJSTranslationTest : public ::testing::Test {
 protected:
   static an<Translation> createMockTranslation() {
@@ -19,8 +21,7 @@ protected:
   }
 };
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables,
-// readability-function-cognitive-complexity)
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
 TEST_F(QuickJSTranslationTest, Initialize) {
   auto translation = createMockTranslation();
   auto qjsTranslation =
@@ -30,8 +31,7 @@ TEST_F(QuickJSTranslationTest, Initialize) {
   EXPECT_EQ(qjsTranslation->Peek(), nullptr);
 }
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables,
-// readability-function-cognitive-complexity)
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
 TEST_F(QuickJSTranslationTest, FilterCandidates) {
   auto translation = createMockTranslation();
   const char* jsCode = R"(
@@ -62,8 +62,7 @@ TEST_F(QuickJSTranslationTest, FilterCandidates) {
   ASSERT_FALSE(qjsTranslation->Next());
 }
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables,
-// readability-function-cognitive-complexity)
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
 TEST_F(QuickJSTranslationTest, EmptyTranslation) {
   auto translation = New<FakeTranslation>();
   auto qjsTranslation =
@@ -71,4 +70,40 @@ TEST_F(QuickJSTranslationTest, EmptyTranslation) {
   EXPECT_TRUE(qjsTranslation->exhausted());
   EXPECT_FALSE(qjsTranslation->Next());
   EXPECT_EQ(qjsTranslation->Peek(), nullptr);
+}
+
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
+TEST_F(QuickJSTranslationTest, CandidatesShouldBeFreed) {
+  std::vector<an<Candidate>> candidates;
+  {
+    auto translation = createMockTranslation();
+    const char* jsCode = R"(
+          function filterCandidates(candidates, env) {
+            candidates.push(new Candidate('test', 0, 1, 'new Candidate from js', 'the comment'))
+            return candidates
+          }
+      )";
+
+    auto* ctx = QjsHelper::getInstance().getContext();
+    JSValueRAII result(JS_Eval(ctx, jsCode, strlen(jsCode), "<input>", JS_EVAL_TYPE_GLOBAL));
+    JSValueRAII global(JS_GetGlobalObject(ctx));
+    JSValueRAII filterFunc(JS_GetPropertyStr(ctx, global, "filterCandidates"));
+
+    JSValueRAII env(JS_NewObject(ctx));
+
+    auto qjsTranslation = New<QuickJSTranslation>(translation, JS_UNDEFINED, filterFunc, env);
+
+    while (auto candidate = qjsTranslation->exhausted() ? nullptr : qjsTranslation->Peek()) {
+      candidates.push_back(candidate);
+      qjsTranslation->Next();
+    }
+
+    candidates.push_back(New<SimpleCandidate>("mock", 0, 1, "text4", "comment4"));
+  }
+
+  ASSERT_EQ(candidates.size(), 5);
+
+  for (auto& candidate : candidates) {
+    ASSERT_EQ(candidate.use_count(), 1);
+  }
 }
