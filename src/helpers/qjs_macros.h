@@ -177,7 +177,9 @@
     DLOG(INFO) << "[qjs] Calling js_" << #class_name << "_finalizer.";                    \
     if (auto ptr = JS_GetOpaque(val, js_##class_name##_class_id)) {                       \
       auto ppObj = static_cast<std::shared_ptr<class_name>*>(ptr);                        \
-      (*ppObj).reset();                                                                   \
+      ppObj->reset();                                                                     \
+      delete ppObj;                                                                       \
+      JS_SetOpaque(val, nullptr);                                                         \
     }                                                                                     \
   }
 
