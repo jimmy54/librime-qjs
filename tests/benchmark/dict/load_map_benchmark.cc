@@ -179,8 +179,12 @@ TEST(LoadMapDictBenchmark, LoadTextFileAndLookup) {
   checkMapData(map);
 
   MmapStringMap mmap;
+  for (auto pair : map) {
+    mmap.add(pair.first, pair.second);
+  }
+
   auto mmapFile = std::string(FOLDER) + "dict_map.mmap";
-  RESAVE_FILE(mmapFile, PRINT_DURATION(YELLOW, "Mmap serialization: \t", mmap.save(mmapFile, map)));
+  RESAVE_FILE(mmapFile, PRINT_DURATION(YELLOW, "Mmap serialization: \t", mmap.save(mmapFile)));
 
   auto yasFile = std::string(FOLDER) + "dict_map.yas";
   RESAVE_FILE(yasFile,
@@ -189,10 +193,11 @@ TEST(LoadMapDictBenchmark, LoadTextFileAndLookup) {
 
 TEST(LoadMapDictBenchmark, LoadMmap) {
   MmapStringMap mmap;
-  std::unordered_map<std::string, std::string> map;
 
   auto mmapFile = std::string(FOLDER) + "dict_map.mmap";
-  PRINT_DURATION(MAGENTA, "Mmap deserialization: \t", map = mmap.load(mmapFile));
+  PRINT_DURATION(MAGENTA, "Mmap deserialization: \t", mmap.load(mmapFile));
+
+  std::unordered_map<std::string, std::string> map = mmap.exportToMap();
   checkMapData(map);
   std::remove(mmapFile.c_str());
 }
@@ -220,6 +225,6 @@ int main(int argc, char** argv) {
 // | Option               | Load from Text | Save to Binary | Load from Binary | Hardware                        |
 // +----------------------+----------------+----------------+------------------+---------------------------------+
 // | Trie (with mmap)     |  200 ms        |  57 ms         |  11 ms           | MBP 2015, 2.4 GHz Intel Core i7 |
-// | unordered_map + mmap |  125 ms        | 125 ms         |  43 ms           | MBP 2015, 2.4 GHz Intel Core i7 |
-// | unordered_map + YAS  |  125 ms        |  65 ms         |  56 ms           | MBP 2015, 2.4 GHz Intel Core i7 |
+// | unordered_map + mmap |   90 ms        | 100 ms         |  40 ms           | MBP 2015, 2.4 GHz Intel Core i7 |
+// | unordered_map + YAS  |   90 ms        |  57 ms         |  60 ms           | MBP 2015, 2.4 GHz Intel Core i7 |
 // +=============================================================================================================+

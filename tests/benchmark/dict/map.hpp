@@ -4,8 +4,10 @@
 #include <boost/interprocess/mapped_region.hpp>
 #include <cstdint>
 #include <fstream>
+#include <iostream>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 class MmapStringMap {
   struct FileHeader {
@@ -16,8 +18,8 @@ class MmapStringMap {
   };
 
   struct StringRef {
-    uint64_t offset;  // Offset in strings pool
-    uint32_t length;  // Length of string
+    size_t offset;  // Offset in strings pool
+    size_t length;  // Length of string
   };
 
   struct KeyValuePair {
@@ -27,19 +29,51 @@ class MmapStringMap {
 
   static constexpr uint64_t MAGIC = 0x4D4150535452494EUL;  // "MAPSTRIN" in hex
 
+  std::string stringsPool_;
+  std::vector<KeyValuePair> pairs_;
+  std::unordered_map<std::string_view, const StringRef&> map_;
+
 public:
-  void save(const std::string& filename, const std::unordered_map<std::string, std::string>& data) {
-    // Calculate required size in a single pass
-    size_t strings_size = 0;
-    const size_t total_pairs = data.size();
+  std::unordered_map<std::string, std::string> exportToMap() {
+    std::unordered_map<std::string, std::string> result;
+    result.reserve(pairs_.size());
+
+    for (const auto& [key, value] : pairs_) {
+      std::string strKey(stringsPool_.data() + key.offset, key.length);
+      std::string strVal(stringsPool_.data() + value.offset, value.length);
+      result.try_emplace(strKey, strVal);
+    }
+    return result;
+  }
+
+  void reserve(size_t size) {
+    pairs_.reserve(size);
+    map_.reserve(size);
+  }
+
+  void add(const std::string& key, const std::string& value) {
+    size_t offset = stringsPool_.size();
+    stringsPool_.append(key);
+    stringsPool_.append(value);
+
+    StringRef refVal = {offset + key.size(), value.size()};
+    KeyValuePair pair = {
+        {offset, key.size()},
+        refVal,
+    };
+
+    pairs_.push_back(pair);
+
+    std::string_view keyView(stringsPool_.data() + offset, key.size());
+    map_.try_emplace(keyView, refVal);
+  }
+
+  void save(const std::string& filename) {
+    const size_t total_pairs = pairs_.size();
     const size_t header_size = sizeof(FileHeader);
     const size_t pairs_size = sizeof(KeyValuePair) * total_pairs;
 
-    for (const auto& [key, value] : data) {
-      strings_size += key.size() + value.size();
-    }
-
-    const size_t total_size = header_size + pairs_size + strings_size;
+    const size_t total_size = header_size + pairs_size + stringsPool_.size();
 
     // Create and size the file in one operation
     {
@@ -60,33 +94,16 @@ public:
     header->magic = MAGIC;
     header->count = total_pairs;
     header->strings_offset = header_size + pairs_size;
-    header->strings_size = strings_size;
+    header->strings_size = stringsPool_.size();
 
-    // Setup pointers for direct memory access
-    auto* pairs = reinterpret_cast<KeyValuePair*>(base_addr + header_size);
     char* strings = base_addr + header->strings_offset;
-    uint64_t current_offset = 0;
-
-    // Write data in a single pass
-    size_t i = 0;
-    for (const auto& [key, value] : data) {
-      const size_t key_size = key.size();
-      const size_t value_size = value.size();
-
-      pairs[i].key = {current_offset, static_cast<uint32_t>(key_size)};
-      std::memcpy(strings + current_offset, key.data(), key_size);
-      current_offset += key_size;
-
-      pairs[i].value = {current_offset, static_cast<uint32_t>(value_size)};
-      std::memcpy(strings + current_offset, value.data(), value_size);
-      current_offset += value_size;
-      ++i;
-    }
+    std::memcpy(strings, stringsPool_.data(), stringsPool_.size());
+    std::memcpy(base_addr + header_size, pairs_.data(), pairs_size);
 
     region.flush();
   }
 
-  std::unordered_map<std::string, std::string> load(const std::string& filename) {
+  void load(const std::string& filename) {
     boost::interprocess::mapped_region region(
         boost::interprocess::file_mapping(filename.c_str(), boost::interprocess::read_only),
         boost::interprocess::read_only);
@@ -95,17 +112,22 @@ public:
     if (header->magic != MAGIC)
       throw std::runtime_error("Invalid file format");
 
-    std::unordered_map<std::string, std::string> result;
-    result.reserve(header->count);
+    const char* strings_base =
+        static_cast<const char*>(region.get_address()) + header->strings_offset;
+    stringsPool_.assign(strings_base, header->strings_size);
+
+    pairs_.reserve(header->count);
 
     auto* pairs = reinterpret_cast<const KeyValuePair*>(
         static_cast<const char*>(region.get_address()) + sizeof(FileHeader));
-    const char* strings = static_cast<const char*>(region.get_address()) + header->strings_offset;
 
     for (size_t i = 0; i < header->count; ++i) {
-      result.emplace(std::string(strings + pairs[i].key.offset, pairs[i].key.length),
-                     std::string(strings + pairs[i].value.offset, pairs[i].value.length));
+      const auto& pair = pairs[i];
+      pairs_.push_back(pair);
+
+      std::string_view keyView(strings_base + pair.key.offset, pair.key.length);
+      auto& value = pair.value;
+      map_.try_emplace(keyView, value);
     }
-    return result;
   }
 };
