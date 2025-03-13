@@ -18,79 +18,67 @@ namespace rime {
 template <typename T_ACTUAL, typename T_BASE>
 class ComponentWrapper;
 
-// Specialization for Filter
-template <typename T_ACTUAL>
-class ComponentWrapper<T_ACTUAL, Filter> : public Filter {
+// Base class for all ComponentWrapper specializations
+template <typename T_ACTUAL, typename T_BASE>
+class ComponentWrapperBase : public T_BASE {
 public:
-  explicit ComponentWrapper(const Ticket& ticket, an<T_ACTUAL>& actual)
-      : Filter(ticket), actual_(actual) {
-    DLOG(INFO) << "[qjs] Filter ComponentWrapper created with ticket: " << ticket.name_space;
+  explicit ComponentWrapperBase(const Ticket& ticket, an<T_ACTUAL>& actual)
+      : T_BASE(ticket), actual_(actual) {
+    DLOG(INFO) << "[qjs] " << typeid(T_BASE).name()
+               << " ComponentWrapper created with ticket: " << ticket.name_space;
   }
 
-  virtual ~ComponentWrapper() { DLOG(INFO) << "[qjs] Filter ComponentWrapper destroyed"; }
+  virtual ~ComponentWrapperBase() {
+    DLOG(INFO) << "[qjs] " << typeid(T_BASE).name() << " ComponentWrapper destroyed";
+  }
 
   // Delete copy constructor and assignment operator
-  ComponentWrapper(const ComponentWrapper&) = delete;
-  ComponentWrapper& operator=(const ComponentWrapper&) = delete;
+  ComponentWrapperBase(const ComponentWrapperBase&) = delete;
+  ComponentWrapperBase& operator=(const ComponentWrapperBase&) = delete;
   // Delete move constructor and assignment operator
-  ComponentWrapper(ComponentWrapper&&) = delete;
-  ComponentWrapper& operator=(ComponentWrapper&&) = delete;
+  ComponentWrapperBase(ComponentWrapperBase&&) = delete;
+  ComponentWrapperBase& operator=(ComponentWrapperBase&&) = delete;
+
+  an<T_ACTUAL> actual() { return actual_; }
+
+protected:
+  an<T_ACTUAL> actual_;
+};
+
+// Specialization for Filter
+template <typename T_ACTUAL>
+class ComponentWrapper<T_ACTUAL, Filter> : public ComponentWrapperBase<T_ACTUAL, Filter> {
+public:
+  using Base = ComponentWrapperBase<T_ACTUAL, Filter>;
+  explicit ComponentWrapper(const Ticket& ticket, an<T_ACTUAL>& actual) : Base(ticket, actual) {}
 
   virtual an<Translation> Apply(an<Translation> translation, CandidateList* candidates) {
-    return actual_->Apply(translation, candidates);
+    return this->actual_->Apply(translation, candidates);
   }
-
-  an<T_ACTUAL> actual_;
 };
 
 // Specialization for Translator
 template <typename T_ACTUAL>
-class ComponentWrapper<T_ACTUAL, Translator> : public Translator {
+class ComponentWrapper<T_ACTUAL, Translator> : public ComponentWrapperBase<T_ACTUAL, Translator> {
 public:
-  explicit ComponentWrapper(const Ticket& ticket, an<T_ACTUAL>& actual)
-      : Translator(ticket), actual_(actual) {
-    DLOG(INFO) << "[qjs] Translator ComponentWrapper created with ticket: " << ticket.name_space;
-  }
-
-  virtual ~ComponentWrapper() { DLOG(INFO) << "[qjs] Translator ComponentWrapper destroyed"; }
-
-  // Delete copy constructor and assignment operator
-  ComponentWrapper(const ComponentWrapper&) = delete;
-  ComponentWrapper& operator=(const ComponentWrapper&) = delete;
-  // Delete move constructor and assignment operator
-  ComponentWrapper(ComponentWrapper&&) = delete;
-  ComponentWrapper& operator=(ComponentWrapper&&) = delete;
+  using Base = ComponentWrapperBase<T_ACTUAL, Translator>;
+  explicit ComponentWrapper(const Ticket& ticket, an<T_ACTUAL>& actual) : Base(ticket, actual) {}
 
   virtual an<Translation> Query(const string& input, const Segment& segment) {
-    return actual_->Query(input, segment);
+    return this->actual_->Query(input, segment);
   }
-
-  an<T_ACTUAL> actual_;
 };
 
 // Specialization for Processor
 template <typename T_ACTUAL>
-class ComponentWrapper<T_ACTUAL, Processor> : public Processor {
+class ComponentWrapper<T_ACTUAL, Processor> : public ComponentWrapperBase<T_ACTUAL, Processor> {
 public:
-  explicit ComponentWrapper(const Ticket& ticket, an<T_ACTUAL>& actual)
-      : Processor(ticket), actual_(actual) {
-    DLOG(INFO) << "[qjs] Processor ComponentWrapper created with ticket: " << ticket.name_space;
-  }
-
-  virtual ~ComponentWrapper() { DLOG(INFO) << "Processor ComponentWrapper destroyed"; }
-
-  // Delete copy constructor and assignment operator
-  ComponentWrapper(const ComponentWrapper&) = delete;
-  ComponentWrapper& operator=(const ComponentWrapper&) = delete;
-  // Delete move constructor and assignment operator
-  ComponentWrapper(ComponentWrapper&&) = delete;
-  ComponentWrapper& operator=(ComponentWrapper&&) = delete;
+  using Base = ComponentWrapperBase<T_ACTUAL, Processor>;
+  explicit ComponentWrapper(const Ticket& ticket, an<T_ACTUAL>& actual) : Base(ticket, actual) {}
 
   ProcessResult ProcessKeyEvent(const KeyEvent& keyEvent) override {
-    return actual_->ProcessKeyEvent(keyEvent);
+    return this->actual_->ProcessKeyEvent(keyEvent);
   }
-
-  an<T_ACTUAL> actual_;
 };
 
 template <typename T_ACTUAL, typename T_BASE>
