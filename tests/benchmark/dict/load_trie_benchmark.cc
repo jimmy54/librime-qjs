@@ -25,7 +25,7 @@ public:
 
 #endif  // RUN_BENCHMARK_WITH_REAL_DATA
 
-void TestSearchItems(TrieWithStringExt& trie) {
+void testSearchItems(TrieWithStringExt& trie) {
   // Test lookup for existing words
   auto result1 = trie.find("accord");
   ASSERT_TRUE(result1.has_value());
@@ -40,7 +40,7 @@ void TestSearchItems(TrieWithStringExt& trie) {
   ASSERT_FALSE(result3.has_value());
 
   // Test prefix search
-  auto prefix_results = trie.prefix_search("accord");
+  auto prefix_results = trie.prefixSearch("accord");
   ASSERT_FALSE(prefix_results.empty());
   EXPECT_EQ(prefix_results.size(), 6);  // All words starting with "accord"
 }
@@ -49,7 +49,7 @@ TEST(LoadTrieDictBenchmark, LoadTextFileAndLookup) {
   TrieWithStringExt trie;
   PRINT_DURATION(MAGENTA, "Plain text file: \t\t\t",
                  trie.loadTextFile(trieDataHelper_.txtPath_, trieDataHelper_.entrySize_));
-  trieDataHelper_.TestSearchItems(trie);
+  trieDataHelper_.testSearchItems(trie);
 
   RESAVE_FILE(trieDataHelper_.binaryPath_,
               PRINT_DURATION(YELLOW, "mmap trie + r/w data as string: \t",
@@ -68,28 +68,28 @@ TEST(LoadTrieDictBenchmark, LoadSingleBinaryFileWithMmapAndLookup) {
   TrieWithStringExt trie;
   PRINT_DURATION(MAGENTA, "mmap (trie + data): \t\t\t",
                  trie.loadBinaryFileMmap(trieDataHelper_.mergedBinaryPath_));
-  trieDataHelper_.TestSearchItems(trie);
+  trieDataHelper_.testSearchItems(trie);
 }
 
 TEST(LoadTrieDictBenchmark, LoadSingleBinaryFileAndLookup) {
   TrieWithStringExt trie;
   PRINT_DURATION(MAGENTA, "mmap trie + r/w data as vector: \t",
                  trie.load_from_single_file(trieDataHelper_.mergedBinaryPath_));
-  trieDataHelper_.TestSearchItems(trie);
+  trieDataHelper_.testSearchItems(trie);
 }
 
 TEST(LoadTrieDictBenchmark, LoadBinaryFilesAndLookup) {
   TrieWithStringExt trie;
   PRINT_DURATION(MAGENTA, "mmap trie + r/w data as string: \t",
                  trie.load_from_files(trieDataHelper_.binaryPath_));
-  trieDataHelper_.TestSearchItems(trie);
+  trieDataHelper_.testSearchItems(trie);
 }
 
 TEST(LoadTrieDictBenchmark, LoadSingleBinaryFileAndLookupYas) {
   TrieWithStringExt trie;
   auto yasPath = trieDataHelper_.mergedBinaryPath_ + ".yas";
   PRINT_DURATION(MAGENTA, "YAS  (trie + data): \t\t\t", trie.loadBinaryFileYas(yasPath));
-  trieDataHelper_.TestSearchItems(trie);
+  trieDataHelper_.testSearchItems(trie);
 }
 
 int main(int argc, char** argv) {
@@ -111,14 +111,10 @@ int main(int argc, char** argv) {
 
 // Benchmark of loading the en2cn dictionary (3.8MB, 57614 rows)
 // +=======================================================================================================================+
-// | Option                         | Load from Text | Save to Binary | Load
-// from Binary |  Hardware
-// |
+// | Option                         | Load from Text | Save to Binary | Load from Binary |  Hardware                       |
 // +--------------------------------+----------------+----------------+------------------+---------------------------------+
-// | mmap (trie + data)             |  110 ms        |  24 ms         |   5 ms
-// | MBP 2015, 2.4 GHz Intel Core i7 | | mmap trie + r/w data as vector |  110
-// ms        |  24 ms |  13 ms | MBP 2015, 2.4 GHz Intel Core i7 | | mmap trie +
-// r/w data as string |  110 ms        |  22 ms | 8 ms           | MBP 2015, 2.4
-// GHz Intel Core i7 | | YAS  (trie + data)             |  110 ms | 26 ms |   8
-// ms           | MBP 2015, 2.4 GHz Intel Core i7 |
+// | mmap (trie + data)             |  110 ms        |  24 ms         |   5 ms           | MBP 2015, 2.4 GHz Intel Core i7 |
+// | mmap trie + r/w data as vector |  110 ms        |  24 ms         |  13 ms           | MBP 2015, 2.4 GHz Intel Core i7 |
+// | mmap trie + r/w data as string |  110 ms        |  22 ms         |   8 ms           | MBP 2015, 2.4 GHz Intel Core i7 |
+// | YAS  (trie + data)             |  110 ms        |  26 ms         |   8 ms           | MBP 2015, 2.4 GHz Intel Core i7 |
 // +=======================================================================================================================+

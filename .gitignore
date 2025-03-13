@@ -13,6 +13,7 @@ tests/qjs/js/qjsc
 tests/**/*.i
 tests/**/*.bin
 tests/**/*.trie
+tests/**/*.yas
 
 thirdparty
 src/types/others

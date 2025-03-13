@@ -24,20 +24,8 @@ private:
   std::vector<std::string> data_;
 
 protected:
-  // RAII wrapper for mmap
-  class MappedFile {
-    void* data_ = nullptr;
-    size_t size_ = 0;
-    int fd_ = -1;
-
-  public:
-    MappedFile(const std::string& path);
-    ~MappedFile();
-
-    [[nodiscard]] const char* data() const { return static_cast<const char*>(data_); }
-    [[nodiscard]] size_t size() const { return size_; }
-    [[nodiscard]] int fd() const { return fd_; }
-  };
+  marisa::Trie& getTrie() { return trie_; }
+  std::vector<std::string>& getData() { return data_; }
 
   // Enhanced I/O utilities
   struct IOUtil {

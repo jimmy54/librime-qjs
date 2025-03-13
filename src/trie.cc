@@ -1,42 +1,19 @@
 #include "trie.h"
 
-#include <cstring>
+#include <boost/interprocess/file_mapping.hpp>
+#include <boost/interprocess/mapped_region.hpp>
+#include <filesystem>
 #include <fstream>
 
 namespace rime {
 
-Trie::MappedFile::MappedFile(const std::string& path) : fd_(open(path.c_str(), O_RDONLY)) {
-  if (fd_ == -1) {
-    throw std::runtime_error("Failed to open file");
-  }
-
-  struct stat sb{};
-  if (fstat(fd_, &sb) == -1) {
-    close(fd_);
-    throw std::runtime_error("Failed to get file size");
-  }
-
-  size_ = sb.st_size;
-  data_ = mmap(nullptr, size_, PROT_READ, MAP_PRIVATE, fd_, 0);
-  if (data_ == MAP_FAILED) {
-    close(fd_);
-    throw std::runtime_error("Failed to mmap file");
-  }
-}
-
-Trie::MappedFile::~MappedFile() {
-  if (data_ != nullptr) {
-    munmap(data_, size_);
-  }
-  if (fd_ != -1) {
-    close(fd_);
-  }
-}
-
 void Trie::loadBinaryFileMmap(std::string_view filePath) {
-  MappedFile mapped{std::string(filePath)};
-  const char* current = mapped.data();
-  const char* end = current + mapped.size();
+  boost::interprocess::file_mapping mapping(std::string(filePath).c_str(),
+                                            boost::interprocess::read_only);
+  boost::interprocess::mapped_region region(mapping, boost::interprocess::read_only);
+
+  const char* current = static_cast<const char*>(region.get_address());
+  const char* end = current + region.get_size();
 
   // Read data vector size
   size_t dataSize = 0;
@@ -64,9 +41,13 @@ void Trie::loadBinaryFileMmap(std::string_view filePath) {
   std::memcpy(&trieSize, current, sizeof(trieSize));
   current += sizeof(trieSize);
 
-  off_t offset = current - mapped.data();
-  lseek(mapped.fd(), offset, SEEK_SET);
-  trie_.read(mapped.fd());
+  off_t offset = current - static_cast<const char*>(region.get_address());
+#ifdef _WIN32
+  SetFilePointer(mapping.get_mapping_handle(), offset, nullptr, FILE_BEGIN);
+#else
+  ::lseek(mapping.get_mapping_handle().handle, offset, SEEK_SET);
+#endif
+  trie_.read(mapping.get_mapping_handle().handle);
 }
 
 void Trie::loadTextFile(const std::string& txtPath, size_t entrySize) {

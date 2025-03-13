@@ -10,7 +10,7 @@
 #include <yas/std_types.hpp>
 
 #include "benchmark_helper.h"
-#include "map.h"
+#include "map.hpp"
 #include "trie.h"
 
 // #define RUN_BENCHMARK_WITH_REAL_DATA
@@ -18,7 +18,7 @@
 #ifndef RUN_BENCHMARK_WITH_REAL_DATA
 constexpr const char* TXT_PATH = "./tests/benchmark/dict/dummy_dict.txt";
 #else
-constexpr const char* TXT_PATH = "/Users/hj/Library/Rime/lua/data/cedict_fixed.u8";
+constexpr const char* TXT_PATH = "/Users/hj/Library/Rime/js/data/cedict_fixed.u8";
 #endif
 
 constexpr const char* FOLDER = "./tests/benchmark/dict/";
@@ -82,11 +82,10 @@ void checkTrieData(rime::Trie& trie) {
   checkTrieEntry(trie, "点头之交", "[diǎn tóu zhī jiāo]nodding acquaintance");
   checkTrieEntry(trie, "点头", "[diǎn tóu]to nod");
   checkTrieEntry(trie, "点点滴滴",
-                 "[diǎn diǎn dī dī]bit by bit/dribs and drabs/the little "
-                 "details/every aspect");
+                 "[diǎn diǎn dī dī]bit by bit/dribs and drabs/the little details/every aspect");
   checkTrieEntry(trie, "点点",
-                 "[diǎn diǎn]Diandian (Chinese microblogging and social "
-                 "networking website)||[diǎn diǎn]point/speck");
+                 "[diǎn diǎn]Diandian (Chinese microblogging and social networking website)||[diǎn "
+                 "diǎn]point/speck");
 
   auto notFound = trie.find("abc");
   ASSERT_FALSE(notFound.has_value());
@@ -201,7 +200,7 @@ TEST(LoadMapDictBenchmark, LoadMmap) {
 TEST(LoadMapDictBenchmark, LoadYas) {
   auto yasFile = std::string(FOLDER) + "dict_map" + ".yas";
   std::unordered_map<std::string, std::string> map;
-  PRINT_DURATION(MAGENTA, "Mmap deserialization: \t", map = loadMapWithYas(yasFile));
+  PRINT_DURATION(MAGENTA, "Yas deserialization: \t", map = loadMapWithYas(yasFile));
   checkMapData(map);
   std::remove(yasFile.c_str());
 }
@@ -216,14 +215,11 @@ int main(int argc, char** argv) {
   return RUN_ALL_TESTS();
 }
 
-// Benchmark of loading the cn2en dictionary
+// Benchmark of loading the cn2en dictionary (7.5 MB, 116647 lines)
 // +=============================================================================================================+
-// | Option               | Load from Text | Save to Binary | Load from Binary |
-// Hardware |
+// | Option               | Load from Text | Save to Binary | Load from Binary | Hardware                        |
 // +----------------------+----------------+----------------+------------------+---------------------------------+
-// | Trie (with mmap)     |  210 ms        |  50 ms         |  15 ms           |
-// MBP 2015, 2.4 GHz Intel Core i7 | | unordered_map + mmap |  110 ms        |
-// 45 ms         |  50 ms           | MBP 2015, 2.4 GHz Intel Core i7 | |
-// unordered_map + YAS  |  110 ms        |  53 ms         |  70 ms | MBP
-// 2015, 2.4 GHz Intel Core i7 |
+// | Trie (with mmap)     |  200 ms        |  57 ms         |  11 ms           | MBP 2015, 2.4 GHz Intel Core i7 |
+// | unordered_map + mmap |  125 ms        | 125 ms         |  43 ms           | MBP 2015, 2.4 GHz Intel Core i7 |
+// | unordered_map + YAS  |  125 ms        |  65 ms         |  56 ms           | MBP 2015, 2.4 GHz Intel Core i7 |
 // +=============================================================================================================+
