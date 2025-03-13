@@ -4,7 +4,6 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
-#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -24,9 +23,9 @@
 
 class TrieWithStringExt : public rime::Trie {
 public:
-  void save_to_files(std::string_view data_path) const {
-    const auto trie_path = std::string(data_path) + ".trie";
-    trie_.save(trie_path.c_str());
+  void save_to_files(const std::string& data_path) {
+    const auto trie_path = data_path + ".trie";
+    getTrie().save(trie_path.c_str());
 
     // Save associated string data
     std::ofstream data_file(data_path, std::ios::binary);
@@ -34,11 +33,11 @@ public:
       throw std::runtime_error("Failed to open data file for writing");
     }
 
-    size_t size = data_.size();
+    size_t size = getData().size();
     data_file.write(reinterpret_cast<const char*>(&size), sizeof(size));
 
     // Write each string with its length
-    for (const auto& str : data_) {
+    for (const auto& str : getData()) {
       size_t str_len = str.length();
       data_file.write(reinterpret_cast<const char*>(&str_len), sizeof(str_len));
       data_file.write(str.data(), str_len);
@@ -48,7 +47,9 @@ public:
   void load_from_files(const std::string& data_path) {
     // Load trie data
     std::string trie_path = data_path + ".trie";
-    trie_.load(trie_path.c_str());
+    getTrie().load(trie_path.c_str());
+
+    auto& data = getData();
 
     // Load associated string data
     std::ifstream data_file(data_path, std::ios::binary);
@@ -58,7 +59,7 @@ public:
 
     size_t size;
     data_file.read(reinterpret_cast<char*>(&size), sizeof(size));
-    data_.resize(size);
+    data.resize(size);
 
     // Read each string
     for (size_t i = 0; i < size; ++i) {
@@ -67,7 +68,7 @@ public:
 
       std::string str(str_len, '\0');
       data_file.read(&str[0], str_len);
-      data_[i] = std::move(str);
+      data[i] = std::move(str);
     }
 
     if (data_file.fail()) {
@@ -75,12 +76,12 @@ public:
     }
   }
 
-  void load_from_single_file(std::string_view file_path) {
+  void load_from_single_file(const std::string& file_path) {
     std::ifstream file(file_path, std::ios::binary);
     if (!file)
       throw std::runtime_error("Failed to open file for reading");
 
-    IOUtil::read_vector_data(file, data_);
+    IOUtil::readVectorData(file, getData());
 
     // Read and load trie
     size_t trie_size;
@@ -94,7 +95,7 @@ public:
       trie_file.write(buffer.data(), trie_size);
     }
 
-    trie_.load(temp_file.path().c_str());
+    getTrie().load(temp_file.path().c_str());
 
     if (file.fail())
       throw std::runtime_error("Failed to read data from file");
@@ -119,7 +120,7 @@ public:
     constexpr std::uint32_t yas_flags = yas::binary | yas::no_header;
     yas::binary_iarchive<yas::mem_istream, yas_flags> ia(ms);
 
-    ia & data_;
+    ia& getData();
 
     // Read and load trie
     std::vector<char> trie_data;
@@ -130,20 +131,20 @@ public:
       std::ofstream trie_out(temp_file.path(), std::ios::binary);
       trie_out.write(trie_data.data(), trie_data.size());
     }
-    trie_.load(temp_file.path().c_str());
+    getTrie().load(temp_file.path().c_str());
   }
 
-  void saveToBinaryFileYas(std::string_view file_path) const {
+  void saveToBinaryFileYas(std::string_view file_path) {
     // Use memory buffer for serialization
     yas::mem_ostream ms;
     constexpr std::uint32_t yas_flags = yas::binary | yas::no_header;
     yas::binary_oarchive<yas::mem_ostream, yas_flags> oa(ms);
 
-    oa & data_;
+    oa& getData();
 
     // Handle trie data
     ScopedTempFile temp_file{file_path};
-    trie_.save(temp_file.path().c_str());
+    getTrie().save(temp_file.path().c_str());
 
     std::vector<char> trie_data;
     {

@@ -97,9 +97,10 @@ add_test(NAME librime-qjs-tests
   COMMAND librime-qjs-tests
   WORKING_DIRECTORY ${EXECUTABLE_OUTPUT_PATH})
 
-# set(benchmark_files "tests/benchmark/dict/load_trie_benchmark.cc")
+# set(benchmark_files "tests/benchmark/dict/load_map_benchmark.cc")
 # add_executable(load-dict-benchmark ${benchmark_files})
 # target_link_libraries(load-dict-benchmark
+#   librime-qjs-objs
 #   ${rime_library}
 #   ${rime_dict_library}
 #   ${rime_gears_library}
