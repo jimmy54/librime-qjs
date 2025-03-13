@@ -1,5 +1,6 @@
 #include "trie.h"
 
+#include <cstring>
 #include <fstream>
 
 namespace rime {
