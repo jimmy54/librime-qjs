@@ -2,10 +2,6 @@
 
 cmake_minimum_required(VERSION 3.12)
 
-# Add at the top of your CMakeLists.txt, before project()
-set(CMAKE_C_COMPILER "/opt/local/libexec/llvm-20/bin/clang")
-set(CMAKE_CXX_COMPILER "/opt/local/libexec/llvm-20/bin/clang++")
-
 # Enable compilation database for clangd and clang-tidy
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -21,9 +17,6 @@ add_definitions(-DRIME_QJS_VERSION="${PROJECT_VERSION}")
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-# Additional LLVM-specific settings
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
-
 # Add _GNU_SOURCE definition for Boost.Stacktrace
 add_definitions(-D_GNU_SOURCE)
 
@@ -31,27 +24,31 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build)
 
-# QuickJS source files
-set(QUICKJS_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/quickjs/quickjs.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/quickjs/libregexp.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/quickjs/libunicode.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/quickjs/libbf.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/quickjs/cutils.c
-)
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/quickjs/quickjs.h")
+  # QuickJS source files
+  set(QUICKJS_SOURCES
+      ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/quickjs/quickjs.c
+      ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/quickjs/libregexp.c
+      ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/quickjs/libunicode.c
+      ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/quickjs/libbf.c
+      ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/quickjs/cutils.c
+  )
 
-include_directories(include ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/quickjs)
+  include_directories(include ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/quickjs)
 
-# Create QuickJS library
-add_library(quickjs STATIC ${QUICKJS_SOURCES})
-target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/quickjs)
+  # Create QuickJS library
+  add_library(qjs STATIC ${QUICKJS_SOURCES})
+  target_include_directories(qjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/quickjs)
+else()
+  find_package(quickjs REQUIRED CONFIGS qjsConfig.cmake)
+endif()
 
 set(CMAKE_CURRENT_LIST_DIR ${CMAKE_CURRENT_SOURCE_DIR}/CMakeFiles/list)
 set(CMAKE_CURRENT_BINARY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build)
 
 set(plugin_name "rime-qjs" PARENT_SCOPE)
 set(plugin_objs $<TARGET_OBJECTS:librime-qjs-objs> PARENT_SCOPE)
-set(plugin_deps ${rime_library} ${rime_gears_library} quickjs PARENT_SCOPE)
+set(plugin_deps ${rime_library} ${rime_gears_library} qjs PARENT_SCOPE)
 set(plugin_modules "qjs" PARENT_SCOPE)
 
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src SRC)
@@ -71,9 +68,12 @@ include_directories(
 
 # create a dynamic library
 add_library(librime-qjs-objs OBJECT ${SRC} ${SRC_GEARS} ${SRC_TYPES} ${SRC_HELPERS})
+if(BUILD_SHARED_LIBS)
+  set_target_properties(librime-qjs-objs PROPERTIES POSITION_INDEPENDENT_CODE ON)
+endif()
 
 # Link QuickJS to librime-qjs
-target_link_libraries(librime-qjs-objs PRIVATE quickjs)
+target_link_libraries(librime-qjs-objs PRIVATE qjs)
 
 ##### testing #####
 enable_testing()
@@ -89,7 +89,7 @@ target_link_libraries(librime-qjs-tests
   ${rime_dict_library}
   ${rime_gears_library}
   ${GTEST_LIBRARIES}
-  quickjs
+  qjs
   librime-qjs-objs
 )
 
