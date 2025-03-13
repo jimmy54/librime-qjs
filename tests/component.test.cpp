@@ -30,17 +30,17 @@ TEST(QuickJSComponentTest, ShareComponentAcrossRimeSessions) {
 
   Ticket ticket(nullptr, "test_namespace", "test");
   auto* instance1 = component.Create(ticket);
-  auto actualInstance1 = instance1->actual_;
+  auto actualInstance1 = instance1->actual();
   delete instance1;  // Rime session 1 ends
 
   auto* instance2 = component.Create(ticket);
-  ASSERT_EQ(actualInstance1, instance2->actual_)
+  ASSERT_EQ(actualInstance1, instance2->actual())
       << "delete instance1 should not destroy the actual filter instance";
   delete instance2;  // Rime session 2 ends
 
   Ticket ticket2(nullptr, "test_namespace", "test");
   auto* instance3 = component.Create(ticket2);
-  ASSERT_EQ(actualInstance1, instance3->actual_)
+  ASSERT_EQ(actualInstance1, instance3->actual())
       << "delete instance1 should not destroy the actual filter instance";
   delete instance3;  // Rime session 3 ends
 }
@@ -54,18 +54,18 @@ TEST(QuickJSComponentTest, CreateComponent) {
   ASSERT_NE(nullptr, instance1);
 
   auto* instance2 = component.Create(ticket);
-  ASSERT_EQ(instance1->actual_, instance2->actual_)
+  ASSERT_EQ(instance1->actual(), instance2->actual())
       << "should return the same actual filter with the same ticket";
 
   Ticket ticket2(nullptr, "test_namespace", "test");
   auto* instance3 = component.Create(ticket2);
-  ASSERT_EQ(instance1->actual_, instance3->actual_)
+  ASSERT_EQ(instance1->actual(), instance3->actual())
       << "should return the same actual filter with the same ticket namespace";
 
   Ticket ticket3(nullptr, "test_namespace2", "test");
   auto* instance4 = component.Create(ticket3);
   ASSERT_NE(nullptr, instance4);
-  ASSERT_NE(instance1->actual_, instance4->actual_)
+  ASSERT_NE(instance1->actual(), instance4->actual())
       << "should create a new instance with a different ticket namespace";
 
   delete instance1;
