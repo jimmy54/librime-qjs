@@ -12,10 +12,10 @@ DEFINE_SETTER(Preedit, caretPos, int64_t, JS_ToInt64, obj->caret_pos = value)
 DEFINE_SETTER(Preedit, selectStart, int64_t, JS_ToInt64, obj->sel_start = value)
 DEFINE_SETTER(Preedit, selectEnd, int64_t, JS_ToInt64, obj->sel_end = value)
 
-DEFINE_JS_CLASS_WITH_RAW_POINTER(Preedit,
-                                 NO_CONSTRUCTOR_TO_REGISTER,
-                                 DEFINE_PROPERTIES(text, caretPos, selectStart, selectEnd),
-                                 NO_GETTER_TO_REGISTER,
-                                 NO_FUNCTION_TO_REGISTER)
+DEFINE_JS_CLASS_WITH_SHARED_POINTER(Preedit,
+                                    NO_CONSTRUCTOR_TO_REGISTER,
+                                    DEFINE_PROPERTIES(text, caretPos, selectStart, selectEnd),
+                                    NO_GETTER_TO_REGISTER,
+                                    NO_FUNCTION_TO_REGISTER)
 
 }  // namespace rime

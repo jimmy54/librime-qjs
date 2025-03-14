@@ -23,15 +23,13 @@ function checkArgument(env) {
   const context = env.engine.context
   assert(context.input === 'hello')
 
-  context.input = 'world'
-
   assert(context.preedit !== null, 'preedit should not be null')
-  console.log(context.preedit.text) // => x� with llvm clang, [nothing visible] with apple clang
-  assert(context.preedit.text?.length >= 4, 'preedit should have text')// => 4 with llvm clang, 5 with apple clang
+  assert(context.preedit.text === 'hello', 'preedit should have text')
+  assert(context.preedit.caretPos === 5, 'preedit should have caretPos')
+  assert(context.preedit.selectStart === 0, 'preedit should have selectStart')
+  assert(context.preedit.selectEnd === 0, 'preedit should have selectEnd')
 
-  assert(context.preedit.caretPos > 0, 'preedit should have caretPos') // => 4515895616 with llvm clang, 5 with apple clang
-  assert(!isNaN(context.preedit.selectStart), 'preedit should have selectStart') // => 8 with llvm clang, 0 with apple clang
-  assert(!isNaN(context.preedit.selectEnd), 'preedit should have selectEnd') // 140701946852032 with llvm clang, 0 with apple clang
+  context.input = 'world'
 
   env.newCandidate = new Candidate('js', 32, 100, 'the text', 'the comment', 888)
 
