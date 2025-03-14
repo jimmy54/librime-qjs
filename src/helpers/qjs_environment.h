@@ -15,9 +15,6 @@ public:
   // Create and initialize a JavaScript environment object
   static JSValueRAII create(JSContext* ctx, Engine* engine, const std::string& nameSpace);
 
-  // Add utility functions to the environment
-  static void addUtilityFunctions(JSContext* ctx, JSValue environment);
-
 private:
   // Utility function to load file content
   static JSValue loadFile(JSContext* ctx, JSValueConst thisVal, int argc, JSValueConst* argv);

@@ -23,20 +23,19 @@ JSValueRAII QjsEnvironment::create(JSContext* ctx, Engine* engine, const std::st
   JS_SetPropertyStr(ctx, environment, "engine", QjsEngine::Wrap(ctx, engine));
   JS_SetPropertyStr(ctx, environment, "namespace", JS_NewString(ctx, nameSpace.c_str()));
 
-  auto jsUserDataDir = JS_NewString(ctx, QjsHelper::basePath.c_str());
+  auto jsUserDataDir = JS_NewString(ctx, rime_get_api()->get_user_data_dir());
   JS_SetPropertyStr(ctx, environment, "userDataDir", jsUserDataDir);
 
+  auto jsSharedDataDir = JS_NewString(ctx, rime_get_api()->get_shared_data_dir());
+  JS_SetPropertyStr(ctx, environment, "sharedDataDir", jsSharedDataDir);
+
   // Add utility functions
-  addUtilityFunctions(ctx, environment);
-
-  return environment;
-}
-
-void QjsEnvironment::addUtilityFunctions(JSContext* ctx, JSValue environment) {
   SET_FUNCTION_TO_ENVIRONMENT_PROPERTY(loadFile, 1);
   SET_FUNCTION_TO_ENVIRONMENT_PROPERTY(fileExists, 1);
   SET_FUNCTION_TO_ENVIRONMENT_PROPERTY(getRimeInfo, 0);
   SET_FUNCTION_TO_ENVIRONMENT_PROPERTY(popen, 1);
+
+  return environment;
 }
 
 JSValue QjsEnvironment::loadFile(JSContext* ctx,
@@ -92,14 +91,12 @@ JSValue QjsEnvironment::fileExists(JSContext* ctx,
     return JS_ThrowSyntaxError(ctx, "The absolutePath argument is required");
   }
 
-  const char* path = JS_ToCString(ctx, argv[0]);
-  if (path == nullptr) {
+  JSStringRAII path = JS_ToCString(ctx, argv[0]);
+  if (path.cStr() == nullptr) {
     return JS_ThrowSyntaxError(ctx, "The absolutePath argument should be a string");
   }
 
-  bool exists = std::filesystem::exists(path);
-  JS_FreeCString(ctx, path);
-
+  bool exists = std::filesystem::exists(path.cStr());
   return JS_NewBool(ctx, exists);
 }
 
@@ -108,11 +105,12 @@ JSValue QjsEnvironment::popen(JSContext* ctx, JSValueConst thisVal, int argc, JS
     return JS_ThrowSyntaxError(ctx, "The command argument is required");
   }
 
-  auto command = JSStringRAII(JS_ToCString(ctx, argv[0]));
+  JSStringRAII command = JS_ToCString(ctx, argv[0]);
   if (command.cStr() == nullptr) {
     return JS_ThrowSyntaxError(ctx, "The command argument should be a string");
   }
 
+  DLOG(INFO) << "[qjs] popen command: " << command.cStr();
   // Open a pipe to the command
   FILE* pipe = ::popen(command.cStr(), "r");
   if (pipe == nullptr) {
