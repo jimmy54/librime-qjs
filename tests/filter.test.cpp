@@ -8,6 +8,7 @@
 
 #include "fake_translation.h"
 #include "qjs_filter.h"
+#include "quickjs.h"
 
 using namespace rime;
 
@@ -16,16 +17,14 @@ protected:
   void SetUp() override { QjsHelper::basePath = "tests/js"; }
 };
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables,
-// readability-function-cognitive-complexity)
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
 TEST_F(QuickJSFilterTest, ApplyFilter) {
   auto* ctx = QjsHelper::getInstance().getContext();
   QjsHelper::exposeLogToJsConsole(ctx);
 
   auto* engine = Engine::Create();
   // engine->ApplySchema(&schema); // ApplySchema 会触发回调函数，导致 segfault
-  // engine->schema()->schema_id() = .default, engine->schema()->schema_name() =
-  // .default
+  // engine->schema()->schema_id() = .default, engine->schema()->schema_name() = .default
   ASSERT_TRUE(engine->schema() != nullptr);
 
   auto* config = engine->schema()->config();
@@ -34,16 +33,15 @@ TEST_F(QuickJSFilterTest, ApplyFilter) {
   config->SetString("expectingText", "text2");
 
   Ticket ticket(engine, "filter", "qjs_filter@filter_test");
-
-  auto filter = New<QuickJSFilter>(ticket);
+  JSValue environment = QjsEnvironment::create(ctx, engine, "filter_test");
+  auto filter = New<QuickJSFilter>(ticket, environment);
 
   auto translation = New<FakeTranslation>();
   translation->append(New<SimpleCandidate>("mock", 0, 1, "text1", "comment1"));
   translation->append(New<SimpleCandidate>("mock", 0, 1, "text2", "comment2"));
   translation->append(New<SimpleCandidate>("mock", 0, 1, "text3", "comment3"));
 
-  CandidateList candidates;
-  auto filtered = filter->Apply(translation, &candidates);
+  auto filtered = filter->Apply(translation, environment);
   ASSERT_TRUE(filtered != nullptr);
 
   auto candidate = filtered->Peek();
@@ -55,4 +53,6 @@ TEST_F(QuickJSFilterTest, ApplyFilter) {
   candidate = filtered->Peek();
   ASSERT_TRUE(candidate == nullptr);
   ASSERT_FALSE(filtered->Next());
+
+  JS_FreeValue(ctx, environment);
 }

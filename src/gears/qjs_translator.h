@@ -4,16 +4,32 @@
 #include <rime/gear/translator_commons.h>
 #include <rime/translator.h>
 
+#include "qjs_component.h"
 #include "qjs_module.h"
+#include "quickjs.h"
 
 namespace rime {
 
-class QuickJSTranslator : public Translator, public QjsModule {
+class QuickJSTranslator : public QjsModule {
 public:
-  explicit QuickJSTranslator(const Ticket& ticket)
-      : Translator(ticket), QjsModule(name_space_, engine_, "translate") {}
+  explicit QuickJSTranslator(const Ticket& ticket, JSValue& environment)
+      : QjsModule(ticket.name_space, environment, "translate") {}
 
-  an<Translation> Query(const string& input, const Segment& segment) override;
+  an<Translation> Query(const string& input, const Segment& segment, const JSValue& environment);
+};
+
+// Specialization for Translator
+template <typename T_ACTUAL>
+class ComponentWrapper<T_ACTUAL, Translator> : public ComponentWrapperBase<T_ACTUAL, Translator> {
+public:
+  explicit ComponentWrapper(const Ticket& ticket,
+                            const an<T_ACTUAL>& actual,
+                            const JSValue& environment)
+      : ComponentWrapperBase<T_ACTUAL, Translator>(ticket, actual, environment) {}
+
+  virtual an<Translation> Query(const string& input, const Segment& segment) {
+    return this->actual_->Query(input, segment, this->environment_.get());
+  }
 };
 
 }  // namespace rime

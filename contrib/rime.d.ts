@@ -620,10 +620,9 @@ declare class Module {
 
   /**
    * Cleanup function called when module is unloaded
-   * @param env - The runtime environment
    * @returns {void}
    */
-  finalizer?(env: Environment): void
+  finalizer?(): void
 }
 
 /**
@@ -639,7 +638,7 @@ type ProcessResult = 'kRejected' | 'kAccepted' | 'kNoop'
  * Represents a Rime input processor
  * @namespace Processor
  */
-declare class  Processor extends Module {
+declare class Processor extends Module {
   /**
    * Process a keyboard input event
    * @param keyEvent - The key event to process
@@ -653,7 +652,7 @@ declare class  Processor extends Module {
  * Represents a Rime translator module for converting input to candidates
  * @namespace Translator
  */
-declare class  Translator extends Module {
+declare class Translator extends Module {
   /**
    * Translate to candidates by the input
    * @param input - The input string to translate
@@ -668,7 +667,7 @@ declare class  Translator extends Module {
  * Represents a Rime filter module for processing candidates
  * @namespace Filter
  */
-declare class  Filter extends Module {
+declare class Filter extends Module {
   /**
    * Apply filtering to a list of candidates
    * @param candidates - Array of candidates to filter

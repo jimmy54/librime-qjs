@@ -4,22 +4,24 @@
 #include <rime/ticket.h>
 
 #include "qjs_component.h"
+#include "qjs_filter.h"
+#include "quickjs.h"
 
 using namespace rime;
 
-class MockFilter : public Filter {
+class MockFilter {
 public:
   MockFilter(const MockFilter&) = default;
   MockFilter(MockFilter&&) = delete;
   MockFilter& operator=(const MockFilter&) = default;
   MockFilter& operator=(MockFilter&&) = delete;
 
-  explicit MockFilter(const Ticket& ticket) : Filter(ticket) {
+  explicit MockFilter(const Ticket& ticket, JSValue& environment) {
     LOG(INFO) << "MockFilter created with ticket: " << ticket.name_space;
   };
-  virtual ~MockFilter() { LOG(INFO) << "MockFilter destroyed"; }
-  void setEngine(Engine* engine) { this->engine_ = engine; }
-  virtual an<Translation> Apply(an<Translation> translation, CandidateList* candidates) {
+  ~MockFilter() { LOG(INFO) << "MockFilter destroyed"; }
+
+  an<Translation> Apply(an<Translation> translation, const JSValue& environment) {
     return translation;
   }
 };
@@ -28,7 +30,8 @@ public:
 TEST(QuickJSComponentTest, ShareComponentAcrossRimeSessions) {
   QuickJSComponent<MockFilter, Filter> component;
 
-  Ticket ticket(nullptr, "test_namespace", "test");
+  Ticket ticket(Engine::Create(), "test_namespace", "test");
+
   auto* instance1 = component.Create(ticket);
   auto actualInstance1 = instance1->actual();
   delete instance1;  // Rime session 1 ends
@@ -38,7 +41,7 @@ TEST(QuickJSComponentTest, ShareComponentAcrossRimeSessions) {
       << "delete instance1 should not destroy the actual filter instance";
   delete instance2;  // Rime session 2 ends
 
-  Ticket ticket2(nullptr, "test_namespace", "test");
+  Ticket ticket2(Engine::Create(), "test_namespace", "test");
   auto* instance3 = component.Create(ticket2);
   ASSERT_EQ(actualInstance1, instance3->actual())
       << "delete instance1 should not destroy the actual filter instance";
@@ -49,7 +52,7 @@ TEST(QuickJSComponentTest, ShareComponentAcrossRimeSessions) {
 TEST(QuickJSComponentTest, CreateComponent) {
   QuickJSComponent<MockFilter, Filter> component;
 
-  Ticket ticket(nullptr, "test_namespace", "test");
+  Ticket ticket(Engine::Create(), "test_namespace", "test");
   auto* instance1 = component.Create(ticket);
   ASSERT_NE(nullptr, instance1);
 
@@ -57,19 +60,19 @@ TEST(QuickJSComponentTest, CreateComponent) {
   ASSERT_EQ(instance1->actual(), instance2->actual())
       << "should return the same actual filter with the same ticket";
 
-  Ticket ticket2(nullptr, "test_namespace", "test");
+  Ticket ticket2(Engine::Create(), "test_namespace", "test");
   auto* instance3 = component.Create(ticket2);
   ASSERT_EQ(instance1->actual(), instance3->actual())
       << "should return the same actual filter with the same ticket namespace";
 
-  Ticket ticket3(nullptr, "test_namespace2", "test");
+  Ticket ticket3(Engine::Create(), "test_namespace2", "test");
   auto* instance4 = component.Create(ticket3);
-  ASSERT_NE(nullptr, instance4);
+  ASSERT_TRUE(instance4 != nullptr);
   ASSERT_NE(instance1->actual(), instance4->actual())
       << "should create a new instance with a different ticket namespace";
 
-  delete instance1;
-  delete instance2;
-  delete instance3;
   delete instance4;
+  delete instance3;
+  delete instance2;
+  delete instance1;
 }

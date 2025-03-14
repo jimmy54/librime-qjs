@@ -8,7 +8,7 @@ export class TestProcessor {
     }
   }
 
-  finalizer(env) {
+  finalizer() {
     console.log('[processor_test] finit')
   }
 

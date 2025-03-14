@@ -5,7 +5,6 @@
 
 #include <string>
 
-#include "jsvalue_raii.h"
 #include "quickjs.h"
 
 namespace rime {
@@ -13,7 +12,7 @@ namespace rime {
 class QjsEnvironment {
 public:
   // Create and initialize a JavaScript environment object
-  static JSValueRAII create(JSContext* ctx, Engine* engine, const std::string& nameSpace);
+  static JSValue create(JSContext* ctx, Engine* engine, const std::string& nameSpace);
 
 private:
   // Utility function to load file content

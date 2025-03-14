@@ -6,11 +6,8 @@ export class TestFilter {
     const config = env.engine.schema.config
     assert(config.getString('greet') === 'hello from c++')
   }
-  finalizer(env) {
+  finalizer() {
     console.log('filter_test finit')
-    assert(env.namespace === 'filter_test')
-    const config = env.engine.schema.config
-    assert(config.getString('greet') === 'hello from c++')
   }
   filter(candidates, env) {
     console.log('filter_test filter', candidates.length)

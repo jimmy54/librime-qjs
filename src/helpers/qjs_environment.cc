@@ -18,8 +18,8 @@
 
 namespace rime {
 
-JSValueRAII QjsEnvironment::create(JSContext* ctx, Engine* engine, const std::string& nameSpace) {
-  JSValueRAII environment(JS_NewObject(ctx));  // do not free its properties/methods manually
+JSValue QjsEnvironment::create(JSContext* ctx, Engine* engine, const std::string& nameSpace) {
+  JSValue environment = JS_NewObject(ctx);  // do not free its properties/methods manually
   JS_SetPropertyStr(ctx, environment, "engine", QjsEngine::Wrap(ctx, engine));
   JS_SetPropertyStr(ctx, environment, "namespace", JS_NewString(ctx, nameSpace.c_str()));
 

@@ -9,6 +9,7 @@
 #include <rime/translation.h>
 
 #include "qjs_translator.h"
+#include "quickjs.h"
 
 using namespace rime;
 
@@ -26,11 +27,9 @@ protected:
   }
 };
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables,
-// readability-function-cognitive-complexity)
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
 TEST_F(QuickJSTranslatorTest, QueryTranslation) {
   auto* ctx = QjsHelper::getInstance().getContext();
-  QjsHelper::exposeLogToJsConsole(ctx);
 
   auto* engine = Engine::Create();
   ASSERT_TRUE(engine->schema() != nullptr);
@@ -41,14 +40,14 @@ TEST_F(QuickJSTranslatorTest, QueryTranslation) {
   config->SetString("expectedInput", "test_input");
 
   Ticket ticket(engine, "translator", "qjs_translator@translator_test");
-
-  auto translator = New<QuickJSTranslator>(ticket);
+  JSValue environment = QjsEnvironment::create(ctx, engine, "translator_test");
+  auto translator = New<QuickJSTranslator>(ticket, environment);
 
   // Create a segment for testing
   Segment segment = createSegment();
 
   // Test the translator with the expected input
-  auto translation = translator->Query("test_input", segment);
+  auto translation = translator->Query("test_input", segment, environment);
   ASSERT_TRUE(translation != nullptr);
 
   // Verify the first candidate
@@ -76,13 +75,13 @@ TEST_F(QuickJSTranslatorTest, QueryTranslation) {
   EXPECT_TRUE(translation->exhausted());
   candidate = translation->Peek();
   EXPECT_TRUE(candidate == nullptr);
+
+  JS_FreeValue(ctx, environment);
 }
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables,
-// readability-function-cognitive-complexity)
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
 TEST_F(QuickJSTranslatorTest, EmptyResult) {
   auto* ctx = QjsHelper::getInstance().getContext();
-  QjsHelper::exposeLogToJsConsole(ctx);
 
   auto* engine = Engine::Create();
   ASSERT_TRUE(engine->schema() != nullptr);
@@ -93,43 +92,45 @@ TEST_F(QuickJSTranslatorTest, EmptyResult) {
   config->SetString("expectedInput", "empty_input");
 
   Ticket ticket(engine, "translator", "qjs_translator@translator_test");
-
-  auto translator = New<QuickJSTranslator>(ticket);
+  JSValue environment = QjsEnvironment::create(ctx, engine, "translator_test");
+  auto translator = New<QuickJSTranslator>(ticket, environment);
 
   // Create a segment for testing
   Segment segment = createSegment();
 
   // Test the translator with input that should return empty results
-  auto translation = translator->Query("empty_input", segment);
+  auto translation = translator->Query("empty_input", segment, environment);
   ASSERT_TRUE(translation != nullptr);
   EXPECT_TRUE(translation->exhausted());
 
   auto candidate = translation->Peek();
   EXPECT_TRUE(candidate == nullptr);
+
+  JS_FreeValue(ctx, environment);
 }
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables,
-// readability-function-cognitive-complexity)
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
 TEST_F(QuickJSTranslatorTest, NonExistentModule) {
   auto* ctx = QjsHelper::getInstance().getContext();
-  QjsHelper::exposeLogToJsConsole(ctx);
 
   auto* engine = Engine::Create();
   ASSERT_TRUE(engine->schema() != nullptr);
 
   // Create a ticket with a non-existent module
   Ticket ticket(engine, "translator", "qjs_translator@non_existent");
-
-  auto translator = New<QuickJSTranslator>(ticket);
+  JSValue environment = QjsEnvironment::create(ctx, engine, "non_existent");
+  auto translator = New<QuickJSTranslator>(ticket, environment);
 
   // Create a segment for testing
   Segment segment = createSegment();
 
   // Test the translator - should return an empty translation
-  auto translation = translator->Query("test_input", segment);
+  auto translation = translator->Query("test_input", segment, environment);
   ASSERT_TRUE(translation != nullptr);
   EXPECT_TRUE(translation->exhausted());
 
   auto candidate = translation->Peek();
   EXPECT_TRUE(candidate == nullptr);
+
+  JS_FreeValue(ctx, environment);
 }

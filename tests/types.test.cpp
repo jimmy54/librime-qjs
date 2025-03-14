@@ -29,15 +29,13 @@ protected:
   }
 };
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables,
-// readability-function-cognitive-complexity)
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
 TEST_F(QuickJSTypesTest, WrapUnwrapRimeGears) {
   auto* ctx = QjsHelper::getInstance().getContext();
 
   auto* engine = Engine::Create();
   // engine->ApplySchema(&schema); // ApplySchema 会触发回调函数，导致 segfault
-  // engine->schema()->schema_id() = .default, engine->schema()->schema_name() =
-  // .default
+  // engine->schema()->schema_id() = .default, engine->schema()->schema_name() = .default
   ASSERT_TRUE(engine->schema() != nullptr);
   auto* config = engine->schema()->config();
   ASSERT_TRUE(config != nullptr);
@@ -59,23 +57,21 @@ TEST_F(QuickJSTypesTest, WrapUnwrapRimeGears) {
   ASSERT_TRUE(context != nullptr);
   context->set_input("hello");
 
-  auto env = QjsEnvironment::create(ctx, engine, "namespace");
+  JSValueRAII env = QjsEnvironment::create(ctx, engine, "namespace");
   auto candidate = New<SimpleCandidate>("mock", 0, 1, "text", "comment");
   JS_SetPropertyStr(ctx, env, "candidate", QjsCandidate::Wrap(ctx, candidate));
 
-  JSValueRAII module(
-      QjsHelper::loadJsModuleToGlobalThis(ctx, "types_test.js"));  // wrap it to free automatically
+  JSValueRAII module = QjsHelper::loadJsModuleToGlobalThis(ctx, "types_test.js");
 
-  JSValueRAII global(JS_GetGlobalObject(ctx));
-  JSValueRAII jsFunc(JS_GetPropertyStr(ctx, global, "checkArgument"));
-  JSValueRAII retValue(JS_Call(ctx, jsFunc, JS_UNDEFINED, 1, env.getPtr()));
+  JSValueRAII global = JS_GetGlobalObject(ctx);
+  JSValueRAII jsFunc = JS_GetPropertyStr(ctx, global, "checkArgument");
+  JSValueRAII retValue = JS_Call(ctx, jsFunc, JS_UNDEFINED, 1, env.getPtr());
 
-  JSValueRAII retJsEngine(
-      JS_GetPropertyStr(ctx, retValue, "engine"));  // wrap it to free automatically
+  JSValueRAII retJsEngine = JS_GetPropertyStr(ctx, retValue, "engine");
   Engine* retEngine = QjsEngine::Unwrap(ctx, retJsEngine);
   ASSERT_EQ(retEngine, engine);
   ASSERT_EQ(retEngine->schema()->schema_name(), engine->schema()->schema_name());
-  JSValueRAII retJsCandidate(JS_GetPropertyStr(ctx, retValue, "candidate"));
+  JSValueRAII retJsCandidate = JS_GetPropertyStr(ctx, retValue, "candidate");
   an<Candidate> retCandidate = QjsCandidate::Unwrap(ctx, retJsCandidate);
   ASSERT_EQ(retCandidate->text(), "new text");
   ASSERT_EQ(retCandidate.get(), candidate.get());
@@ -88,10 +84,8 @@ TEST_F(QuickJSTypesTest, WrapUnwrapRimeGears) {
   Context* retContext = retEngine->context();
   ASSERT_EQ(retContext->input(), "world");
 
-  // env.newCandidate = new Candidate('js', 32, 100, 'the text', 'the comment',
-  // 888)
-  JSValueRAII retJsNewCandidate(
-      JS_GetPropertyStr(ctx, retValue, "newCandidate"));  // wrap it to free automatically
+  // js code: env.newCandidate = new Candidate('js', 32, 100, 'the text', 'the comment', 888)
+  JSValueRAII retJsNewCandidate = JS_GetPropertyStr(ctx, retValue, "newCandidate");
   auto newCandidate = QjsCandidate::Unwrap(ctx, retJsNewCandidate);
   ASSERT_EQ(newCandidate->type(), "js");
   ASSERT_EQ(newCandidate->start(), 32);

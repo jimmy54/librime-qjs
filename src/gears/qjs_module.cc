@@ -1,12 +1,11 @@
 #include "qjs_module.h"
 
 #include "jsvalue_raii.h"
-#include "qjs_environment.h"
 #include "qjs_helper.h"
 
 namespace rime {
 
-QjsModule::QjsModule(const std::string& nameSpace, Engine* engine, const char* mainFuncName)
+QjsModule::QjsModule(const std::string& nameSpace, JSValue& environment, const char* mainFuncName)
     : namespace_(nameSpace) {
   auto* ctx = QjsHelper::getInstance().getContext();
   std::string fileName = nameSpace + ".js";
@@ -24,12 +23,10 @@ QjsModule::QjsModule(const std::string& nameSpace, Engine* engine, const char* m
     return;
   }
 
-  environment_ = QjsEnvironment::create(ctx, engine, nameSpace);
-
   JSValueRAII proto = JS_GetPropertyStr(ctx, jsClazz, "prototype");
   JSValueRAII constructor = JS_GetPropertyStr(ctx, proto, "constructor");
   if (!JS_IsUndefined(constructor)) {
-    instance_ = JS_CallConstructor(ctx, constructor, 1, environment_.getPtr());
+    instance_ = JS_CallConstructor(ctx, constructor, 1, &environment);
     if (JS_IsException(instance_)) {
       LOG(ERROR) << "[qjs] Error creating an instance of the exported class in " << fileName;
       return;
@@ -49,7 +46,7 @@ QjsModule::~QjsModule() {
   } else {
     DLOG(INFO) << "[qjs] running the finalizer function of " << namespace_;
     auto* ctx = QjsHelper::getInstance().getContext();
-    JSValueRAII finalizerResult(JS_Call(ctx, finalizer_, instance_, 1, environment_.getPtr()));
+    JSValueRAII finalizerResult(JS_Call(ctx, finalizer_, instance_, 0, nullptr));
     if (JS_IsException(finalizerResult)) {
       LOG(ERROR) << "[qjs] ~" << namespace_ << " Error running the finalizer function.";
     }

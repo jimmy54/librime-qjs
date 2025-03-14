@@ -5,7 +5,10 @@
 #include <rime/key_event.h>
 #include <rime/schema.h>
 
+#include "qjs_environment.h"
+#include "qjs_helper.h"
 #include "qjs_processor.h"
+#include "quickjs.h"
 
 using namespace rime;
 
@@ -20,8 +23,7 @@ protected:
   }
 };
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables,
-// readability-function-cognitive-complexity)
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
 TEST_F(QuickJSProcessorTest, ProcessKeyEvent) {
   auto* engine = Engine::Create();
   ASSERT_TRUE(engine->schema() != nullptr);
@@ -32,24 +34,27 @@ TEST_F(QuickJSProcessorTest, ProcessKeyEvent) {
 
   addSegment(engine, "prompt");
 
-  Ticket ticket(engine, "processor", "qjs_processor@processor_test");
-  auto processor = New<QuickJSProcessor>(ticket);
+  Ticket ticket(engine, "processor_test", "qjs_processor@processor_test");
+  auto* ctx = QjsHelper::getInstance().getContext();
+  JSValue environment = QjsEnvironment::create(ctx, engine, "processor_test");
+  auto processor = New<QuickJSProcessor>(ticket, environment);
 
   // Test key event that should be accepted
   KeyEvent acceptEvent("space");
-  EXPECT_EQ(processor->ProcessKeyEvent(acceptEvent), kAccepted);
+  EXPECT_EQ(processor->ProcessKeyEvent(acceptEvent, environment), kAccepted);
 
   // Test key event that should be rejected
   KeyEvent rejectEvent("Return");
-  EXPECT_EQ(processor->ProcessKeyEvent(rejectEvent), kRejected);
+  EXPECT_EQ(processor->ProcessKeyEvent(rejectEvent, environment), kRejected);
 
   // Test key event that should result in noop
   KeyEvent noopEvent("invalid_key");
-  EXPECT_EQ(processor->ProcessKeyEvent(noopEvent), kNoop);
+  EXPECT_EQ(processor->ProcessKeyEvent(noopEvent, environment), kNoop);
+
+  JS_FreeValue(ctx, environment);
 }
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables,
-// readability-function-cognitive-complexity)
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
 TEST_F(QuickJSProcessorTest, NonExistentModule) {
   auto* engine = Engine::Create();
   ASSERT_TRUE(engine->schema() != nullptr);
@@ -57,30 +62,14 @@ TEST_F(QuickJSProcessorTest, NonExistentModule) {
   addSegment(engine, "prompt");
 
   // Create a ticket with a non-existent module
-  Ticket ticket(engine, "processor", "qjs_processor@non_existent");
-  auto processor = New<QuickJSProcessor>(ticket);
+  Ticket ticket(engine, "non_existent", "qjs_processor@non_existent");
+  auto* ctx = QjsHelper::getInstance().getContext();
+  JSValue environment = QjsEnvironment::create(ctx, engine, "non_existent");
+  auto processor = New<QuickJSProcessor>(ticket, environment);
 
   // Test key event - should return noop due to unloaded module
   KeyEvent event("space");
-  EXPECT_EQ(processor->ProcessKeyEvent(event), kNoop);
-}
+  EXPECT_EQ(processor->ProcessKeyEvent(event, environment), kNoop);
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables,
-// readability-function-cognitive-complexity)
-TEST_F(QuickJSProcessorTest, ModuleInitialization) {
-  auto* engine = Engine::Create();
-  ASSERT_TRUE(engine->schema() != nullptr);
-
-  auto* config = engine->schema()->config();
-  ASSERT_TRUE(config != nullptr);
-  config->SetString("init_test", "test_value");
-
-  addSegment(engine, "prompt");
-
-  Ticket ticket(engine, "processor", "qjs_processor@processor_test");
-  auto processor = New<QuickJSProcessor>(ticket);
-
-  // Test a key event to verify the processor was properly initialized
-  KeyEvent event("space");
-  EXPECT_EQ(processor->ProcessKeyEvent(event), kAccepted);
+  JS_FreeValue(ctx, environment);
 }

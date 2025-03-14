@@ -9,10 +9,13 @@
 #include "qjs_candidate.h"
 #include "qjs_helper.h"
 #include "qjs_segment.h"
+#include "quickjs.h"
 
 namespace rime {
 
-an<Translation> QuickJSTranslator::Query(const string& input, const Segment& segment) {
+an<Translation> QuickJSTranslator::Query(const string& input,
+                                         const Segment& segment,
+                                         const JSValue& environment) {
   auto translation = New<FifoTranslation>();
   if (!isLoaded()) {
     return translation;
@@ -22,7 +25,7 @@ an<Translation> QuickJSTranslator::Query(const string& input, const Segment& seg
   JSValueRAII jsInput(JS_NewString(ctx, input.c_str()));
   // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
   JSValueRAII jsSegment(QjsSegment::Wrap(ctx, const_cast<Segment*>(&segment)));
-  JSValue args[] = {jsInput.get(), jsSegment.get(), getEnvironment()};
+  JSValue args[] = {jsInput.get(), jsSegment.get(), environment};
   JSValueRAII resultArray =
       JS_Call(ctx, getMainFunc(), getInstance(), 3, static_cast<JSValue*>(args));
   if (JS_IsException(resultArray)) {

@@ -8,7 +8,7 @@ export class TestTranslator {
     assert(config.getString('greet') === 'hello from c++')
   }
 
-  finalizer(env) {
+  finalizer() {
     console.log('translator_test finit')
     assert(env.namespace === 'translator_test')
     const config = env.engine.schema.config
