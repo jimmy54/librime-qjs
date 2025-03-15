@@ -3,7 +3,8 @@ name: Commit CI
 on:
   push:
     branches:
-      - '!master'
+      - '*'         # This will match all branches
+      - '!main'   # Then exclude main
     tags:
       - '![0-9]+.*'
   pull_request:
