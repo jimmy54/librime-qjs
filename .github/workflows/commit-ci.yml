@@ -18,6 +18,9 @@ jobs:
       - name: Checkout last commit
         uses: actions/checkout@v4
 
+      - name: Checkout submodules/dependencies
+        run: bash ./action-install.sh
+
       - name: Configure build environment
         run: brew update && brew install cmake llvm clang-format nodejs
 
