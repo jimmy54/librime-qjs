@@ -19,7 +19,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Configure build environment
-        run: brew update && brew install cmake llvm nodejs
+        run: brew update && brew install cmake llvm clang-format nodejs
 
       - name: Code format lint
         run: bash ./tools/clang-format.sh lint
