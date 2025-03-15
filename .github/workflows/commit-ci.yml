@@ -19,7 +19,7 @@ jobs:
       - name: Install latest lang-format
         run: brew update && brew install clang-format
       - name: Code style lint
-        run: bash ./tools/format.sh lint
+        run: bash ./tools/clang-format.sh lint
   macos:
     needs: lint
     uses: rime/librime/.github/workflows/macos-build.yml@master
