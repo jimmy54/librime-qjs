@@ -7,9 +7,9 @@
 
 namespace rime {
 
-DEFINE_GETTER(Engine, schema, QjsSchema::Wrap(ctx, obj->schema()))
-DEFINE_GETTER(Engine, context, QjsContext::Wrap(ctx, obj->context()))
-DEFINE_GETTER(Engine, activeEngine, QjsEngine::Wrap(ctx, obj->active_engine()))
+DEFINE_GETTER(Engine, schema, QjsSchema::wrap(ctx, obj->schema()))
+DEFINE_GETTER(Engine, context, QjsContext::wrap(ctx, obj->context()))
+DEFINE_GETTER(Engine, activeEngine, QjsEngine::wrap(ctx, obj->active_engine()))
 
 DEFINE_FUNCTION_ARGC(Engine, commitText, 1, {
   JSStringRAII param(JS_ToCString(ctx, argv[0]));
@@ -18,7 +18,7 @@ DEFINE_FUNCTION_ARGC(Engine, commitText, 1, {
 })
 
 DEFINE_FUNCTION_ARGC(Engine, applySchema, 1, {
-  auto schema = QjsSchema::Unwrap(ctx, argv[0]);
+  auto schema = QjsSchema::unwrap(ctx, argv[0]);
   if (!schema)
     return JS_FALSE;
 

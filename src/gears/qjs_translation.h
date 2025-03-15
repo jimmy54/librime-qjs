@@ -18,13 +18,13 @@ public:
                      const JSValue& filterObj,
                      const JSValue& filterFunc,
                      const JSValue& environment);
-  ~QuickJSTranslation() override {};
+  ~QuickJSTranslation() override = default;
 
 protected:
   bool Replenish() override { return replenished_; }
 
 private:
-  bool DoFilter(const JSValue& filterObj, const JSValue& filterFunc, const JSValue& environment);
+  bool doFilter(const JSValue& filterObj, const JSValue& filterFunc, const JSValue& environment);
   bool replenished_ = false;
 };
 

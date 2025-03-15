@@ -14,7 +14,7 @@ DEFINE_STRING_SETTER(Segment, prompt, obj->prompt = str)
 
 DEFINE_GETTER(Segment, start, JS_NewInt32(ctx, obj->start))
 DEFINE_GETTER(Segment, end, JS_NewInt32(ctx, obj->end))
-DEFINE_GETTER(Segment, selectedCandidate, QjsCandidate::Wrap(ctx, obj->GetSelectedCandidate()))
+DEFINE_GETTER(Segment, selectedCandidate, QjsCandidate::wrap(ctx, obj->GetSelectedCandidate()))
 DEFINE_GETTER(Segment, candidateSize, JS_NewInt32(ctx, obj->menu->candidate_count()))
 
 DEFINE_FUNCTION_ARGC(Segment, getCandidateAt, 1, {
@@ -23,7 +23,7 @@ DEFINE_FUNCTION_ARGC(Segment, getCandidateAt, 1, {
   if (index < 0 || size_t(index) >= obj->menu->candidate_count())
     return JS_NULL;
 
-  return QjsCandidate::Wrap(ctx, obj->menu->GetCandidateAt(index));
+  return QjsCandidate::wrap(ctx, obj->menu->GetCandidateAt(index));
 })
 
 DEFINE_FUNCTION_ARGC(Segment, hasTag, 1, {

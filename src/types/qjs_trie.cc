@@ -3,7 +3,7 @@
 namespace rime {
 
 static JSValue makeTrie(JSContext* ctx, JSValueConst newTarget, int argc, JSValueConst* argv) {
-  return QjsTrie::Wrap(ctx, std::make_shared<Trie>());
+  return QjsTrie::wrap(ctx, std::make_shared<Trie>());
 }
 
 DEFINE_FUNCTION_ARGC(Trie, loadTextFile, 2, {

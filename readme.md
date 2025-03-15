@@ -25,14 +25,12 @@ Bring a fresh JavaScript plugin ecosystem to the Rime Input Method Engine, deliv
   - 🧪 JavaScript plugins? Test freely with qjs/nodejs/bun/deno using our [test suite](https://github.com/HuangJian/rime-frost/tree/hj/js/tests).
 
 ## TODO
-- [ ] Memory Leaks
 - [ ] Multiple Platform Support
   - [x] macOS
   - [ ] Windows
   - [ ] Linux (PR Welcome)
   - [ ] Android (PR Welcome)
   - [ ] iOS (PR Welcome)
-- [ ] CI/CD: GitHub Actions
 - [ ] More JavaScript Engine Support (PR Welcome)
   - [ ] JavaScriptCore on macOS/iOS
     - Built-in on macOS/iOS systems

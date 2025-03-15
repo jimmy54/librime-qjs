@@ -20,7 +20,7 @@ namespace rime {
 
 JSValue QjsEnvironment::create(JSContext* ctx, Engine* engine, const std::string& nameSpace) {
   JSValue environment = JS_NewObject(ctx);  // do not free its properties/methods manually
-  JS_SetPropertyStr(ctx, environment, "engine", QjsEngine::Wrap(ctx, engine));
+  JS_SetPropertyStr(ctx, environment, "engine", QjsEngine::wrap(ctx, engine));
   JS_SetPropertyStr(ctx, environment, "namespace", JS_NewString(ctx, nameSpace.c_str()));
 
   auto jsUserDataDir = JS_NewString(ctx, rime_get_api()->get_user_data_dir());

@@ -6,7 +6,7 @@ namespace rime {
 
 DEFINE_GETTER(Schema, id, jsNewStringFromStd(ctx, obj->schema_id()))
 DEFINE_GETTER(Schema, name, jsNewStringFromStd(ctx, obj->schema_name()))
-DEFINE_GETTER(Schema, config, QjsConfig::Wrap(ctx, obj->config()))
+DEFINE_GETTER(Schema, config, QjsConfig::wrap(ctx, obj->config()))
 DEFINE_GETTER(Schema, pageSize, JS_NewInt32(ctx, obj->page_size()))
 DEFINE_GETTER(Schema, selectKeys, jsNewStringFromStd(ctx, obj->select_keys()))
 

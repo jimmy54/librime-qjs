@@ -24,6 +24,7 @@ CompileFlags:
     - "-I../../include/**"
     - "-I../../include/glog"
     - "-I../../deps/boost-1.84.0"
+    - "-I/usr/local/include"
 
 Diagnostics:
   # Suppress diagnostics from headers

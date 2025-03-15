@@ -30,7 +30,7 @@ JSValue QjsHelper::loadJsModuleToNamespace(JSContext* ctx, const char* fileName)
     return funcObj;
   }
 
-  JSModuleDef* md = reinterpret_cast<JSModuleDef*>(JS_VALUE_GET_PTR(funcObj));
+  auto* md = reinterpret_cast<JSModuleDef*>(JS_VALUE_GET_PTR(funcObj));
   JSValue evalResult = JS_EvalFunction(ctx, funcObj);
   if (JS_IsException(funcObj)) {
     return evalResult;
@@ -138,8 +138,8 @@ JSValue QjsHelper::getMethodByNameInClass(JSContext* ctx,
 JSValue QjsHelper::getExportedClassByNameInModule(JSContext* ctx,
                                                   JSValue moduleObj,
                                                   const char* className) {
-  JSPropertyEnum* props;
-  uint32_t propCount;  // Get all enumerable properties from namespace
+  JSPropertyEnum* props = nullptr;
+  uint32_t propCount = 0;  // Get all enumerable properties from namespace
   int flags = JS_GPN_STRING_MASK | JS_GPN_SYMBOL_MASK | JS_GPN_ENUM_ONLY;
   if (JS_GetOwnPropertyNames(ctx, &props, &propCount, moduleObj, flags) == 0) {
     size_t n = strlen(className);
@@ -167,8 +167,8 @@ JSValue QjsHelper::getExportedClassByNameInModule(JSContext* ctx,
 JSValue QjsHelper::getExportedClassHavingMethodNameInModule(JSContext* ctx,
                                                             JSValue moduleObj,
                                                             const char* methodName) {
-  JSPropertyEnum* props;
-  uint32_t propCount;  // Get all enumerable properties from namespace
+  JSPropertyEnum* props = nullptr;
+  uint32_t propCount = 0;  // Get all enumerable properties from namespace
   int flags = JS_GPN_STRING_MASK | JS_GPN_SYMBOL_MASK | JS_GPN_ENUM_ONLY;
   if (JS_GetOwnPropertyNames(ctx, &props, &propCount, moduleObj, flags) == 0) {
     for (uint32_t i = 0; i < propCount; i++) {

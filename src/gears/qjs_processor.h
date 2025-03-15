@@ -14,7 +14,7 @@ public:
   explicit QuickJSProcessor(const Ticket& ticket, JSValue& environment)
       : QjsModule(ticket.name_space, environment, "process") {}
 
-  ProcessResult ProcessKeyEvent(const KeyEvent& keyEvent, const JSValue& environment);
+  ProcessResult processKeyEvent(const KeyEvent& keyEvent, const JSValue& environment);
 };
 
 // Specialization for Processor
@@ -26,8 +26,9 @@ public:
                             const JSValue& environment)
       : ComponentWrapperBase<T_ACTUAL, Processor>(ticket, actual, environment) {}
 
+  // NOLINTNEXTLINE(readability-identifier-naming)
   ProcessResult ProcessKeyEvent(const KeyEvent& keyEvent) override {
-    return this->actual_->ProcessKeyEvent(keyEvent, this->environment_.get());
+    return this->actual()->processKeyEvent(keyEvent, this->environment());
   }
 };
 

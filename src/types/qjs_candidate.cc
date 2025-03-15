@@ -22,7 +22,7 @@ static JSValue makeCandidate(JSContext* ctx, JSValueConst newTarget, int argc, J
     NUMERIC_ASSIGNMENT_FROM_JS_ARGV(quality, 5, int32_t, JS_ToInt32)
   }
 
-  return QjsCandidate::Wrap(ctx, obj);
+  return QjsCandidate::wrap(ctx, obj);
 }
 
 DEFINE_GETTER(Candidate, text, jsNewStringFromStd(ctx, obj->text()))

@@ -42,7 +42,7 @@ TEST_F(QuickJSFilterTest, ApplyFilter) {
   translation->append(New<SimpleCandidate>("mock", 0, 1, "text2", "comment2"));
   translation->append(New<SimpleCandidate>("mock", 0, 1, "text3", "comment3"));
 
-  auto filtered = filter->Apply(translation, environment);
+  auto filtered = filter->apply(translation, environment);
   ASSERT_TRUE(filtered != nullptr);
 
   auto candidate = filtered->Peek();

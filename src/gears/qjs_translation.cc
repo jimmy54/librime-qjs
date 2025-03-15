@@ -15,11 +15,11 @@ QuickJSTranslation::QuickJSTranslation(an<Translation> translation,
                                        const JSValue& filterFunc,
                                        const JSValue& environment)
     : PrefetchTranslation(std::move(translation)), replenished_(true) {
-  DoFilter(filterObj, filterFunc, environment);
+  doFilter(filterObj, filterFunc, environment);
   set_exhausted(cache_.empty());
 }
 
-bool QuickJSTranslation::DoFilter(const JSValue& filterObj,
+bool QuickJSTranslation::doFilter(const JSValue& filterObj,
                                   const JSValue& filterFunc,
                                   const JSValue& environment) {
   auto* ctx = QjsHelper::getInstance().getContext();
@@ -27,7 +27,7 @@ bool QuickJSTranslation::DoFilter(const JSValue& filterObj,
   size_t idx = 0;
   while (auto candidate = translation_->exhausted() ? nullptr : translation_->Peek()) {
     translation_->Next();
-    JS_SetPropertyUint32(ctx, jsArray, idx++, QjsCandidate::Wrap(ctx, candidate));
+    JS_SetPropertyUint32(ctx, jsArray, idx++, QjsCandidate::wrap(ctx, candidate));
   }
   if (idx == 0) {
     return true;
@@ -45,7 +45,7 @@ bool QuickJSTranslation::DoFilter(const JSValue& filterObj,
 
   for (uint32_t i = 0; i < length; i++) {
     JSValueRAII item(JS_GetPropertyUint32(ctx, resultArray, i));
-    if (an<Candidate> candidate = QjsCandidate::Unwrap(ctx, item)) {
+    if (an<Candidate> candidate = QjsCandidate::unwrap(ctx, item)) {
       cache_.push_back(candidate);
     } else {
       LOG(ERROR) << "[qjs] Failed to unwrap candidate at index " << i;

@@ -25,14 +25,12 @@
   - 🧪 JavaScript 插件？随心所欲地用 qjs/nodejs/bun/deno [执行测试](https://github.com/HuangJian/rime-frost/tree/hj/js/tests)。
 
 ## TODO
-- [ ] 内存泄漏
 - [ ] 多平台支持
   - [x] macOS
   - [ ] Windows
   - [ ] Linux（PR Welcome）
   - [ ] Android（PR Welcome）
   - [ ] iOS（PR Welcome）
-- [ ] CI/CD：GitHub Actions
 - [ ] 更多 JavaScript 引擎支持（PR Welcome）
   - [ ] JavaScriptCore on macOS/iOS
     - macOS/iOS 系统内置

@@ -13,7 +13,7 @@
 
 namespace rime {
 
-an<Translation> QuickJSTranslator::Query(const string& input,
+an<Translation> QuickJSTranslator::query(const string& input,
                                          const Segment& segment,
                                          const JSValue& environment) {
   auto translation = New<FifoTranslation>();
@@ -24,10 +24,10 @@ an<Translation> QuickJSTranslator::Query(const string& input,
   auto* ctx = QjsHelper::getInstance().getContext();
   JSValueRAII jsInput(JS_NewString(ctx, input.c_str()));
   // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
-  JSValueRAII jsSegment(QjsSegment::Wrap(ctx, const_cast<Segment*>(&segment)));
+  JSValueRAII jsSegment(QjsSegment::wrap(ctx, const_cast<Segment*>(&segment)));
   JSValue args[] = {jsInput.get(), jsSegment.get(), environment};
   JSValueRAII resultArray =
-      JS_Call(ctx, getMainFunc(), getInstance(), 3, static_cast<JSValue*>(args));
+      JS_Call(ctx, getMainFunc(), getInstance(), countof(args), static_cast<JSValue*>(args));
   if (JS_IsException(resultArray)) {
     return translation;
   }
@@ -38,7 +38,7 @@ an<Translation> QuickJSTranslator::Query(const string& input,
 
   for (uint32_t i = 0; i < length; i++) {
     JSValueRAII item(JS_GetPropertyUint32(ctx, resultArray, i));
-    if (an<Candidate> candidate = QjsCandidate::Unwrap(ctx, item)) {
+    if (an<Candidate> candidate = QjsCandidate::unwrap(ctx, item)) {
       translation->Append(candidate);
     } else {
       LOG(ERROR) << "[qjs] Failed to unwrap candidate at index " << i;

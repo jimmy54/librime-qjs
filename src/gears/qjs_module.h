@@ -14,7 +14,7 @@ class QjsModule {
 protected:
   QjsModule(const std::string& nameSpace, JSValue& environment, const char* mainFuncName);
 
-  virtual ~QjsModule();
+  ~QjsModule();
 
   [[nodiscard]] bool isLoaded() const { return isLoaded_; }
   [[nodiscard]] JSValue getInstance() const { return instance_.get(); }

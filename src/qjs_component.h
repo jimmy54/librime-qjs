@@ -25,6 +25,14 @@ template <typename T_ACTUAL, typename T_BASE>
 class ComponentWrapperBase : public T_BASE {
 public:
   an<T_ACTUAL> actual() { return actual_; }
+  JSValue environment() { return environment_.get(); }
+
+  // Delete copy constructor and assignment operator
+  ComponentWrapperBase(const ComponentWrapperBase&) = delete;
+  ComponentWrapperBase& operator=(const ComponentWrapperBase&) = delete;
+  // Delete move constructor and assignment operator
+  ComponentWrapperBase(ComponentWrapperBase&&) = delete;
+  ComponentWrapperBase& operator=(ComponentWrapperBase&&) = delete;
 
 protected:
   explicit ComponentWrapperBase(const Ticket& ticket,
@@ -39,13 +47,7 @@ protected:
     DLOG(INFO) << "[qjs] " << typeid(T_ACTUAL).name() << " ComponentWrapper destroyed";
   }
 
-  // Delete copy constructor and assignment operator
-  ComponentWrapperBase(const ComponentWrapperBase&) = delete;
-  ComponentWrapperBase& operator=(const ComponentWrapperBase&) = delete;
-  // Delete move constructor and assignment operator
-  ComponentWrapperBase(ComponentWrapperBase&&) = delete;
-  ComponentWrapperBase& operator=(ComponentWrapperBase&&) = delete;
-
+private:
   const JSValueRAII environment_;
   const an<T_ACTUAL>& actual_;
 };
@@ -55,8 +57,6 @@ class QuickJSComponent : public T_BASE::Component {
   using KeyType = std::pair<std::string, std::string>;
 
 public:
-  QuickJSComponent() = default;
-
   // NOLINTNEXTLINE(readability-identifier-naming)
   ComponentWrapper<T_ACTUAL, T_BASE>* Create(const Ticket& a) {
     auto* ctx = QjsHelper::getInstance().getContext();
@@ -64,7 +64,7 @@ public:
 
     // The same plugin could have difference configurations for different schemas, and then behave differently.
     // So we need to create a new component for each schema.
-    auto& schemaId = a.engine->schema()->schema_id();
+    const string& schemaId = a.engine->schema()->schema_id();
     KeyType key = std::make_pair(schemaId, a.name_space);
     if (!components_.count(key)) {
       LOG(INFO) << "[qjs] creating component '" << a.name_space << "' for schema " << schemaId;

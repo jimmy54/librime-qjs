@@ -9,7 +9,7 @@
 
 namespace rime {
 
-ProcessResult QuickJSProcessor::ProcessKeyEvent(const KeyEvent& keyEvent,
+ProcessResult QuickJSProcessor::processKeyEvent(const KeyEvent& keyEvent,
                                                 const JSValue& environment) {
   if (!isLoaded()) {
     return kNoop;
@@ -17,7 +17,7 @@ ProcessResult QuickJSProcessor::ProcessKeyEvent(const KeyEvent& keyEvent,
 
   auto* ctx = QjsHelper::getInstance().getContext();
   // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
-  JSValueRAII jsKeyEvt(QjsKeyEvent::Wrap(ctx, const_cast<KeyEvent*>(&keyEvent)));
+  JSValueRAII jsKeyEvt(QjsKeyEvent::wrap(ctx, const_cast<KeyEvent*>(&keyEvent)));
   JSValue args[] = {jsKeyEvt.get(), environment};
   JSValueRAII jsResult = JS_Call(ctx, getMainFunc(), getInstance(), 2, static_cast<JSValue*>(args));
   if (JS_IsException(jsResult)) {

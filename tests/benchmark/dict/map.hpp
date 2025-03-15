@@ -4,6 +4,7 @@
 #include <boost/interprocess/mapped_region.hpp>
 #include <cstdint>
 #include <fstream>
+#include <ios>
 #include <iostream>
 #include <string>
 #include <unordered_map>
@@ -69,36 +70,36 @@ public:
   }
 
   void save(const std::string& filename) {
-    const size_t total_pairs = pairs_.size();
-    const size_t header_size = sizeof(FileHeader);
-    const size_t pairs_size = sizeof(KeyValuePair) * total_pairs;
+    const size_t totalPairs = pairs_.size();
+    const size_t headerSize = sizeof(FileHeader);
+    const size_t pairsSize = sizeof(KeyValuePair) * totalPairs;
 
-    const size_t total_size = header_size + pairs_size + stringsPool_.size();
+    const size_t totalSize = headerSize + pairsSize + stringsPool_.size();
 
     // Create and size the file in one operation
     {
       std::ofstream file(filename, std::ios::binary | std::ios::trunc);
       file.exceptions(std::ios::failbit | std::ios::badbit);
-      file.seekp(total_size - 1);
+      file.seekp(static_cast<std::streamoff>(totalSize - 1));
       file.put(0);
     }
 
     // Map the entire file at once
-    boost::interprocess::file_mapping file_map(filename.c_str(), boost::interprocess::read_write);
-    boost::interprocess::mapped_region region(file_map, boost::interprocess::read_write, 0,
-                                              total_size);
-    char* const base_addr = static_cast<char*>(region.get_address());
+    boost::interprocess::file_mapping fileMap(filename.c_str(), boost::interprocess::read_write);
+    boost::interprocess::mapped_region region(fileMap, boost::interprocess::read_write, 0,
+                                              totalSize);
+    char* const baseAddr = static_cast<char*>(region.get_address());
 
     // Write header
-    auto* header = reinterpret_cast<FileHeader*>(base_addr);
+    auto* header = reinterpret_cast<FileHeader*>(baseAddr);
     header->magic = MAGIC;
-    header->count = total_pairs;
-    header->strings_offset = header_size + pairs_size;
+    header->count = totalPairs;
+    header->strings_offset = headerSize + pairsSize;
     header->strings_size = stringsPool_.size();
 
-    char* strings = base_addr + header->strings_offset;
+    char* strings = baseAddr + header->strings_offset;
     std::memcpy(strings, stringsPool_.data(), stringsPool_.size());
-    std::memcpy(base_addr + header_size, pairs_.data(), pairs_size);
+    std::memcpy(baseAddr + headerSize, pairs_.data(), pairsSize);
 
     region.flush();
   }
@@ -108,25 +109,26 @@ public:
         boost::interprocess::file_mapping(filename.c_str(), boost::interprocess::read_only),
         boost::interprocess::read_only);
 
-    auto* header = static_cast<const FileHeader*>(region.get_address());
-    if (header->magic != MAGIC)
+    const auto* header = static_cast<const FileHeader*>(region.get_address());
+    if (header->magic != MAGIC) {
       throw std::runtime_error("Invalid file format");
+    }
 
-    const char* strings_base =
+    const char* stringsBase =
         static_cast<const char*>(region.get_address()) + header->strings_offset;
-    stringsPool_.assign(strings_base, header->strings_size);
+    stringsPool_.assign(stringsBase, header->strings_size);
 
     pairs_.reserve(header->count);
 
-    auto* pairs = reinterpret_cast<const KeyValuePair*>(
+    const auto* pairs = reinterpret_cast<const KeyValuePair*>(
         static_cast<const char*>(region.get_address()) + sizeof(FileHeader));
 
     for (size_t i = 0; i < header->count; ++i) {
       const auto& pair = pairs[i];
       pairs_.push_back(pair);
 
-      std::string_view keyView(strings_base + pair.key.offset, pair.key.length);
-      auto& value = pair.value;
+      std::string_view keyView(stringsBase + pair.key.offset, pair.key.length);
+      const auto& value = pair.value;
       map_.try_emplace(keyView, value);
     }
   }

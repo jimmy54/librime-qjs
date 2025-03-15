@@ -53,11 +53,9 @@ private:
   std::unique_ptr<JSIteratorWrapper<VectorIterator>> wrapper_;
 };
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables,
-// readability-function-cognitive-complexity)
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
 TEST_F(QuickJSGeneratorTest, TestVectorIterator) {
-  // NOLINTNEXTLINE(readability-magic-numbers,
-  // cppcoreguidelines-avoid-magic-numbers)
+  // NOLINTNEXTLINE(readability-magic-numbers, cppcoreguidelines-avoid-magic-numbers)
   std::vector<int> numbers{1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
   auto* context = QjsHelper::getInstance().getContext();
   auto* vecIterator = new VectorIterator(context, numbers);
@@ -76,8 +74,8 @@ TEST_F(QuickJSGeneratorTest, TestVectorIterator) {
         }
     )";
 
-  JSValueRAII result(
-      JS_Eval(context, SCRIPT.data(), SCRIPT.size(), "<input>", JS_EVAL_TYPE_GLOBAL));
+  JSValueRAII result =
+      JS_Eval(context, SCRIPT.data(), SCRIPT.size(), "<input>", JS_EVAL_TYPE_GLOBAL);
   ASSERT_FALSE(JS_IsException(result));
 
   JSValueRAII global(JS_GetGlobalObject(context));

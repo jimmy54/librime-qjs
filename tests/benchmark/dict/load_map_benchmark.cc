@@ -2,6 +2,7 @@
 
 #include <cstdio>
 #include <fstream>
+#include <ios>
 #include <string>
 #include <string_view>
 #include <yas/binary_iarchive.hpp>
@@ -75,7 +76,9 @@ void checkMapData(const std::unordered_map<std::string, std::string>& map) {
 void checkTrieEntry(rime::Trie& trie, const std::string& key, const std::string& expectedValue) {
   auto val = trie.find(key);
   ASSERT_TRUE(val.has_value());
-  ASSERT_EQ(val.value(), expectedValue);
+  if (val.has_value()) {
+    ASSERT_EQ(val.value(), expectedValue);
+  }
 }
 
 void checkTrieData(rime::Trie& trie) {
@@ -130,7 +133,7 @@ void saveMapWithYas(const std::string& filename,
 
   std::ofstream fout(filename, std::ios::binary);
   const auto buf = os.get_shared_buffer();
-  fout.write(reinterpret_cast<const char*>(buf.data.get()), buf.size);
+  fout.write(reinterpret_cast<const char*>(buf.data.get()), static_cast<std::streamsize>(buf.size));
 }
 
 std::unordered_map<std::string, std::string> loadMapWithYas(const std::string& filename) {
@@ -179,7 +182,7 @@ TEST(LoadMapDictBenchmark, LoadTextFileAndLookup) {
   checkMapData(map);
 
   MmapStringMap mmap;
-  for (auto pair : map) {
+  for (const auto& pair : map) {
     mmap.add(pair.first, pair.second);
   }
 

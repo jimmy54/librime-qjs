@@ -17,7 +17,7 @@ public:
   explicit QuickJSFilter(const Ticket& ticket, JSValue& environment)
       : QjsModule(ticket.name_space, environment, "filter") {}
 
-  an<Translation> Apply(an<Translation> translation, const JSValue& environment) {
+  an<Translation> apply(an<Translation> translation, const JSValue& environment) {
     if (!isLoaded()) {
       return translation;
     }
@@ -35,8 +35,9 @@ public:
                             const JSValue& environment)
       : ComponentWrapperBase<T_ACTUAL, Filter>(ticket, actual, environment) {}
 
+  // NOLINTNEXTLINE(readability-identifier-naming)
   virtual an<Translation> Apply(an<Translation> translation, CandidateList* candidates) {
-    return this->actual_->Apply(translation, this->environment_.get());
+    return this->actual()->apply(translation, this->environment());
   }
 };
 

@@ -21,7 +21,8 @@ public:
   };
   ~MockFilter() { LOG(INFO) << "MockFilter destroyed"; }
 
-  an<Translation> Apply(an<Translation> translation, const JSValue& environment) {
+  // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
+  an<Translation> apply(an<Translation> translation, const JSValue& environment) {
     return translation;
   }
 };

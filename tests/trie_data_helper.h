@@ -30,11 +30,15 @@ public:
   static void testExistingWords(rime::Trie& trie) {
     auto result1 = trie.find("accord");
     ASSERT_TRUE(result1.has_value());
-    EXPECT_EQ(result1.value(), "[ә'kɒ:d]; n. 一致, 调和, 协定\\n vt. 给与, 使一致\\n vi. 相符合");
+    if (result1.has_value()) {
+      EXPECT_EQ(result1.value(), "[ә'kɒ:d]; n. 一致, 调和, 协定\\n vt. 给与, 使一致\\n vi. 相符合");
+    }
 
     auto result2 = trie.find("accordion");
     ASSERT_TRUE(result2.has_value());
-    EXPECT_EQ(result2.value(), "[ә'kɒ:djәn]; n. 手风琴\\n a. 可折叠的");
+    if (result2.has_value()) {
+      EXPECT_EQ(result2.value(), "[ә'kɒ:djәn]; n. 手风琴\\n a. 可折叠的");
+    }
   }
 
   static void testNonExistingWords(rime::Trie& trie) {

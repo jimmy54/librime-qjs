@@ -42,15 +42,15 @@ TEST_F(QuickJSProcessorTest, ProcessKeyEvent) {
 
   // Test key event that should be accepted
   KeyEvent acceptEvent("space");
-  EXPECT_EQ(processor->ProcessKeyEvent(acceptEvent, environment), kAccepted);
+  EXPECT_EQ(processor->processKeyEvent(acceptEvent, environment), kAccepted);
 
   // Test key event that should be rejected
   KeyEvent rejectEvent("Return");
-  EXPECT_EQ(processor->ProcessKeyEvent(rejectEvent, environment), kRejected);
+  EXPECT_EQ(processor->processKeyEvent(rejectEvent, environment), kRejected);
 
   // Test key event that should result in noop
   KeyEvent noopEvent("invalid_key");
-  EXPECT_EQ(processor->ProcessKeyEvent(noopEvent, environment), kNoop);
+  EXPECT_EQ(processor->processKeyEvent(noopEvent, environment), kNoop);
 
   JS_FreeValue(ctx, environment);
 }
@@ -70,7 +70,7 @@ TEST_F(QuickJSProcessorTest, NonExistentModule) {
 
   // Test key event - should return noop due to unloaded module
   KeyEvent event("space");
-  EXPECT_EQ(processor->ProcessKeyEvent(event, environment), kNoop);
+  EXPECT_EQ(processor->processKeyEvent(event, environment), kNoop);
 
   JS_FreeValue(ctx, environment);
 }

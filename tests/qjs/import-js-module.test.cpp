@@ -64,8 +64,7 @@ TEST_F(QuickJSModuleTest, ImportJsModuleToNamespace) {
   JS_FreeCString(ctx, str);
 }
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables,
-// readability-function-cognitive-complexity)
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
 TEST_F(QuickJSModuleTest, FindImportedClass) {
   auto* ctx = QjsHelper::getInstance().getContext();
   JSValueRAII moduleNamespace = QjsHelper::loadJsModuleToNamespace(ctx, "lib.js");

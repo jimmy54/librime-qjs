@@ -7,6 +7,7 @@ Checks: '-*,
   performance-*,
   portability-*,
   readability-*,
+  readability-magic-numbers,
   -fuchsia-*,
   -google-*,
   -zircon-*,
@@ -24,14 +25,13 @@ Checks: '-*,
 
 WarningsAsErrors: ''
 
-HeaderFilterRegex: '.*'
-
-AnalyzeTemporaryDtors: false
-
 FormatStyle: file
 
-# If you need to specify system include paths
-SystemHeaders: false  # Set to false if you want to ignore system headers
+# Ignore system headers completely
+SystemHeaders: true
+
+# Add this line to ignore external headers
+InheritParentConfig: false
 
 CheckOptions:
   readability-identifier-naming.ClassCase: CamelCase
@@ -49,5 +49,6 @@ CheckOptions:
   readability-identifier-naming.ProtectedMemberSuffix: '_'
   cppcoreguidelines-special-member-functions.AllowSoleDefaultDtor: true
   modernize-use-nullptr.NullMacros: 'NULL,nullptr'
-  readability-magic-numbers.IgnoredIntegerValues: '1,2,3,4,5,6'
+  readability-magic-numbers.IgnoredIntegerValues: '0,1,2,3,4,5,6'
   readability-magic-numbers.IgnoredFloatingPointValues: '0.0,1.0,100.0'
+  readability-magic-numbers.IgnorePowersOf2IntegerValues: true

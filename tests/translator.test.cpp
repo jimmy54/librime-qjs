@@ -48,7 +48,7 @@ TEST_F(QuickJSTranslatorTest, QueryTranslation) {
   Segment segment = createSegment();
 
   // Test the translator with the expected input
-  auto translation = translator->Query("test_input", segment, environment);
+  auto translation = translator->query("test_input", segment, environment);
   ASSERT_TRUE(translation != nullptr);
 
   // Verify the first candidate
@@ -100,7 +100,7 @@ TEST_F(QuickJSTranslatorTest, EmptyResult) {
   Segment segment = createSegment();
 
   // Test the translator with input that should return empty results
-  auto translation = translator->Query("empty_input", segment, environment);
+  auto translation = translator->query("empty_input", segment, environment);
   ASSERT_TRUE(translation != nullptr);
   EXPECT_TRUE(translation->exhausted());
 
@@ -126,7 +126,7 @@ TEST_F(QuickJSTranslatorTest, NonExistentModule) {
   Segment segment = createSegment();
 
   // Test the translator - should return an empty translation
-  auto translation = translator->Query("test_input", segment, environment);
+  auto translation = translator->query("test_input", segment, environment);
   ASSERT_TRUE(translation != nullptr);
   EXPECT_TRUE(translation->exhausted());
 

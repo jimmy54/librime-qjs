@@ -15,7 +15,7 @@ public:
   explicit QuickJSTranslator(const Ticket& ticket, JSValue& environment)
       : QjsModule(ticket.name_space, environment, "translate") {}
 
-  an<Translation> Query(const string& input, const Segment& segment, const JSValue& environment);
+  an<Translation> query(const string& input, const Segment& segment, const JSValue& environment);
 };
 
 // Specialization for Translator
@@ -27,8 +27,9 @@ public:
                             const JSValue& environment)
       : ComponentWrapperBase<T_ACTUAL, Translator>(ticket, actual, environment) {}
 
+  // NOLINTNEXTLINE(readability-identifier-naming)
   virtual an<Translation> Query(const string& input, const Segment& segment) {
-    return this->actual_->Query(input, segment, this->environment_.get());
+    return this->actual()->query(input, segment, this->environment());
   }
 };
 

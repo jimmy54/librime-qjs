@@ -29,7 +29,7 @@ protected:
 
   // Enhanced I/O utilities
   struct IOUtil {
-    static void writeSizeAndData(std::ostream& out, std::string_view data) {
+    static void writeSizeAndData(std::ostream& out, const std::string& data) {
       const size_t len = data.length();
       out.write(reinterpret_cast<const char*>(&len), sizeof(len));
       out.write(data.data(), static_cast<std::streamsize>(len));

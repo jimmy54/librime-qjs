@@ -15,18 +15,18 @@ DEFINE_FUNCTION_ARGC(ConfigMap, getItem, 1, {
   auto value = obj->Get(param);
   if (!value)
     return JS_NULL;
-  return QjsConfigItem::Wrap(ctx, value);
+  return QjsConfigItem::wrap(ctx, value);
 })
 DEFINE_FUNCTION_ARGC(ConfigMap, getValue, 1, {
   JSStringRAII param(JS_ToCString(ctx, argv[0]));
   auto value = obj->GetValue(param);
   if (!value)
     return JS_NULL;
-  return QjsConfigValue::Wrap(ctx, value);
+  return QjsConfigValue::wrap(ctx, value);
 })
 DEFINE_FUNCTION_ARGC(ConfigMap, setItem, 2, {
   JSStringRAII param(JS_ToCString(ctx, argv[0]));
-  if (auto item = QjsConfigItem::Unwrap(ctx, argv[1])) {
+  if (auto item = QjsConfigItem::unwrap(ctx, argv[1])) {
     obj->Set(param, item);
   }
   return JS_UNDEFINED;
