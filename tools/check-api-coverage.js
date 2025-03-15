@@ -18,7 +18,7 @@ function parseCppExports() {
       const content = readFileSync(join(TYPES_DIR, f), 'utf-8')
 
       // Match class definitions
-      const classDefRegex = /DEFINE_JS_CLASS_WITH_(?:RAW_POINTER|SHARED_POINTER)\s*\(\s*\n*(\w+),(.+?)\n\)/gs
+      const classDefRegex = /DEFINE_JS_CLASS_WITH_(?:RAW_POINTER|SHARED_POINTER)\s*\(\s*\n*(\w+),(\n.+)+\)/gs
       let classMatch
 
       while ((classMatch = classDefRegex.exec(content)) !== null) {
@@ -99,7 +99,11 @@ function compareExports(declaration, otherDeclaration, errorType) {
   let errorCount = 0
 
   for (const [className, { props, getters, methods }] of declaration) {
-    const otherExports = otherDeclaration.get(className) || { props: new Set(), methods: new Set() }
+    const otherExports = otherDeclaration.get(className) || {
+      props: new Set(),
+      getters: new Set(),
+      methods: new Set(),
+    }
 
     // Check missing properties
     ;[...props]
