@@ -9,17 +9,21 @@
 #include "qjs_candidate.h"
 #include "qjs_engine.h"
 #include "qjs_environment.h"
+#include "quickjs.h"
+#include "test_helper.h"
 #include "trie_data_helper.h"
 
 using namespace rime;
 
 class QuickJSTypesTest : public ::testing::Test {
 private:
-  TrieDataHelper trieDataHelper_ = TrieDataHelper("./tests", "dummy_dict.txt");
+  TrieDataHelper trieDataHelper_ =
+      TrieDataHelper(getFolderPath(__FILE__).c_str(), "dummy_dict.txt");
 
 protected:
   void SetUp() override {
-    QjsHelper::basePath = "tests/js";
+    setJsBasePath(__FILE__, "/js");
+
     trieDataHelper_.createDummyTextFile();
   }
 
@@ -58,6 +62,10 @@ TEST_F(QuickJSTypesTest, WrapUnwrapRimeGears) {
   context->set_input("hello");
 
   JSValueRAII env = QjsEnvironment::create(ctx, engine, "namespace");
+
+  auto folderPath = getFolderPath(__FILE__);
+  JS_SetPropertyStr(ctx, env, "currentFolder", JS_NewString(ctx, folderPath.c_str()));
+
   auto candidate = New<SimpleCandidate>("mock", 0, 1, "text", "comment");
   JS_SetPropertyStr(ctx, env, "candidate", QjsCandidate::Wrap(ctx, candidate));
 

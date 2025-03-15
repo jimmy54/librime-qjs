@@ -10,12 +10,13 @@
 
 #include "qjs_translator.h"
 #include "quickjs.h"
+#include "test_helper.h"
 
 using namespace rime;
 
 class QuickJSTranslatorTest : public ::testing::Test {
 protected:
-  void SetUp() override { QjsHelper::basePath = "tests/js"; }
+  void SetUp() override { setJsBasePath(__FILE__, "/js"); }
 
   static Segment createSegment() {
     Segment segment;

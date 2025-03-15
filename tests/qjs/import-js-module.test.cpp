@@ -5,12 +5,13 @@
 
 #include "jsvalue_raii.h"
 #include "qjs_helper.h"
+#include "test_helper.h"
 
 using namespace rime;
 
 class QuickJSModuleTest : public testing::Test {
 protected:
-  void SetUp() override { QjsHelper::basePath = "tests/qjs/js"; }
+  void SetUp() override { setJsBasePath(__FILE__, "/js"); }
 };
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables,

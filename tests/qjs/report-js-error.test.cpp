@@ -4,6 +4,7 @@
 #include <string>
 
 #include "qjs_helper.h"
+#include "test_helper.h"
 
 std::string trim(const std::string& str) {
   const auto start = str.find_first_not_of(" \t\n\r");
@@ -17,7 +18,7 @@ std::string trim(const std::string& str) {
 
 class QuickJSErrorTest : public ::testing::Test {
 protected:
-  void SetUp() override { QjsHelper::basePath = "tests/qjs/js"; }
+  void SetUp() override { setJsBasePath(__FILE__, "/js"); }
 };
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables,

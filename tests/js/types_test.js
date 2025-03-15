@@ -38,7 +38,7 @@ function checkArgument(env) {
   assert(env.newCandidate.extraField === 'extra field')
 
   testEnvUtilities(env)
-  testTrie()
+  testTrie(env)
 
   return env
 }
@@ -59,22 +59,22 @@ function testEnvUtilities(env) {
 
   assertEquals(env.popen(`echo 'libRime-qjs'`).trim(), 'libRime-qjs')
 
-  assertEquals(env.fileExists('tests/js/types_test.js'), true)
-  assertEquals(env.fileExists('tests/js/not_found.js'), false)
+  assertEquals(env.fileExists(env.currentFolder + '/js/types_test.js'), true)
+  assertEquals(env.fileExists(env.currentFolder + '/js/not_found.js'), false)
 
   // test load file with utf-8 chars
-  const content = env.loadFile('tests/js/types_test.js')
+  const content = env.loadFile(env.currentFolder + '/js/types_test.js')
   assert(content.includes('测试 UTF-8 编码'))
 }
 
-function testTrie() {
+function testTrie(env) {
   const trie = new Trie()
-  trie.loadTextFile('./tests/dummy_dict.txt', 6)
+  trie.loadTextFile(env.currentFolder + '/dummy_dict.txt', 6)
   checkTrieData(trie)
 
-  trie.saveToBinaryFile('./tests/dumm.bin')
+  trie.saveToBinaryFile(env.currentFolder + '/dumm.bin')
   const trie2 = new Trie()
-  trie2.loadBinaryFile('./tests/dumm.bin')
+  trie2.loadBinaryFile(env.currentFolder + '/dumm.bin')
   checkTrieData(trie2)
 }
 

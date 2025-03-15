@@ -7,6 +7,8 @@
 #include "qjs_helper.h"
 #include "qjs_types.h"
 
+#include "test_helper.h"
+
 using rime::kDefaultModules;
 
 using namespace rime;
@@ -21,10 +23,11 @@ int main(int argc, char** argv) {
   // Do not StartService, otherwise it would leak memory.
   // rime::Service::instance().StartService();
 
+  setJsBasePath(__FILE__, "/js");
+
   // Register the Rime types to quickjs again, since the ones registered in
   // module.cc are not available in the tests. It seems two diffrent quickjs
   // engines/contexts are created. Probably in diffrent process?
-  QjsHelper::basePath = string(rime_get_api()->get_user_data_dir()) + "/js";
   auto* ctx = QjsHelper::getInstance().getContext();
   initQjsTypes(ctx);
 

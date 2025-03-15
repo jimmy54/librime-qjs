@@ -9,12 +9,13 @@
 #include "qjs_helper.h"
 #include "qjs_processor.h"
 #include "quickjs.h"
+#include "test_helper.h"
 
 using namespace rime;
 
 class QuickJSProcessorTest : public ::testing::Test {
 protected:
-  void SetUp() override { QjsHelper::basePath = "tests/js"; }
+  void SetUp() override { setJsBasePath(__FILE__, "/js"); }
 
   static void addSegment(Engine* engine, const std::string& prompt) {
     Segment segment(0, static_cast<int>(prompt.length()));

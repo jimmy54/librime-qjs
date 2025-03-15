@@ -2,11 +2,13 @@
 
 #include <gtest/gtest.h>
 
+#include "test_helper.h"
 #include "trie_data_helper.h"
 
 class TrieTest : public ::testing::Test {
 private:
-  TrieDataHelper trieDataHelper_ = TrieDataHelper("./tests", "dummy_dict.txt");
+  TrieDataHelper trieDataHelper_ =
+      TrieDataHelper(getFolderPath(__FILE__).c_str(), "dummy_dict.txt");
 
 protected:
   TrieDataHelper getTrieDataHelper() { return trieDataHelper_; }
@@ -15,8 +17,7 @@ protected:
   void TearDown() override { trieDataHelper_.cleanupDummyFiles(); }
 };
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables,
-// readability-function-cognitive-complexity)
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
 TEST_F(TrieTest, LoadTextFileAndLookup) {
   rime::Trie trie;
   auto helper = getTrieDataHelper();
