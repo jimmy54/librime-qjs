@@ -8,8 +8,7 @@ lib
 _deps
 Testing
 
-tests/qjs/js/qjs
-tests/qjs/js/qjsc
+tests/js/qjs
 tests/**/*.i
 tests/**/*.bin
 tests/**/*.trie

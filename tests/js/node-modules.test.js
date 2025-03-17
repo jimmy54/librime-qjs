@@ -10,7 +10,7 @@ assertEquals(format(tomorrow, 'yyyy-MM-dd'), '2025-03-18','should get correct to
 
 
 import { Solar } from 'lunar-typescript'
-import { assertEquals } from '../../js/testutils'
+import { assertEquals } from './testutils'
 
 const dt = Solar.fromYmdHms(2025, 3, 17, 11, 20, 0) // month starts from 1
 assertEquals(dt.toFullString(), '2025-03-17 11:20:00 星期一 双鱼座', 'should get correct date time')

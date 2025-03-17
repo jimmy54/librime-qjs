@@ -1,18 +1,12 @@
 #include <gtest/gtest.h>
 #include <quickjs.h>
 
-#include <string>
-
 #include "jsvalue_raii.h"
 #include "qjs_helper.h"
-#include "test_helper.h"
 
 using namespace rime;
 
-class QuickJSModuleTest : public testing::Test {
-protected:
-  void SetUp() override { setJsBasePathForTest(__FILE__, "/js"); }
-};
+class QuickJSModuleTest : public testing::Test {};
 
 TEST_F(QuickJSModuleTest, ImportJsModuleFromAnotherJsFile) {
   auto* ctx = QjsHelper::getInstance().getContext();

@@ -113,6 +113,9 @@ static JSValue jsMyclassSetName(JSContext* ctx,
 static JSClassDef jsMyclassClass = {
     .class_name = "MyClass",
     .finalizer = jsMyclassFinalizer,
+    .gc_mark = nullptr,
+    .call = nullptr,
+    .exotic = nullptr,
 };
 
 // Export the class and methods

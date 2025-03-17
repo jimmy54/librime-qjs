@@ -21,11 +21,7 @@ private:
       TrieDataHelper(getFolderPath(__FILE__).c_str(), "dummy_dict.txt");
 
 protected:
-  void SetUp() override {
-    setJsBasePathForTest(__FILE__, "/js");
-
-    trieDataHelper_.createDummyTextFile();
-  }
+  void SetUp() override { trieDataHelper_.createDummyTextFile(); }
 
   void TearDown() override {
     trieDataHelper_.cleanupDummyFiles();

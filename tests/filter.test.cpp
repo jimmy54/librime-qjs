@@ -9,14 +9,10 @@
 #include "fake_translation.h"
 #include "qjs_filter.h"
 #include "quickjs.h"
-#include "test_helper.h"
 
 using namespace rime;
 
-class QuickJSFilterTest : public ::testing::Test {
-protected:
-  void SetUp() override { setJsBasePathForTest(__FILE__, "/js"); }
-};
+class QuickJSFilterTest : public ::testing::Test {};
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
 TEST_F(QuickJSFilterTest, ApplyFilter) {

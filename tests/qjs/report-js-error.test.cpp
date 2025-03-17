@@ -4,7 +4,6 @@
 #include <string>
 
 #include "qjs_helper.h"
-#include "test_helper.h"
 
 std::string trim(const std::string& str) {
   const auto start = str.find_first_not_of(" \t\n\r");
@@ -16,13 +15,8 @@ std::string trim(const std::string& str) {
   return str.substr(start, end - start + 1);
 }
 
-class QuickJSErrorTest : public ::testing::Test {
-protected:
-  void SetUp() override { setJsBasePathForTest(__FILE__, "/js"); }
-};
+class QuickJSErrorTest : public ::testing::Test {};
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables,
-// readability-function-cognitive-complexity)
 TEST_F(QuickJSErrorTest, TestJsRuntimeError) {
   JSContext* ctx = QjsHelper::getInstance().getContext();
   JSValue module = QjsHelper::loadJsModuleToGlobalThis(ctx, "runtime-error.js");
