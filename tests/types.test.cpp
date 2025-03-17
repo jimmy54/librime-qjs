@@ -22,7 +22,7 @@ private:
 
 protected:
   void SetUp() override {
-    setJsBasePath(__FILE__, "/js");
+    setJsBasePathForTest(__FILE__, "/js");
 
     trieDataHelper_.createDummyTextFile();
   }

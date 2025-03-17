@@ -18,7 +18,7 @@ std::string trim(const std::string& str) {
 
 class QuickJSErrorTest : public ::testing::Test {
 protected:
-  void SetUp() override { setJsBasePath(__FILE__, "/js"); }
+  void SetUp() override { setJsBasePathForTest(__FILE__, "/js"); }
 };
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables,

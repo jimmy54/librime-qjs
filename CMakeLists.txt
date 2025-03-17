@@ -39,12 +39,37 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/quickjs/quickjs.h")
     ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/quickjs/gen/repl.c
     ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/quickjs/gen/standalone.c
     ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/quickjs/qjs.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/quickjs/quickjs-libc.c
   )
   set_target_properties(qjs_exe PROPERTIES
     OUTPUT_NAME "qjs"
   )
-  target_link_libraries(qjs_exe qjs)
+  if(APPLE)
+    target_link_options(qjs_exe PRIVATE "-Wl,-force_load")
+  else()
+    target_link_options(qjs_exe PRIVATE "-Wl,--allow-multiple-definition")
+  endif()
+
+  # Create libraries
+  add_library(node_module_loader STATIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/patch/quickjs/node_module_loader.c
+  )
+  target_compile_definitions(node_module_loader PRIVATE BUILD_FOR_QJS_EXE)
+
+  add_library(quickjs_libc STATIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/quickjs/quickjs-libc.c
+  )
+
+  # Add compile definition to rename the js_module_loader symbol, to replace it with the patched
+  target_compile_definitions(quickjs_libc PRIVATE -Djs_module_loader=js_module_loader_default)
+
+  # Link both libraries
+  target_link_libraries(qjs_exe
+    PRIVATE
+    node_module_loader
+    quickjs_libc
+    qjs
+  )
+
   if(NOT WIN32)
     set_target_properties(qjs_exe PROPERTIES ENABLE_EXPORTS TRUE)
   endif()
@@ -64,6 +89,7 @@ aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src SRC)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/gears SRC_GEARS)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/types SRC_TYPES)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/helpers SRC_HELPERS)
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/patch/quickjs SRC_PATCHES)
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/yas/include
@@ -72,11 +98,12 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gears
     ${CMAKE_CURRENT_SOURCE_DIR}/src/types
     ${CMAKE_CURRENT_SOURCE_DIR}/src/helpers
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/patch/quickjs
     ${CMAKE_CURRENT_SOURCE_DIR}/tests/
 )
 
 # create a dynamic library
-add_library(librime-qjs-objs OBJECT ${SRC} ${SRC_GEARS} ${SRC_TYPES} ${SRC_HELPERS})
+add_library(librime-qjs-objs OBJECT ${SRC} ${SRC_GEARS} ${SRC_TYPES} ${SRC_HELPERS} ${SRC_PATCHES})
 if(BUILD_SHARED_LIBS)
   set_target_properties(librime-qjs-objs PROPERTIES POSITION_INDEPENDENT_CODE ON)
 endif()

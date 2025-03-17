@@ -25,6 +25,7 @@ options="-p ${root}/build \
     -extra-arg=-I${root}/src/gears \
     -extra-arg=-I${root}/src/helpers \
     -extra-arg=-I${root}/src/types \
+    -extra-arg=-I${root}/src/patch/quickjs \
     -extra-arg=-isystem${root}/../../src \
     -extra-arg=-isystem${root}/../../include \
     -extra-arg=-isystem${root}/../../include/glog \

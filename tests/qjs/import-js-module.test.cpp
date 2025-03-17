@@ -11,7 +11,7 @@ using namespace rime;
 
 class QuickJSModuleTest : public testing::Test {
 protected:
-  void SetUp() override { setJsBasePath(__FILE__, "/js"); }
+  void SetUp() override { setJsBasePathForTest(__FILE__, "/js"); }
 };
 
 TEST_F(QuickJSModuleTest, ImportJsModuleFromAnotherJsFile) {
