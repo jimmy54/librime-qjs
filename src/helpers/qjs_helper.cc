@@ -12,20 +12,100 @@
 using namespace rime;
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-std::string QjsHelper::basePath;
+std::string QjsHelper::baseFolder;
 
 QjsHelper& QjsHelper::getInstance() {
   static QjsHelper instance;
   return instance;
 }
 
-JSModuleDef* QjsHelper::jsModuleLoader(JSContext* ctx, const char* fileName, void* opaque) {
-  JSValue funcObj = loadJsModule(ctx, fileName);
-  return reinterpret_cast<JSModuleDef*>(JS_VALUE_GET_PTR(funcObj));
+std::ifstream QjsHelper::tryLoadFileToStream(const std::string& path) {
+  const std::vector<std::string> possibleExtensions = {"", ".js", ".mjs", ".cjs"};
+  for (const auto& ext : possibleExtensions) {
+    auto stream = std::ifstream(path + ext);
+    if (stream.good()) {
+      return stream;
+    }
+  }
+  return std::ifstream{nullptr};
 }
 
-JSValue QjsHelper::loadJsModuleToNamespace(JSContext* ctx, const char* fileName) {
-  JSValue funcObj = loadJsModule(ctx, fileName);
+std::string QjsHelper::tryFindNodeModuleEntryFileName(const std::string& folder,
+                                                      const std::string& key) {
+  if (auto packageJson = std::ifstream(folder + "/package.json")) {
+    std::string entryFileName;
+
+    std::string line;
+    while (std::getline(packageJson, line)) {
+      auto pos = line.find(key);
+      if (pos == std::string::npos) {
+        continue;
+      }
+      // format: `"module": "lib/index.js",` or `"module": "lib/index.js"`
+      auto leftQuote = line.find('\"', pos + key.size());
+      auto rightQuote = line.find('\"', leftQuote + 1);
+      entryFileName = line.substr(leftQuote + 1, rightQuote - leftQuote - 1);
+
+      LOG(INFO) << "Found entry file: [" << entryFileName << "] from package.json line: " << line;
+      break;
+    }
+
+    auto stream = tryLoadFileToStream(folder + "/" + entryFileName);
+    if (stream.good()) {
+      return entryFileName;
+    }
+  }
+  return "";
+}
+
+std::string QjsHelper::tryFindNodeModuleEntryPath(const std::string& moduleName) {
+  std::string folder = QjsHelper::baseFolder + "/node_modules/" + moduleName;
+
+  // format: `"module": "lib/index.js",` or `"module": "lib/index.js"`
+  std::string entryFileName = tryFindNodeModuleEntryFileName(folder, "\"module\":");
+  if (entryFileName.empty()) {
+    // format: `"main": "main.js",` or `"main": "main.js"`
+    entryFileName = tryFindNodeModuleEntryFileName(folder, "\"main\":");
+  }
+  if (entryFileName.empty()) {
+    LOG(ERROR) << "Failed to find the entry file of the node module: " << moduleName;
+    return "";
+  }
+
+  return entryFileName;
+}
+
+JSModuleDef* QjsHelper::jsModuleLoader(JSContext* ctx, const char* moduleName, void* opaque) {
+  LOG(INFO) << "Loading js module: " << moduleName;
+  std::string relativePath = moduleName;
+  if (relativePath.empty()) {
+    LOG(ERROR) << "fileName is empty in loading js module";
+    return nullptr;
+  }
+
+  // 1. try to load the file relative to baseFolder
+  auto stream = tryLoadFileToStream(QjsHelper::baseFolder + "/" + relativePath);
+  if (!stream.good()) {
+    // 2. try to load the file from baseFolder/node_modules/moduleName
+    auto nodeModuleEntryFile = tryFindNodeModuleEntryPath(relativePath);
+    if (nodeModuleEntryFile.empty()) {
+      relativePath = "";
+    } else {
+      relativePath = "/node_modules/" + relativePath + "/" + nodeModuleEntryFile;
+    }
+  }
+
+  if (!relativePath.empty()) {
+    JSValue funcObj = loadJsModule(ctx, relativePath.c_str());
+    return reinterpret_cast<JSModuleDef*>(JS_VALUE_GET_PTR(funcObj));
+  }
+
+  LOG(ERROR) << "Failed to load the js module: " << moduleName;
+  return nullptr;
+}
+
+JSValue QjsHelper::loadJsModuleToNamespace(JSContext* ctx, const char* moduleName) {
+  JSValue funcObj = loadJsModule(ctx, moduleName);
   if (JS_IsException(funcObj)) {
     return funcObj;
   }
@@ -40,9 +120,9 @@ JSValue QjsHelper::loadJsModuleToNamespace(JSContext* ctx, const char* fileName)
   return JS_GetModuleNamespace(ctx, md);
 }
 
-JSValue QjsHelper::loadJsModuleToGlobalThis(JSContext* ctx, const char* fileName) {
-  std::string jsCode = readJsCode(ctx, fileName);
-  return JS_Eval(ctx, jsCode.c_str(), jsCode.size(), fileName, JS_EVAL_TYPE_MODULE);
+JSValue QjsHelper::loadJsModuleToGlobalThis(JSContext* ctx, const char* moduleName) {
+  std::string jsCode = readJsCode(ctx, moduleName);
+  return JS_Eval(ctx, jsCode.c_str(), jsCode.size(), moduleName, JS_EVAL_TYPE_MODULE);
 }
 
 void QjsHelper::exposeLogToJsConsole(JSContext* ctx) {
@@ -55,7 +135,7 @@ void QjsHelper::exposeLogToJsConsole(JSContext* ctx) {
 }
 
 std::string QjsHelper::loadFile(const char* absolutePath) {
-  std::ifstream stream(absolutePath);
+  std::ifstream stream = tryLoadFileToStream(absolutePath);
   if (!stream.is_open()) {
     LOG(ERROR) << "Failed to open file at: " << absolutePath;
     return "";
@@ -64,13 +144,13 @@ std::string QjsHelper::loadFile(const char* absolutePath) {
   return content;
 }
 
-std::string QjsHelper::readJsCode(JSContext* ctx, const char* fileName) {
-  if (basePath.empty()) {
-    LOG(ERROR) << "basePath is empty in loading js file: " << fileName;
-    JS_ThrowReferenceError(ctx, "basePath is empty in loading js file: %s", fileName);
+std::string QjsHelper::readJsCode(JSContext* ctx, const char* relativePath) {
+  if (QjsHelper::baseFolder.empty()) {
+    LOG(ERROR) << "basePath is empty in loading js file: " << relativePath;
+    JS_ThrowReferenceError(ctx, "basePath is empty in loading js file: %s", relativePath);
     return "";
   }
-  std::string fullPath = basePath + "/" + fileName;
+  std::string fullPath = QjsHelper::baseFolder + "/" + relativePath;
   return loadFile(fullPath.c_str());
 }
 

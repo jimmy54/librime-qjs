@@ -16,7 +16,7 @@ static void rime_qjs_initialize() {
   LOG(INFO) << "[qjs] registering components from module 'qjs'.";
   Registry& r = Registry::instance();
 
-  QjsHelper::basePath = string(rime_get_api()->get_user_data_dir()) + "/js";
+  QjsHelper::baseFolder = string(rime_get_api()->get_user_data_dir()) + "/js";
   auto* ctx = QjsHelper::getInstance().getContext();
   initQjsTypes(ctx);
 

@@ -14,6 +14,7 @@ tests/**/*.i
 tests/**/*.bin
 tests/**/*.trie
 tests/**/*.yas
+tests/**/node_modules
 
 thirdparty
 src/types/others

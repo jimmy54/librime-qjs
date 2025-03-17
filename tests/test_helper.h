@@ -11,5 +11,5 @@ inline std::string getFolderPath(const std::string& sourcePath) {
 
 inline void setJsBasePath(const std::string& sourcePath, const std::string& relativePath) {
   std::string folderPath = getFolderPath(sourcePath);
-  QjsHelper::basePath = folderPath + relativePath;
+  QjsHelper::baseFolder = folderPath + relativePath;
 }

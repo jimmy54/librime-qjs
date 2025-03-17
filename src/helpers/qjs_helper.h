@@ -16,9 +16,9 @@ public:
   QjsHelper(const QjsHelper&) = delete;
   QjsHelper& operator=(const QjsHelper&) = delete;
 
-  static JSModuleDef* jsModuleLoader(JSContext* ctx, const char* fileName, void* opaque);
-  static JSValue loadJsModuleToNamespace(JSContext* ctx, const char* fileName);
-  static JSValue loadJsModuleToGlobalThis(JSContext* ctx, const char* fileName);
+  static JSModuleDef* jsModuleLoader(JSContext* ctx, const char* moduleName, void* opaque);
+  static JSValue loadJsModuleToNamespace(JSContext* ctx, const char* moduleName);
+  static JSValue loadJsModuleToGlobalThis(JSContext* ctx, const char* moduleName);
   static void exposeLogToJsConsole(JSContext* ctx);
   static JSValue getExportedClassHavingMethodNameInModule(JSContext* ctx,
                                                           JSValue moduleObj,
@@ -31,7 +31,7 @@ public:
   static std::string loadFile(const char* absolutePath);
 
   // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-  static std::string basePath;
+  static std::string baseFolder;
 
   // Getters for runtime and context
   [[nodiscard]] JSRuntime* getRuntime() const { return rt_; }
@@ -51,7 +51,11 @@ private:
   JSRuntime* rt_{nullptr};
   JSContext* ctx_{nullptr};
 
-  static std::string readJsCode(JSContext* ctx, const char* fileName);
+  static std::ifstream tryLoadFileToStream(const std::string& path);
+  static std::string tryFindNodeModuleEntryFileName(const std::string& folder,
+                                                    const std::string& key);
+  static std::string tryFindNodeModuleEntryPath(const std::string& moduleName);
+  static std::string readJsCode(JSContext* ctx, const char* relativePath);
   static JSValue loadJsModule(JSContext* ctx, const char* fileName);
   static JSValue jsLog(JSContext* ctx, JSValueConst thisVal, int argc, JSValueConst* argv);
   static JSValue jsError(JSContext* ctx, JSValueConst thisVal, int argc, JSValueConst* argv);
