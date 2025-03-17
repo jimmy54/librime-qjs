@@ -33,6 +33,21 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/quickjs/quickjs.h")
   # Create QuickJS library
   add_library(qjs STATIC ${QUICKJS_SOURCES})
   target_include_directories(qjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/quickjs)
+
+  # Create QuickJS executable
+  add_executable(qjs_exe
+    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/quickjs/gen/repl.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/quickjs/gen/standalone.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/quickjs/qjs.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/quickjs/quickjs-libc.c
+  )
+  set_target_properties(qjs_exe PROPERTIES
+    OUTPUT_NAME "qjs"
+  )
+  target_link_libraries(qjs_exe qjs)
+  if(NOT WIN32)
+    set_target_properties(qjs_exe PROPERTIES ENABLE_EXPORTS TRUE)
+  endif()
 else()
   find_package(quickjs REQUIRED CONFIGS qjsConfig.cmake)
 endif()
