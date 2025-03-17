@@ -1,3 +1,5 @@
+import { assert } from './testutils.js'
+
 export class TestFilter {
   constructor(env) {
     console.log('filter_test init')
@@ -18,11 +20,5 @@ export class TestFilter {
     const expectingText = config.getString('expectingText')
     assert(expectingText === 'text2')
     return candidates.filter((it) => it.text === expectingText)
-  }
-}
-
-function assert(condition, msg) {
-  if (!condition) {
-    throw new Error('assertion failed: ' + msg)
   }
 }

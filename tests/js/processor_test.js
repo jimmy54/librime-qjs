@@ -1,3 +1,5 @@
+import { assertEquals } from './testutils.js'
+
 export class TestProcessor {
   constructor(env) {
     console.log('[processor_test] init')
@@ -23,13 +25,5 @@ export class TestProcessor {
     }
 
     return 'kNoop'
-  }
-}
-
-function assertEquals(actual, expected, message) {
-  const actualStr = JSON.stringify(actual)
-  const expectedStr = JSON.stringify(expected)
-  if (actualStr !== expectedStr) {
-    throw new Error(`Expected ${expectedStr}, but got ${actualStr}. <== ${message}`)
   }
 }

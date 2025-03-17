@@ -1,21 +1,13 @@
 #include <gtest/gtest.h>
 #include <quickjs.h>
 
-#include <string>
-
 #include "jsvalue_raii.h"
 #include "qjs_helper.h"
-#include "test_helper.h"
 
 using namespace rime;
 
-class QuickJSModuleTest : public testing::Test {
-protected:
-  void SetUp() override { setJsBasePath(__FILE__, "/js"); }
-};
+class QuickJSModuleTest : public testing::Test {};
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables,
-// readability-function-cognitive-complexity)
 TEST_F(QuickJSModuleTest, ImportJsModuleFromAnotherJsFile) {
   auto* ctx = QjsHelper::getInstance().getContext();
   JSValueRAII module(QjsHelper::loadJsModuleToGlobalThis(ctx, "main.js"));
@@ -41,8 +33,6 @@ TEST_F(QuickJSModuleTest, ImportJsModuleFromAnotherJsFile) {
   JS_FreeCString(ctx, str);
 }
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, //
-// readability-function-cognitive-complexity)
 TEST_F(QuickJSModuleTest, ImportJsModuleToNamespace) {
   auto* ctx = QjsHelper::getInstance().getContext();
   JSValueRAII moduleNamespace(QjsHelper::loadJsModuleToNamespace(ctx, "lib.js"));
@@ -77,8 +67,7 @@ TEST_F(QuickJSModuleTest, FindImportedClass) {
   JSValueRAII classHavingMethodName =
       QjsHelper::getExportedClassHavingMethodNameInModule(ctx, moduleNamespace, "myMethod");
   ASSERT_FALSE(JS_IsException(classHavingMethodName));
-  // ASSERT_EQ(myClass.getPtr(), classHavingMethodName.getPtr()); // <-- this is
-  // not true, because the class is not the same object.
+  // ASSERT_EQ(myClass.getPtr(), classHavingMethodName.getPtr()); // <-- this is not true, because the class is not the same object.
 
   for (auto clazz : {myClass.get(), classHavingMethodName.get()}) {
     JSValueRAII proto = JS_GetPropertyStr(ctx, clazz, "prototype");
@@ -101,4 +90,10 @@ TEST_F(QuickJSModuleTest, FindImportedClass) {
     JS_ToInt32(ctx, &intResult, myMethodResult);
     ASSERT_EQ(intResult, A_NAMED_INT + 1);
   }
+}
+
+TEST_F(QuickJSModuleTest, ImportNodeModule) {
+  auto* ctx = QjsHelper::getInstance().getContext();
+  JSValueRAII module = QjsHelper::loadJsModuleToGlobalThis(ctx, "node-modules.test.js");
+  ASSERT_FALSE(JS_IsException(module));
 }

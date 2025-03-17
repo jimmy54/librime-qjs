@@ -1,11 +1,13 @@
+import { assertEquals } from './testutils.js'
+
 export class TestTranslator {
   constructor(env) {
     console.log('translator_test init')
-    assert(env.namespace === 'translator_test')
-    assert(env.userDataDir === '.')
-    assert(env.sharedDataDir === '.')
+    assertEquals(env.namespace, 'translator_test')
+    assertEquals(env.userDataDir, '.')
+    assertEquals(env.sharedDataDir, '.')
     const config = env.engine.schema.config
-    assert(config.getString('greet') === 'hello from c++')
+    assertEquals(config.getString('greet'), 'hello from c++')
   }
 
   finalizer() {
@@ -14,13 +16,13 @@ export class TestTranslator {
 
   translate(input, segment, env) {
     console.log('translator_test translate', input)
-    assert(env.namespace === 'translator_test')
+    assertEquals(env.namespace, 'translator_test')
     const config = env.engine.schema.config
-    assert(config.getString('greet') === 'hello from c++')
+    assertEquals(config.getString('greet'), 'hello from c++')
 
     // Check if the input matches the expected input from the test
     const expectedInput = config.getString('expectedInput')
-    assert(expectedInput === input)
+    assertEquals(expectedInput, input)
 
     // Return candidates based on the input
     if (input === 'test_input') {
@@ -31,11 +33,5 @@ export class TestTranslator {
       ]
     }
     return []
-  }
-}
-
-function assert(condition, msg) {
-  if (!condition) {
-    throw new Error('assertion failed: ' + msg)
   }
 }

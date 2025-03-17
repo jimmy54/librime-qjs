@@ -3,29 +3,22 @@
 #include <glog/logging.h>
 
 #include <cstddef>
-#include <fstream>
 #include <sstream>
 
 #include "jsvalue_raii.h"
 #include "quickjs.h"
 
-using namespace rime;
+#include "node_module_loader.h"
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-std::string QjsHelper::basePath;
+using namespace rime;
 
 QjsHelper& QjsHelper::getInstance() {
   static QjsHelper instance;
   return instance;
 }
 
-JSModuleDef* QjsHelper::jsModuleLoader(JSContext* ctx, const char* fileName, void* opaque) {
-  JSValue funcObj = loadJsModule(ctx, fileName);
-  return reinterpret_cast<JSModuleDef*>(JS_VALUE_GET_PTR(funcObj));
-}
-
-JSValue QjsHelper::loadJsModuleToNamespace(JSContext* ctx, const char* fileName) {
-  JSValue funcObj = loadJsModule(ctx, fileName);
+JSValue QjsHelper::loadJsModuleToNamespace(JSContext* ctx, const char* moduleName) {
+  JSValue funcObj = loadJsModule(ctx, moduleName);
   if (JS_IsException(funcObj)) {
     return funcObj;
   }
@@ -40,9 +33,12 @@ JSValue QjsHelper::loadJsModuleToNamespace(JSContext* ctx, const char* fileName)
   return JS_GetModuleNamespace(ctx, md);
 }
 
-JSValue QjsHelper::loadJsModuleToGlobalThis(JSContext* ctx, const char* fileName) {
-  std::string jsCode = readJsCode(ctx, fileName);
-  return JS_Eval(ctx, jsCode.c_str(), jsCode.size(), fileName, JS_EVAL_TYPE_MODULE);
+JSValue QjsHelper::loadJsModuleToGlobalThis(JSContext* ctx, const char* moduleName) {
+  char* jsCode = readJsCode(ctx, moduleName);
+  std::string jsCodeStr(jsCode);
+  // NOLINTNEXTLINE(cppcoreguidelines-no-malloc)
+  free(jsCode);
+  return JS_Eval(ctx, jsCodeStr.c_str(), jsCodeStr.size(), moduleName, JS_EVAL_TYPE_MODULE);
 }
 
 void QjsHelper::exposeLogToJsConsole(JSContext* ctx) {
@@ -52,48 +48,6 @@ void QjsHelper::exposeLogToJsConsole(JSContext* ctx) {
   JS_SetPropertyStr(ctx, console, "error", JS_NewCFunction(ctx, jsError, "error", 1));
   JS_SetPropertyStr(ctx, globalObj, "console", console);
   JS_FreeValue(ctx, globalObj);
-}
-
-std::string QjsHelper::loadFile(const char* absolutePath) {
-  std::ifstream stream(absolutePath);
-  if (!stream.is_open()) {
-    LOG(ERROR) << "Failed to open file at: " << absolutePath;
-    return "";
-  }
-  std::string content((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
-  return content;
-}
-
-std::string QjsHelper::readJsCode(JSContext* ctx, const char* fileName) {
-  if (basePath.empty()) {
-    LOG(ERROR) << "basePath is empty in loading js file: " << fileName;
-    JS_ThrowReferenceError(ctx, "basePath is empty in loading js file: %s", fileName);
-    return "";
-  }
-  std::string fullPath = basePath + "/" + fileName;
-  return loadFile(fullPath.c_str());
-}
-
-JSValue QjsHelper::loadJsModule(JSContext* ctx, const char* fileName) {
-  std::string code = readJsCode(ctx, fileName);
-  if (code.empty()) {
-    return JS_ThrowReferenceError(ctx, "Could not open %s", fileName);
-  }
-
-  int flags = JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_COMPILE_ONLY;
-  JSValue funcObj = JS_Eval(ctx, code.c_str(), code.size(), fileName, flags);
-
-  if (JS_IsException(funcObj)) {
-    JSValue exception = JS_GetException(ctx);
-    JSValue message = JS_GetPropertyStr(ctx, exception, "message");
-    const char* messageStr = JS_ToCString(ctx, message);
-    LOG(ERROR) << "Module evaluation failed: " << messageStr;
-
-    JS_FreeCString(ctx, messageStr);
-    JS_FreeValue(ctx, message);
-    JS_FreeValue(ctx, exception);
-  }
-  return funcObj;
 }
 
 static std::string logToStringStream(JSContext* ctx, int argc, JSValueConst* argv) {

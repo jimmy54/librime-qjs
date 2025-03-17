@@ -23,7 +23,7 @@ int main(int argc, char** argv) {
   // Do not StartService, otherwise it would leak memory.
   // rime::Service::instance().StartService();
 
-  setJsBasePath(__FILE__, "/js");
+  setJsBasePathForTest(__FILE__, "/js");
 
   // Register the Rime types to quickjs again, since the ones registered in
   // module.cc are not available in the tests. It seems two diffrent quickjs

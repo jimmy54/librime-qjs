@@ -9,9 +9,9 @@
 #include <sstream>
 
 #include "jsstring_raii.h"
+#include "node_module_loader.h"
 #include "process_memory.h"
 #include "qjs_engine.h"
-#include "qjs_helper.h"
 
 #define SET_FUNCTION_TO_ENVIRONMENT_PROPERTY(funcName, argc) \
   JS_SetPropertyStr(ctx, environment, #funcName, JS_NewCFunction(ctx, funcName, #funcName, argc));
@@ -51,7 +51,7 @@ JSValue QjsEnvironment::loadFile(JSContext* ctx,
     return JS_ThrowSyntaxError(ctx, "The absolutePath argument should be a string");
   }
 
-  std::string content = QjsHelper::loadFile(path);
+  std::string content = ::loadFile(path);
   JS_FreeCString(ctx, path);
 
   return JS_NewString(ctx, content.c_str());
