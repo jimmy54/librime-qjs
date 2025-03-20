@@ -31,6 +31,24 @@ static void rime_qjs_finalize() {}
 
 void rime_require_module_qjs() {}
 
+#ifdef _WIN32
+
+static void __cdecl rime_register_module_qjs(void);
+__declspec(allocate(".CRT$XCU")) void(__cdecl* rime_register_module_qjs_)(void) =
+    rime_register_module_qjs;
+static void __cdecl rime_register_module_qjs(void) {
+  static RimeModule module = {0};
+  if (!module.data_size) {
+    module.data_size = sizeof(RimeModule) - sizeof((module).data_size);
+    module.module_name = "qjs";
+    module.initialize = rime_qjs_initialize;
+    module.finalize = rime_qjs_finalize;
+  }
+  RimeRegisterModule(&module);
+}
+
+#else
+
 static void rime_register_module_qjs() __attribute__((constructor));
 
 static void rime_register_module_qjs() {
@@ -43,5 +61,7 @@ static void rime_register_module_qjs() {
   };
   RimeRegisterModule(&module);
 }
+#endif
+
 
 // NOLINTEND(readability-identifier-naming)

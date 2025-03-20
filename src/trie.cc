@@ -4,6 +4,11 @@
 #include <boost/interprocess/mapped_region.hpp>
 #include <filesystem>
 #include <fstream>
+#ifdef _WIN32
+#include <windows.h>
+#include <io.h>
+#include <fcntl.h>
+#endif
 
 namespace rime {
 
@@ -43,11 +48,15 @@ void Trie::loadBinaryFileMmap(std::string_view filePath) {
 
   off_t offset = current - static_cast<const char*>(region.get_address());
 #ifdef _WIN32
-  SetFilePointer(mapping.get_mapping_handle(), offset, nullptr, FILE_BEGIN);
+  auto native_handle = mapping.get_mapping_handle().handle;
+  SetFilePointer(reinterpret_cast<HANDLE>(native_handle), offset, nullptr, FILE_BEGIN);
+  int fd = _open_osfhandle(reinterpret_cast<intptr_t>(native_handle), _O_RDONLY);
+  trie_.read(fd);
+  _close(fd);
 #else
   ::lseek(mapping.get_mapping_handle().handle, offset, SEEK_SET);
-#endif
   trie_.read(mapping.get_mapping_handle().handle);
+#endif
 }
 
 void Trie::loadTextFile(const std::string& txtPath, size_t entrySize) {
@@ -90,7 +99,7 @@ void Trie::saveToBinaryFile(const std::string& filePath) const {
 
   // Handle trie data
   ScopedTempFile tempFile{filePath};
-  trie_.save(tempFile.path().c_str());
+  trie_.save(tempFile.path().string().c_str());
 
   std::ifstream trieFile(tempFile.path(), std::ios::binary | std::ios::ate);
   const size_t trieSize = trieFile.tellg();

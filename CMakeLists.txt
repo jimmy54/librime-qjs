@@ -11,6 +11,10 @@ add_definitions(-DRIME_QJS_VERSION="${PROJECT_VERSION}")
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+# Specify C11 standard for QuickJS
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_STANDARD_REQUIRED True)
+
 # Add _GNU_SOURCE definition for Boost.Stacktrace
 add_definitions(-D_GNU_SOURCE)
 
@@ -18,6 +22,11 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build)
 
+list(APPEND qjs_defines _GNU_SOURCE)
+if(WIN32)
+    # NB: Windows 7 is EOL and we are only supporting in so far as it doesn't interfere with progress.
+    list(APPEND qjs_defines WIN32_LEAN_AND_MEAN _WIN32_WINNT=0x0601)
+endif()
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/quickjs/quickjs.h")
   # QuickJS source files
   set(QUICKJS_SOURCES
@@ -32,6 +41,7 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/quickjs/quickjs.h")
 
   # Create QuickJS library
   add_library(qjs STATIC ${QUICKJS_SOURCES})
+  target_compile_definitions(qjs PRIVATE ${qjs_defines})
   target_include_directories(qjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/quickjs)
 
   # Create QuickJS executable
@@ -43,6 +53,7 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/quickjs/quickjs.h")
   set_target_properties(qjs_exe PROPERTIES
     OUTPUT_NAME "qjs"
   )
+  target_compile_definitions(qjs_exe PRIVATE ${qjs_defines})
   if(APPLE)
     target_link_options(qjs_exe PRIVATE "-Wl,-force_load")
   else()
@@ -108,37 +119,12 @@ if(BUILD_SHARED_LIBS)
   set_target_properties(librime-qjs-objs PROPERTIES POSITION_INDEPENDENT_CODE ON)
 endif()
 
+if(WIN32)
+  target_compile_definitions(librime-qjs-objs PRIVATE RIME_IMPORTS)
+endif()
+
 # Link QuickJS to librime-qjs
 target_link_libraries(librime-qjs-objs PRIVATE qjs)
 
-##### testing #####
-enable_testing()
 
-# Set output directory for test executables
-set(TEST_OUTPUT_DIR ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
-
-file(GLOB QJS_TEST_FILES "tests/qjs/*.test.cpp")
-file(GLOB QJS_GEAR_TEST_FILES "tests/*.test.cpp")
-add_executable(librime-qjs-tests ${QJS_TEST_FILES} ${QJS_GEAR_TEST_FILES})
-target_link_libraries(librime-qjs-tests
-  ${rime_library}
-  ${rime_dict_library}
-  ${rime_gears_library}
-  ${GTEST_LIBRARIES}
-  qjs
-  librime-qjs-objs
-)
-
-add_test(NAME librime-qjs-tests
-  COMMAND librime-qjs-tests
-  WORKING_DIRECTORY ${EXECUTABLE_OUTPUT_PATH})
-
-# set(benchmark_files "tests/benchmark/dict/load_map_benchmark.cc")
-# add_executable(load-dict-benchmark ${benchmark_files})
-# target_link_libraries(load-dict-benchmark
-#   librime-qjs-objs
-#   ${rime_library}
-#   ${rime_dict_library}
-#   ${rime_gears_library}
-#   ${GTEST_LIBRARIES}
-# )
+add_subdirectory(tests)

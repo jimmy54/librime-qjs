@@ -9,11 +9,11 @@ namespace rime {
 
 DEFINE_FUNCTION_ARGC(Config, loadFromFile, 1, {
   JSStringRAII param(JS_ToCString(ctx, argv[0]));
-  return JS_NewBool(ctx, obj->LoadFromFile(std::filesystem::path(param)));
+  return JS_NewBool(ctx, obj->LoadFromFile(std::filesystem::path(param.cStr())));
 })
 DEFINE_FUNCTION_ARGC(Config, saveToFile, 1, {
   JSStringRAII param(JS_ToCString(ctx, argv[0]));
-  return JS_NewBool(ctx, obj->SaveToFile(std::filesystem::path(param)));
+  return JS_NewBool(ctx, obj->SaveToFile(std::filesystem::path(param.cStr())));
 })
 DEFINE_FUNCTION_ARGC(Config, getBool, 1, {
   JSStringRAII param(JS_ToCString(ctx, argv[0]));

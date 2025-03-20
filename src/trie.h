@@ -10,11 +10,6 @@
 #include <string>
 #include <string_view>
 #include <vector>
-// mmap headers
-#include <fcntl.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <unistd.h>
 
 namespace rime {
 

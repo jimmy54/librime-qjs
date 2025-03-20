@@ -5,6 +5,8 @@
 
 #include "node_module_loader.h"
 
+#define PATH_MAX 1024
+
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 static char* qjsBaseFolder = NULL;
 
@@ -23,7 +25,7 @@ __attribute__((constructor)) void initBaseFolder() {
   char* last_slash = strrchr(path, '\\');
   if (last_slash) {
     *last_slash = '\0';
-    baseFolder = _strdup(path);
+    qjsBaseFolder = _strdup(path);
   }
 }
 #else
