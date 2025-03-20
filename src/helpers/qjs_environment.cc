@@ -115,7 +115,7 @@ JSValue QjsEnvironment::popen(JSContext* ctx, JSValueConst thisVal, int argc, JS
 #ifdef _WIN32
   FILE* pipe = _popen(command.cStr(), "r");
 #else
-  FILE* pipe = popen(command.cStr(), "r");
+  FILE* pipe = ::popen(command.cStr(), "r");
 #endif
   if (pipe == nullptr) {
     LOG(ERROR) << "Failed to run command: " << command.cStr();
@@ -134,7 +134,7 @@ JSValue QjsEnvironment::popen(JSContext* ctx, JSValueConst thisVal, int argc, JS
 #ifdef _WIN32
   int status = _pclose(pipe);
 #else
-  int status = pclose(pipe);
+  int status = ::pclose(pipe);
 #endif
   if (status == 0) {
     DLOG(INFO) << "[qjs] Command output: " << result;

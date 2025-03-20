@@ -1,7 +1,6 @@
 enable_testing()
 
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/build)
-
+set(EXECUTABLE_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/build)
 file(GLOB QJS_TEST_FILES "qjs/*.test.cpp")
 file(GLOB QJS_GEAR_TEST_FILES "*.test.cpp")
 add_executable(librime-qjs-tests ${QJS_TEST_FILES} ${QJS_GEAR_TEST_FILES})
