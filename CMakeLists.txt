@@ -126,5 +126,8 @@ endif()
 # Link QuickJS to librime-qjs
 target_link_libraries(librime-qjs-objs PRIVATE qjs)
 
-
-add_subdirectory(tests)
+if(BUILD_SHARED_LIBS)
+  if(BUILD_TEST)
+    add_subdirectory(tests)
+  endif()
+endif()
