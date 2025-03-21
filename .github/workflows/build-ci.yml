@@ -10,7 +10,12 @@ jobs:
       rime_plugins: ${{ github.repository }}@${{ github.ref_name }}
 
   windows:
-    uses: rime/librime/.github/workflows/windows-build.yml@master
+    uses: HuangJian/librime/.github/workflows/windows-build.yml@master
     with:
-      repository: rime/librime
+      repository: HuangJian/librime
       rime_plugins: ${{ github.repository }}@${{ github.ref_name }}
+      matrix: # build with clang only
+        compiler: [clang]
+        arch: [x64]
+        include:
+          - { compiler: clang, cc: clang, cxx: clang++ }
