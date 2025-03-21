@@ -4,6 +4,10 @@
 #include <rime/setup.h>
 #include <rime_api.h>
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 #include "qjs_helper.h"
 #include "qjs_types.h"
 
@@ -17,6 +21,13 @@ using namespace rime;
 // to make `Engine::Create()` not crashing the tests
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
+
+#ifdef _WIN32
+  // Enables UTF-8 output in the Windows console
+  // Only works when printing logs directly to console using `.\librime-qjs-tests.exe`
+  // Does not work when redirecting output to a file using `.\librime-qjs-tests.exe > tests.log 2>&1`
+  SetConsoleOutputCP(CP_UTF8);
+#endif
 
   rime::SetupLogging("rime.test");
   rime::LoadModules(static_cast<const char**>(kDefaultModules));

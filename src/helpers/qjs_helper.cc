@@ -51,6 +51,10 @@ void QjsHelper::exposeLogToJsConsole(JSContext* ctx) {
 }
 
 static std::string logToStringStream(JSContext* ctx, int argc, JSValueConst* argv) {
+  // FIXME: Unicode characters display incorrectly on Windows, showing "鉁?" instead of "✓".
+  // While quickjs-ng's `js_print` function could help with console output,
+  // I haven't found a way to integrate it with glog's `LOG(severity)` statements.
+  // See related fix: https://github.com/quickjs-ng/quickjs/pull/449/files
   std::ostringstream oss;
   for (int i = 0; i < argc; i++) {
     const char* str = JS_ToCString(ctx, argv[i]);
