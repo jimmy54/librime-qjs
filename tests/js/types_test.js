@@ -59,7 +59,7 @@ function testEnvUtilities(env) {
   env.engine.processKey('Down')
   env.engine.processKey('InvalidKey')
 
-  assertEquals(env.popen(`echo 'libRime-qjs'`).trim(), 'libRime-qjs')
+  assertEquals(env.popen(`echo libRime-qjs`).trim(), 'libRime-qjs')
 
   assertEquals(env.fileExists(env.currentFolder + '/js/types_test.js'), true)
   assertEquals(env.fileExists(env.currentFolder + '/js/not_found.js'), false)

@@ -128,7 +128,7 @@ FILE* tryLoadFile(const char* path) {
 
   for (int i = 0; i < numExtensions; i++) {
     snprintf(fullPath, sizeof(fullPath), "%s%s", path, possibleExtensions[i]);
-    file = fopen(fullPath, "r");
+    file = fopen(fullPath, "rb");
     if (file != NULL) {
       return file;
     }
