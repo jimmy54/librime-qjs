@@ -84,7 +84,9 @@ jobs:
         run: .\action-install-plugins-windows.bat
 
       - name: Build and test
-        run: .\build.bat test
+        run: |
+          .\build.bat
+          .\build.bat test
 
       - name: Create distributable
         run: |
