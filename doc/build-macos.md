@@ -8,8 +8,9 @@
 
 ### Required Tools
 - Xcode Command Line Tools
-- cmake 3.12 or later
-- clang/llvm 20 or later
+- cmake 3.12 or newer
+- clang/llvm 20 or newer
+- Node.js 22 or newer
 
 ## Environment Setup
 
@@ -45,6 +46,11 @@
     ```
   - Check LLVM version: `llvm-config --version` and `clang --version`
 
+- Node.js:
+  - Download and install Node.js: https://nodejs.org/en/download/
+  - Verify node version in command line: `node --version`
+  - Verify npm version in command line: `npm --version`
+
 ## Build Steps
 
 ### Getting the Source Code
@@ -68,6 +74,7 @@
 - Build librime and librime-qjs: `make` or `make debug`
 
 ### Running Tests
+- Install the node modules: `(cd plugins/qjs/tests/js; npm install)`
 - Run all unit tests: `make test` or `make test-debug`
 - Run only the librime-qjs tests: `(cd plugins/qjs; ctest)`
 
@@ -86,6 +93,31 @@ sudo cp ${qjs_dylib} ${rime_plugin_folder} && \
 - Enable the Squirrel input method with <kbd>⌘</kbd> + <kbd>Space</kbd>
 - `cat $TMPDIR/rime.squirrel.INFO | grep qjs` there should be something like:
     > loading plugin 'qjs' from /Library/Input Methods/Squirrel.app/Contents/Frameworks/rime-plugins/librime-qjs.dylib
+
+### Testing JavaScript Plugins
+
+1. Set up the test environment:
+   - Copy `librime/plugins/qjs/build/qjs` (patched to load node modules) to the Squirrel user folder `~/Library/Rime`
+   - Ensure your folder structure looks like this:
+     ```
+     <Rime-user-folder>
+     ├─── build
+     ├─── js
+     │    ├─── qjs
+     │    ├─── package.json
+     │    ├─── node_modules
+     │    ├─── <your-plugin>.js
+     │    └─── tests
+     │          └─── <your-plugin>.test.js
+     ├─── ...
+     ├─── squirrel.custom.yaml
+     └─── default.yaml
+     ```
+
+2. Run your plugin tests:
+   ```shell
+   qjs tests/<your-plugin>.test.js
+   ```
 
 ## Troubleshooting
 

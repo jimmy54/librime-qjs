@@ -12,7 +12,7 @@
 ### Setting up the build environment
 
 ```shell
-sudo pacman -S base-devel boost-libs capnproto gcc-libs glibc google-glog leveldb librime-data lua marisa opencc yaml-cpp boost cmake git gtest ninja
+sudo pacman -S base-devel boost-libs capnproto gcc-libs glibc google-glog leveldb librime-data lua marisa opencc yaml-cpp boost cmake git gtest ninja nodejs npm
 paru -S quickjs-ng
 ```
 
@@ -41,6 +41,7 @@ paru -S quickjs-ng
 
 ### Running Tests
 
+- Install the node modules: `(cd plugins/qjs/tests/js; npm install)`
 - Run all unit tests: `make test` or `make test-debug`
 - Run only the librime-qjs tests: `(cd plugins/qjs; ctest)`
 
