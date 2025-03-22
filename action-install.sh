@@ -8,6 +8,10 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
 elif [[ "$OSTYPE" == "linux-gnu"* ]] && [ -f /etc/lsb-release ]; then
     sudo apt-get update
     sudo apt-get install -y nodejs
+else
+    echo "Error: NodeJS is required to run the unit tests."
+    echo "Please install NodeJS for your operating system in 'action-install.sh'."
+    exit 1
 fi
 
 
