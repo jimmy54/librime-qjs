@@ -13,7 +13,7 @@ jobs:
     uses: ./.github/workflows/windows-build.yml
 
   linux:
-    uses: HuangJian/librime/.github/workflows/linux-build.yml@master
+    uses: HuangJian/librime/.github/workflows/linux-build.yml@linux-with-plugins
     with:
       repository: rime/librime
       rime_plugins: ${{ github.repository }}@${{ github.ref_name }}
