@@ -41,6 +41,12 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/quickjs/quickjs.h")
 
   # Create QuickJS library
   add_library(qjs STATIC ${QUICKJS_SOURCES})
+
+  if(UNIX AND NOT APPLE)
+    # Position-Independent Code (PIC) Required for later linking to librime-qjs (a shared library)
+    set_target_properties(qjs PROPERTIES POSITION_INDEPENDENT_CODE ON)
+  endif()
+
   target_compile_definitions(qjs PRIVATE ${qjs_defines})
   target_include_directories(qjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/quickjs)
 
@@ -81,11 +87,16 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/quickjs/quickjs.h")
     qjs
   )
 
+  if(UNIX AND NOT APPLE)
+    # link the math library (libm) to your executable
+    target_link_libraries(qjs_exe PRIVATE m)
+  endif()
+
   if(NOT WIN32)
     set_target_properties(qjs_exe PROPERTIES ENABLE_EXPORTS TRUE)
   endif()
 else()
-  find_package(quickjs REQUIRED CONFIGS qjsConfig.cmake)
+  message(FATAL_ERROR "QuickJS-NG source files not found. \nPlease clone it by `git submodule update --init --recursive` and try again.")
 endif()
 
 set(CMAKE_CURRENT_LIST_DIR ${CMAKE_CURRENT_SOURCE_DIR}/CMakeFiles/list)

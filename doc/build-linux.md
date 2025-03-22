@@ -31,8 +31,8 @@ paru -S quickjs-ng
 
   ```shell
   cd librime/plugins
-  git clone https://github.com/HuangJian/librime-qjs.git qjs
-  cd ..
+  ## quickjs-ng is cloned as a submodule to be patched to load node modules.
+  git clone --recursive https://github.com/HuangJian/librime-qjs.git qjs
   ```
 
 ### Building the Project
