@@ -15,5 +15,6 @@ jobs:
   linux:
     uses: HuangJian/librime/.github/workflows/linux-build.yml@linux-with-plugins
     with:
-      repository: HuangJian/librime@linux-with-plugins
+      repository: HuangJian/librime
+      ref: linux-with-plugins # The branch, tag or SHA to checkout
       rime_plugins: ${{ github.repository }}@${{ github.ref_name }}
