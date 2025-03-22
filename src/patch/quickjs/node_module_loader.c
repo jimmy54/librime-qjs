@@ -28,7 +28,9 @@ __attribute__((constructor)) void initBaseFolder() {
     qjsBaseFolder = _strdup(path);
   }
 }
-#else
+#endif
+
+#ifdef __APPLE__
 #include <unistd.h>
 #include <limits.h>
 #include <mach-o/dyld.h>  // For _NSGetExecutablePath on macOS
@@ -36,8 +38,6 @@ __attribute__((constructor)) void initBaseFolder() {
 __attribute__((constructor)) void initBaseFolder() {
   char path[PATH_MAX];
   uint32_t size = PATH_MAX;
-
-#ifdef __APPLE__
   // macOS specific path retrieval
   if (_NSGetExecutablePath(path, &size) == 0) {
     char* lastSlash = strrchr(path, '/');
@@ -46,7 +46,16 @@ __attribute__((constructor)) void initBaseFolder() {
       qjsBaseFolder = strdup(path);
     }
   }
-#else
+}
+#endif
+
+#ifdef __linux__
+#include <unistd.h>
+#include <limits.h>
+
+__attribute__((constructor)) void initBaseFolder() {
+  char path[PATH_MAX];
+  uint32_t size = PATH_MAX;
   // Linux path retrieval
   ssize_t count = readlink("/proc/self/exe", path, PATH_MAX);
   if (count != -1) {
@@ -54,10 +63,9 @@ __attribute__((constructor)) void initBaseFolder() {
     char* lastSlash = strrchr(path, '/');
     if (lastSlash) {
       *lastSlash = '\0';
-      baseFolder = strdup(path);
+      qjsBaseFolder = strdup(path);
     }
   }
-#endif
 }
 #endif
 
