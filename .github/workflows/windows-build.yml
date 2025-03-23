@@ -6,6 +6,10 @@ on:
         default: HuangJian/librime
         required: false
         type: string
+      ref:
+        default: master
+        required: false
+        type: string
       rime_plugins:
         default: ${{ github.repository }}@${{ github.ref_name }}
         required: false
