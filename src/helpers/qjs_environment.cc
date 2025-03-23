@@ -10,7 +10,7 @@
 
 #include "jsstring_raii.h"
 #include "node_module_loader.h"
-#include "process_memory.h"
+#include "process_memory.hpp"
 #include "qjs_engine.h"
 #include "system_info.hpp"
 
