@@ -20,7 +20,7 @@ target_link_libraries(librime-qjs-tests PUBLIC
 )
 
 if(WIN32)
-  file(GLOB rime_dll ${CMAKE_SOURCE_DIR}/build/test/*.dll)
+  file(GLOB rime_dll ${CMAKE_SOURCE_DIR}/dist/lib/*.dll)
   file(COPY ${rime_dll} DESTINATION ${EXECUTABLE_OUTPUT_PATH})
 endif()
 
