@@ -25,8 +25,11 @@ void getMemoryUsage(size_t& vm_usage, size_t& resident_set) {
 }
 
 #elif _WIN32
-#include <psapi.h>
+// do not sort the following includes, otherwise it will cause the compilation error in windows.
+// clang-format off
 #include <windows.h>
+#include <Psapi.h>
+// clang-format on
 
 void getMemoryUsage(size_t& vm_usage, size_t& resident_set) {
   PROCESS_MEMORY_COUNTERS pmc;
