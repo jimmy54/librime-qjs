@@ -13,12 +13,12 @@ jobs:
     uses: ./.github/workflows/windows-build.yml
     with:
       repository: HuangJian/librime
-      ref: windows-llvm20 # The branch, tag or SHA to checkout
+      ref: ci-build-librime-qjs # The branch, tag or SHA to checkout
       rime_plugins: ${{ github.repository }}@${{ github.ref_name }}
 
   linux:
-    uses: HuangJian/librime/.github/workflows/linux-build.yml@linux-with-plugins
+    uses: HuangJian/librime/.github/workflows/linux-build.yml@ci-build-librime-qjs
     with:
       repository: HuangJian/librime
-      ref: linux-with-plugins # The branch, tag or SHA to checkout
+      ref: ci-build-librime-qjs # The branch, tag or SHA to checkout
       rime_plugins: ${{ github.repository }}@${{ github.ref_name }}
