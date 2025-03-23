@@ -53,6 +53,11 @@ function testEnvUtilities(env) {
   assert(info.includes('Process RSS Mem: '))
   assert(info.includes('QuickJS Mem: '))
 
+  console.log(`env.os = ${JSON.stringify(env.os)}`)
+  assert('macOS|Windows|Linux'.includes(env.os.name), 'os.name should be one of macOS|Windows|Linux')
+  assert(env.os.version.length > 0, 'os.version should not be empty')
+  assert(env.os.architecture.length > 0, 'os.architecture should not be empty')
+
   console.error(`This is an error message.`)
 
   // ensure engine.processKey would not crash the program

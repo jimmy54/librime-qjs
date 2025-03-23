@@ -12,6 +12,7 @@
 #include "node_module_loader.h"
 #include "process_memory.h"
 #include "qjs_engine.h"
+#include "system_info.hpp"
 
 #define SET_FUNCTION_TO_ENVIRONMENT_PROPERTY(funcName, argc) \
   JS_SetPropertyStr(ctx, environment, #funcName, JS_NewCFunction(ctx, funcName, #funcName, argc));
@@ -28,6 +29,13 @@ JSValue QjsEnvironment::create(JSContext* ctx, Engine* engine, const std::string
 
   auto jsSharedDataDir = JS_NewString(ctx, rime_get_api()->get_shared_data_dir());
   JS_SetPropertyStr(ctx, environment, "sharedDataDir", jsSharedDataDir);
+
+  JSValue os = JS_NewObject(ctx);
+  JS_SetPropertyStr(ctx, os, "name", JS_NewString(ctx, SystemInfo::getOSName().c_str()));
+  JS_SetPropertyStr(ctx, os, "version", JS_NewString(ctx, SystemInfo::getOSVersion().c_str()));
+  JS_SetPropertyStr(ctx, os, "architecture",
+                    JS_NewString(ctx, SystemInfo::getArchitecture().c_str()));
+  JS_SetPropertyStr(ctx, environment, "os", os);
 
   // Add utility functions
   SET_FUNCTION_TO_ENVIRONMENT_PROPERTY(loadFile, 1);
@@ -46,15 +54,16 @@ JSValue QjsEnvironment::loadFile(JSContext* ctx,
     return JS_ThrowSyntaxError(ctx, "The absolutePath argument is required");
   }
 
-  const char* path = JS_ToCString(ctx, argv[0]);
-  if (path == nullptr) {
+  JSStringRAII path = JS_ToCString(ctx, argv[0]);
+  if (path.cStr() == nullptr) {
     return JS_ThrowSyntaxError(ctx, "The absolutePath argument should be a string");
   }
 
-  std::string content = ::loadFile(path);
-  JS_FreeCString(ctx, path);
-
-  return JS_NewString(ctx, content.c_str());
+  char* content = ::loadFile(path.cStr());
+  auto ret = JS_NewString(ctx, content);
+  // NOLINTNEXTLINE(cppcoreguidelines-no-malloc)
+  free(content);
+  return ret;
 }
 
 static std::string formatMemoryUsage(size_t usage) {
@@ -74,7 +83,7 @@ JSValue QjsEnvironment::getRimeInfo(JSContext* ctx,
   JSMemoryUsage qjsMemStats;
   JS_ComputeMemoryUsage(JS_GetRuntime(ctx), &qjsMemStats);
 
-  std::stringstream ss;
+  std::stringstream ss{};
   ss << "libRime v" << rime_get_api()->get_version() << " | "
      << "libRime-qjs v" << RIME_QJS_VERSION << " | "
      << "Process RSS Mem: " << formatMemoryUsage(residentSet) << " | "

@@ -120,6 +120,7 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gears
     ${CMAKE_CURRENT_SOURCE_DIR}/src/types
     ${CMAKE_CURRENT_SOURCE_DIR}/src/helpers
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/misc
     ${CMAKE_CURRENT_SOURCE_DIR}/src/patch/quickjs
     ${CMAKE_CURRENT_SOURCE_DIR}/tests/
 )
