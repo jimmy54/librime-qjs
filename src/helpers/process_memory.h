@@ -25,8 +25,8 @@ void getMemoryUsage(size_t& vm_usage, size_t& resident_set) {
 }
 
 #elif _WIN32
-#include <windows.h>
 #include <psapi.h>
+#include <windows.h>
 
 void getMemoryUsage(size_t& vm_usage, size_t& resident_set) {
   PROCESS_MEMORY_COUNTERS pmc;

@@ -5,9 +5,9 @@
 #include <filesystem>
 #include <fstream>
 #ifdef _WIN32
-#include <windows.h>
-#include <io.h>
 #include <fcntl.h>
+#include <io.h>
+#include <windows.h>
 #endif
 
 namespace rime {

@@ -63,5 +63,4 @@ static void rime_register_module_qjs() {
 }
 #endif
 
-
 // NOLINTEND(readability-identifier-naming)
