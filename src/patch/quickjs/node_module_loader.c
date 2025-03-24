@@ -5,7 +5,7 @@
 
 #include "node_module_loader.h"
 
-#define PATH_MAX 1024
+enum { PATH_MAX = 1024 };
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 static char* qjsBaseFolder = NULL;

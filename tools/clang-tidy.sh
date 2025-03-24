@@ -18,7 +18,7 @@ mv ${root}/compile_commands.json ${root}/build
 options="-p ${root}/build \
     --config-file=${root}/.clang-tidy \
     --warnings-as-errors=* \
-    --header-filter=\"${root}/src/.*\" \
+    --header-filter=\"${root}/(src|tests)/.*\" \
     --system-headers=0 \
     --use-color \
     -extra-arg=-I${root}/src \
@@ -27,6 +27,7 @@ options="-p ${root}/build \
     -extra-arg=-I${root}/src/types \
     -extra-arg=-I${root}/src/misc \
     -extra-arg=-I${root}/src/patch/quickjs \
+    -extra-arg=-I${root}/tests \
     -extra-arg=-isystem${root}/../../src \
     -extra-arg=-isystem${root}/../../build/src \
     -extra-arg=-isystem${root}/../../include \
@@ -58,7 +59,7 @@ if [ "$mode" = "all" ]; then
     echo "Linting all files..."
 
     find ${root}/{src,tests} \
-        -type f \( -name '*.h' -o -name '*.hpp' -o -name '*.cc' -o -name '*.cpp' \) | \
+        -type f \( -name '*.h' -o -name '*.hpp' -o -name '*.c' -o -name '*.cc' -o -name '*.cpp' \) | \
         xargs -P $(sysctl -n hw.ncpu) -I {} bash -c 'process_file "{}"'
 else
     echo "Linting modified files..."
