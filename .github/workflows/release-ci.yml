@@ -8,13 +8,16 @@ on:
       - '[0-9]+.*'
   workflow_dispatch:
 
+permissions:
+  contents: write  # Allow workflow to create and manage releases
+
 jobs:
   macos:
     uses: ./.github/workflows/macos-build.yml
     with:
       repository: HuangJian/librime
       rime_plugins: ${{ github.repository }}@${{ github.ref_name }}
-      
+
   windows:
     uses: ./.github/workflows/windows-build.yml
     with:
