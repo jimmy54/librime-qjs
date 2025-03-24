@@ -4,9 +4,9 @@ on: [push, pull_request]
 
 jobs:
   macos:
-    uses: rime/librime/.github/workflows/macos-build.yml@master
+    uses: ./.github/workflows/macos-build.yml
     with:
-      repository: rime/librime
+      repository: HuangJian/librime
       rime_plugins: ${{ github.repository }}@${{ github.ref_name }}
 
   windows:
