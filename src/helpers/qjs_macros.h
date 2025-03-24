@@ -3,7 +3,7 @@
 
 #include <quickjs.h>
 
-#include "jsstring_raii.h"
+#include "jsstring_raii.hpp"
 #include "qjs_type_registry.h"  // IWYU pragma: export
 
 #define NO_CONSTRUCTOR_TO_REGISTER \

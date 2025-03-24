@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <quickjs.h>
 
-#include "jsvalue_raii.h"
+#include "jsvalue_raii.hpp"
 #include "qjs_helper.h"
 
 using namespace rime;

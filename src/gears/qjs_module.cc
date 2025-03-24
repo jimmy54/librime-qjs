@@ -1,6 +1,6 @@
 #include "qjs_module.h"
 
-#include "jsvalue_raii.h"
+#include "jsvalue_raii.hpp"
 #include "qjs_helper.h"
 
 namespace rime {

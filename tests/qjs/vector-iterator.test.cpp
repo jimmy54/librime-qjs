@@ -5,7 +5,7 @@
 #include <string_view>
 #include <vector>
 
-#include "jsvalue_raii.h"
+#include "jsvalue_raii.hpp"
 #include "qjs_helper.h"
 #include "qjs_iterator.h"
 

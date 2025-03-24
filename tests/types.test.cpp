@@ -5,13 +5,13 @@
 #include <rime/engine.h>
 #include <rime/schema.h>
 
-#include "jsvalue_raii.h"
+#include "jsvalue_raii.hpp"
 #include "qjs_candidate.h"
 #include "qjs_engine.h"
 #include "qjs_environment.h"
 #include "quickjs.h"
-#include "test_helper.h"
-#include "trie_data_helper.h"
+#include "test_helper.hpp"
+#include "trie_data_helper.hpp"
 
 using namespace rime;
 

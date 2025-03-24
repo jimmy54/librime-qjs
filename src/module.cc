@@ -3,8 +3,8 @@
 #include <rime_api.h>
 
 #include "node_module_loader.h"
-#include "qjs_component.h"
-#include "qjs_filter.h"
+#include "qjs_component.hpp"
+#include "qjs_filter.hpp"
 #include "qjs_helper.h"
 #include "qjs_processor.h"
 #include "qjs_translator.h"

@@ -4,7 +4,7 @@
 
 #include <utility>
 
-#include "jsvalue_raii.h"
+#include "jsvalue_raii.hpp"
 #include "qjs_candidate.h"
 #include "quickjs.h"
 

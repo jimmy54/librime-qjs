@@ -11,7 +11,7 @@
 #include "qjs_helper.h"
 #include "qjs_types.h"
 
-#include "test_helper.h"
+#include "test_helper.hpp"
 
 using rime::kDefaultModules;
 

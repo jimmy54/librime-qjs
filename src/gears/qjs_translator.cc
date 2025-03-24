@@ -5,7 +5,7 @@
 #include <rime/gear/translator_commons.h>
 #include <rime/translation.h>
 
-#include "jsvalue_raii.h"
+#include "jsvalue_raii.hpp"
 #include "qjs_candidate.h"
 #include "qjs_helper.h"
 #include "qjs_segment.h"

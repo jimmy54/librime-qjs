@@ -3,8 +3,8 @@
 #include <rime/gear/filter_commons.h>
 #include <rime/ticket.h>
 
-#include "qjs_component.h"
-#include "qjs_filter.h"
+#include "qjs_component.hpp"
+#include "qjs_filter.hpp"
 #include "quickjs.h"
 
 using namespace rime;

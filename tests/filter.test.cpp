@@ -6,8 +6,8 @@
 #include <rime/schema.h>
 #include <rime/translation.h>
 
-#include "fake_translation.h"
-#include "qjs_filter.h"
+#include "fake_translation.hpp"
+#include "qjs_filter.hpp"
 #include "quickjs.h"
 
 using namespace rime;

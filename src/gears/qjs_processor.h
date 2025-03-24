@@ -3,7 +3,7 @@
 
 #include <rime/processor.h>
 
-#include "qjs_component.h"
+#include "qjs_component.hpp"
 #include "qjs_module.h"
 #include "quickjs.h"
 

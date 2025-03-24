@@ -3,7 +3,7 @@
 #include <string>
 
 #include "benchmark_helper.h"
-#include "trie_data_helper.h"
+#include "trie_data_helper.hpp"
 #include "trie_ext.hpp"
 
 // #define RUN_BENCHMARK_WITH_REAL_DATA

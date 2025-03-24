@@ -4,7 +4,7 @@
 #include <rime/gear/translator_commons.h>
 #include <rime/translator.h>
 
-#include "qjs_component.h"
+#include "qjs_component.hpp"
 #include "qjs_module.h"
 #include "quickjs.h"
 

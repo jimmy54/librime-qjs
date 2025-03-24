@@ -4,7 +4,7 @@
 
 #include <string>
 
-#include "jsvalue_raii.h"
+#include "jsvalue_raii.hpp"
 #include "quickjs.h"
 
 namespace rime {

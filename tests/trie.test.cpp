@@ -2,8 +2,8 @@
 
 #include <gtest/gtest.h>
 
-#include "test_helper.h"
-#include "trie_data_helper.h"
+#include "test_helper.hpp"
+#include "trie_data_helper.hpp"
 
 class TrieTest : public ::testing::Test {
 private:

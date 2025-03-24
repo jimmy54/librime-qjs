@@ -3,8 +3,8 @@
 #include <rime/translation.h>
 #include <vector>
 
-#include "fake_translation.h"
-#include "jsvalue_raii.h"
+#include "fake_translation.hpp"
+#include "jsvalue_raii.hpp"
 #include "qjs_helper.h"
 #include "qjs_translation.h"
 

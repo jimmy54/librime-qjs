@@ -3,7 +3,7 @@
 #include <rime/gear/translator_commons.h>
 #include <rime/translation.h>
 
-#include "jsvalue_raii.h"
+#include "jsvalue_raii.hpp"
 #include "qjs_key_event.h"
 #include "quickjs.h"
 

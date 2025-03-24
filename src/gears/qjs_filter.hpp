@@ -5,7 +5,7 @@
 #include <rime/filter.h>
 #include <rime/gear/filter_commons.h>
 
-#include "qjs_component.h"
+#include "qjs_component.hpp"
 #include "qjs_module.h"
 #include "qjs_translation.h"
 #include "quickjs.h"

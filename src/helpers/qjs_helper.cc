@@ -5,7 +5,7 @@
 #include <cstddef>
 #include <sstream>
 
-#include "jsvalue_raii.h"
+#include "jsvalue_raii.hpp"
 #include "quickjs.h"
 
 #include "node_module_loader.h"

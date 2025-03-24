@@ -8,7 +8,7 @@
 #include <iostream>
 #include <sstream>
 
-#include "jsstring_raii.h"
+#include "jsstring_raii.hpp"
 #include "node_module_loader.h"
 #include "process_memory.hpp"
 #include "qjs_engine.h"
