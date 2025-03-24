@@ -96,6 +96,12 @@ jobs:
       - name: Install Rime plugins
         run: .\action-install-plugins-windows.bat
 
+      - name: Get librime-qjs commit hash
+        run: |
+          cd .\plugins\qjs
+          $qjs_git_ref_name = git describe --always
+          echo "qjs_git_ref_name=$qjs_git_ref_name" >> $env:GITHUB_ENV
+
       - name: Build and test
         run: |
           .\build.bat
@@ -110,11 +116,11 @@ jobs:
           xcopy /Y /I /E .\dist\lib\rime.dll .\assets\
           xcopy /Y /I /E .\plugins\qjs\build\qjs.exe .\assets\
           xcopy /Y /I .\plugins\qjs\contrib\rime.d.ts .\assets\
-          7z a librime-qjs-${{ github.ref_name }}-${{ runner.os }}-${{ matrix.compiler }}-${{ matrix.arch }}.7z .\assets\*
+          7z a librime-qjs-${{ env.qjs_git_ref_name }}-${{ runner.os }}-${{ matrix.compiler }}-${{ matrix.arch }}.7z .\assets\*
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: artifact-${{ runner.os }}-${{ matrix.compiler }}-${{ matrix.arch }}
           path: |
-            librime-qjs-${{ github.ref_name }}-${{ runner.os }}-${{ matrix.compiler }}-${{ matrix.arch }}.7z
+            librime-qjs-${{ env.qjs_git_ref_name }}-${{ runner.os }}-${{ matrix.compiler }}-${{ matrix.arch }}.7z
