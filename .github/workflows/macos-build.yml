@@ -78,7 +78,7 @@ jobs:
         run: |
           make install
           tar -cjvf librime-qjs-${{ env.git_ref_name }}-${{ runner.os }}-${{ matrix.build_variant || runner.arch }}.tar.bz2 \
-          version-info.txt dist/lib ./plugins/qjs/build/qjs
+          version-info.txt dist/lib ./plugins/qjs/build/qjs ./plugins/qjs/contrib/rime.d.ts
 
       - name: Upload artifacts
         if: matrix.create-distributable

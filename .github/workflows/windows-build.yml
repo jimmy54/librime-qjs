@@ -106,7 +106,7 @@ jobs:
       - name: Create distributable
         run: |
           7z a librime-qjs-${{ env.git_ref_name }}-${{ runner.os }}-${{ matrix.compiler }}-${{ matrix.arch }}.7z `
-          dist\lib\rime.dll version-info.txt
+          dist\lib\rime.dll version-info.txt plugins\qjs\contrib\rime.d.ts .\plugins\qjs\build\librime-qjs-tests.exe
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
