@@ -82,7 +82,7 @@ jobs:
           cp -r ./dist/lib/** ./assets
           cp -r ./plugins/qjs/build/qjs ./assets
           cp -r ./plugins/qjs/contrib/rime.d.ts ./assets
-          tar -cjvf librime-qjs-${{ env.git_ref_name }}-${{ runner.os }}-${{ matrix.build_variant || runner.arch }}.tar.bz2  -C ./assets .
+          tar -cjvf librime-qjs-${{ github.ref_name }}-${{ runner.os }}-${{ matrix.build_variant || runner.arch }}.tar.bz2  -C ./assets .
 
       - name: Upload artifacts
         if: matrix.create-distributable
@@ -90,4 +90,4 @@ jobs:
         with:
           name: artifact-${{ runner.os }}-${{ matrix.build_variant || runner.arch }}
           path: |
-            librime-qjs-${{ env.git_ref_name }}-${{ runner.os }}-${{ matrix.build_variant || runner.arch }}.tar.bz2
+            librime-qjs-${{ github.ref_name }}-${{ runner.os }}-${{ matrix.build_variant || runner.arch }}.tar.bz2

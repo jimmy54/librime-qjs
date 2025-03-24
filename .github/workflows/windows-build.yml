@@ -107,14 +107,14 @@ jobs:
         run: |
           mkdir assets
           xcopy /Y /I .\version-info.txt .\assets\
-          xcopy /Y /I /E .\dist\lib\* .\assets\
-          xcopy /Y /I /E .\plugins\qjs\build\qjs .\assets\
+          xcopy /Y /I /E .\dist\lib\rime.dll .\assets\
+          xcopy /Y /I /E .\plugins\qjs\build\qjs.exe .\assets\
           xcopy /Y /I .\plugins\qjs\contrib\rime.d.ts .\assets\
-          7z a librime-qjs-${{ env.git_ref_name }}-${{ runner.os }}-${{ matrix.compiler }}-${{ matrix.arch }}.7z .\assets\*
+          7z a librime-qjs-${{ github.ref_name }}-${{ runner.os }}-${{ matrix.compiler }}-${{ matrix.arch }}.7z .\assets\*
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: artifact-${{ runner.os }}-${{ matrix.compiler }}-${{ matrix.arch }}
           path: |
-            librime-qjs-${{ env.git_ref_name }}-${{ runner.os }}-${{ matrix.compiler }}-${{ matrix.arch }}.7z
+            librime-qjs-${{ github.ref_name }}-${{ runner.os }}-${{ matrix.compiler }}-${{ matrix.arch }}.7z
