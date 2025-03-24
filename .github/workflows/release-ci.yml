@@ -1,0 +1,62 @@
+name: Release CI
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - '[0-9]+.*'
+  workflow_dispatch:
+
+jobs:
+  macos:
+    uses: ./.github/workflows/macos-build.yml
+    with:
+      repository: HuangJian/librime
+      rime_plugins: ${{ github.repository }}@${{ github.ref_name }}
+      
+  windows:
+    uses: ./.github/workflows/windows-build.yml
+    with:
+      repository: HuangJian/librime
+      ref: ci-build-librime-qjs
+      rime_plugins: ${{ github.repository }}@${{ github.ref_name }}
+
+  linux:
+    uses: HuangJian/librime/.github/workflows/linux-build.yml@ci-build-librime-qjs
+    with:
+      repository: HuangJian/librime
+      ref: ci-build-librime-qjs
+      rime_plugins: ${{ github.repository }}@${{ github.ref_name }}
+
+  release:
+    needs: [macos, windows]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifact
+          merge-multiple: true
+
+      - name: Create Nightly release
+        if: ${{ github.repository == 'HuangJian/librime-qjs' && github.ref == 'refs/heads/main' }}
+        uses: 'marvinpinto/action-automatic-releases@latest'
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          automatic_release_tag: latest
+          prerelease: true
+          title: "librime-qjs Nightly Build"
+          files: |
+            artifact/*
+
+      - name: Create Stable release
+        if: ${{ github.ref != 'refs/heads/main' }}
+        uses: 'marvinpinto/action-automatic-releases@latest'
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          draft: true
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          title: librime-qjs ${{ github.ref_name }}
+          files: |
+            artifact/*
