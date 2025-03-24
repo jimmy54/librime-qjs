@@ -7,7 +7,7 @@
 
 #include "jsvalue_raii.hpp"
 #include "qjs_helper.h"
-#include "qjs_iterator.h"
+#include "qjs_iterator.hpp"
 
 using std::move;
 
