@@ -9,9 +9,9 @@ namespace rime {
 
 class QuickJSTranslation : public PrefetchTranslation {
 public:
-  QuickJSTranslation(const QuickJSTranslation&) = default;
+  QuickJSTranslation(const QuickJSTranslation&) = delete;
   QuickJSTranslation(QuickJSTranslation&&) = delete;
-  QuickJSTranslation& operator=(const QuickJSTranslation&) = default;
+  QuickJSTranslation& operator=(const QuickJSTranslation&) = delete;
   QuickJSTranslation& operator=(QuickJSTranslation&&) = delete;
 
   QuickJSTranslation(an<Translation> translation,

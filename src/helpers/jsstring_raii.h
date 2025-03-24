@@ -12,9 +12,9 @@ class JSStringRAII {
 public:
   JSStringRAII(const char* str) : str_(str) {}
 
-  JSStringRAII(const JSStringRAII&) = default;
+  JSStringRAII(const JSStringRAII&) = delete;
   JSStringRAII(JSStringRAII&&) = delete;
-  JSStringRAII& operator=(const JSStringRAII&) = default;
+  JSStringRAII& operator=(const JSStringRAII&) = delete;
   JSStringRAII& operator=(JSStringRAII&&) = delete;
 
   ~JSStringRAII() {

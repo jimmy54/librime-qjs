@@ -11,9 +11,9 @@ using namespace rime;
 
 class MockFilter {
 public:
-  MockFilter(const MockFilter&) = default;
+  MockFilter(const MockFilter&) = delete;
   MockFilter(MockFilter&&) = delete;
-  MockFilter& operator=(const MockFilter&) = default;
+  MockFilter& operator=(const MockFilter&) = delete;
   MockFilter& operator=(MockFilter&&) = delete;
 
   explicit MockFilter(const Ticket& ticket, JSValue& environment) {
