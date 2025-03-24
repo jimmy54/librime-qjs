@@ -105,15 +105,12 @@ jobs:
 
       - name: Create distributable
         run: |
-          7z a rime-${{ env.git_ref_name }}-${{ runner.os }}-${{ matrix.compiler }}-${{ matrix.arch }}.7z `
-          dist version-info.txt
-          7z a -x'!*/.placeholder' rime-deps-${{ env.git_ref_name }}-${{ runner.os }}-${{ matrix.compiler }}-${{ matrix.arch }}.7z `
-          bin include lib share
+          7z a librime-qjs-${{ env.git_ref_name }}-${{ runner.os }}-${{ matrix.compiler }}-${{ matrix.arch }}.7z `
+          dist\lib\rime.dll version-info.txt
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: artifact-${{ runner.os }}-${{ matrix.compiler }}-${{ matrix.arch }}
           path: |
-            rime-${{ env.git_ref_name }}-${{ runner.os }}-${{ matrix.compiler }}-${{ matrix.arch }}.7z
-            rime-deps-${{ env.git_ref_name }}-${{ runner.os }}-${{ matrix.compiler }}-${{ matrix.arch }}.7z
+            librime-qjs-${{ env.git_ref_name }}-${{ runner.os }}-${{ matrix.compiler }}-${{ matrix.arch }}.7z
