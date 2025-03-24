@@ -160,8 +160,6 @@ protected:
   }
 };
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables,
-// readability-function-cognitive-complexity)
 TEST_F(QuickJSExposeClassTest, TestExposeClassToQuickJS) {
   const char* script = R"(
         function testExposedCppClass() {
@@ -181,4 +179,5 @@ TEST_F(QuickJSExposeClassTest, TestExposeClassToQuickJS) {
   const char* resultStr = JS_ToCString(ctx, result);
   EXPECT_STREQ(resultStr, "Hello, QuickJS! Hello, Trae!");
   JS_FreeCString(ctx, resultStr);
+  JS_FreeValue(ctx, result);
 }
