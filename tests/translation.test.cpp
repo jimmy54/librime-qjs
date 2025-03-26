@@ -7,6 +7,7 @@
 #include "jsvalue_raii.hpp"
 #include "qjs_helper.h"
 #include "qjs_translation.h"
+#include "quickjs.h"
 
 using namespace rime;
 
@@ -106,4 +107,20 @@ TEST_F(QuickJSTranslationTest, CandidatesShouldBeFreed) {
   for (auto& candidate : candidates) {
     ASSERT_EQ(candidate.use_count(), 1);
   }
+}
+
+TEST_F(QuickJSTranslationTest, NoReturnValueShouldNotCrash) {
+  auto translation = createMockTranslation();
+  const char* jsCode = "( function noReturn() { } )";
+
+  auto* ctx = QjsHelper::getInstance().getContext();
+  JSValueRAII result = JS_Eval(ctx, jsCode, strlen(jsCode), "<input>", JS_EVAL_TYPE_GLOBAL);
+  JSValueRAII global = JS_GetGlobalObject(ctx);
+  JSValueRAII filterFunc = JS_GetPropertyStr(ctx, global, "noReturn");
+
+  auto qjsTranslation =
+      New<QuickJSTranslation>(translation, JS_UNDEFINED, filterFunc, JS_UNDEFINED);
+  EXPECT_TRUE(qjsTranslation->exhausted());
+  EXPECT_FALSE(qjsTranslation->Next());
+  EXPECT_EQ(qjsTranslation->Peek(), nullptr);
 }

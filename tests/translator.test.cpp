@@ -132,3 +132,21 @@ TEST_F(QuickJSTranslatorTest, NonExistentModule) {
 
   JS_FreeValue(ctx, environment);
 }
+
+TEST_F(QuickJSTranslatorTest, NoReturnShouldNotCrash) {
+  auto* ctx = QjsHelper::getInstance().getContext();
+  auto* engine = Engine::Create();
+
+  // Create a ticket with a poor implemented plugin
+  Ticket ticket(engine, "translator", "qjs_translator@translator_no_return");
+  JSValue environment = QjsEnvironment::create(ctx, engine, "translator_no_return");
+  auto translator = New<QuickJSTranslator>(ticket, environment);
+  Segment segment = createSegment();
+  auto translation = translator->query("test_input", segment, environment);
+  ASSERT_TRUE(translation != nullptr);
+  EXPECT_TRUE(translation->exhausted());
+  EXPECT_FALSE(translation->Next());
+  EXPECT_EQ(translation->Peek(), nullptr);
+
+  JS_FreeValue(ctx, environment);
+}

@@ -39,7 +39,10 @@ bool QuickJSTranslation::doFilter(const JSValue& filterObj,
     return false;
   }
 
-  JSValueRAII lengthVal(JS_GetPropertyStr(ctx, resultArray, "length"));
+  JSValueRAII lengthVal = JS_GetPropertyStr(ctx, resultArray, "length");
+  if (JS_IsException(lengthVal)) {
+    return false;
+  }
   uint32_t length = 0;
   JS_ToUint32(ctx, &length, lengthVal);
 

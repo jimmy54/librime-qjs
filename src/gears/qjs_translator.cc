@@ -32,7 +32,10 @@ an<Translation> QuickJSTranslator::query(const string& input,
     return translation;
   }
 
-  JSValueRAII lengthVal(JS_GetPropertyStr(ctx, resultArray, "length"));
+  JSValueRAII lengthVal = JS_GetPropertyStr(ctx, resultArray, "length");
+  if (JS_IsException(lengthVal)) {
+    return translation;
+  }
   uint32_t length = 0;
   JS_ToUint32(ctx, &length, lengthVal);
 
