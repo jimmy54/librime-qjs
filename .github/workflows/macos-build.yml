@@ -94,7 +94,7 @@ jobs:
         run: |
           make clean
           make test-debug CFLAGS="-g -fsanitize=address" LDFLAGS="-fsanitize=address"
-          ASAN_OPTIONS=detect_leaks=1 ./plugins/qjs/librime-qjs-tests
+          ASAN_OPTIONS=detect_leaks=1 ./plugins/qjs/build/librime-qjs-tests
 
       - name: Upload artifacts
         if: matrix.create-distributable
