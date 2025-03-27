@@ -25,7 +25,7 @@ __attribute__((constructor)) void initBaseFolder() {
   char* last_slash = strrchr(path, '\\');
   if (last_slash) {
     *last_slash = '\0';
-    qjsBaseFolder = _strdup(path);
+    setQjsBaseFolder(path);
   }
 }
 #endif
@@ -43,7 +43,7 @@ __attribute__((constructor)) void initBaseFolder() {
     char* lastSlash = strrchr(path, '/');
     if (lastSlash) {
       *lastSlash = '\0';
-      qjsBaseFolder = strdup(path);
+      setQjsBaseFolder(path);
     }
   }
 }
@@ -63,7 +63,7 @@ __attribute__((constructor)) void initBaseFolder() {
     char* lastSlash = strrchr(path, '/');
     if (lastSlash) {
       *lastSlash = '\0';
-      qjsBaseFolder = strdup(path);
+      setQjsBaseFolder(path);
     }
   }
 }
