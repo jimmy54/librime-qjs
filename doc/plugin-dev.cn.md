@@ -176,7 +176,7 @@ Edit/view: https://cascii.app/0ca1e                                           '-
       registry.cc:14] registering component: qjs_processor
       registry.cc:14] registering component: qjs_filter
       registry.cc:14] registering component: qjs_translator
-     ```
+      ```
 6. 如果遇到问题，请报 issue 并提供详细重现步骤；或删除`C:\Program Files\Rime\weasel-x.xx.x\rime.dll` 文件，并使用备份版本恢复输入法。
 
 #### 安装到 Linux (PR Welcome)
