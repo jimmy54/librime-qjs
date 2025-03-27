@@ -3,10 +3,14 @@
 #include <rime/service.h>
 #include <rime/setup.h>
 #include <rime_api.h>
-#include <rime_api_impl.h>
 
 #ifdef _WIN32
 #include <windows.h>
+#else
+// this include breaks building on Windows:
+// src\rime_api_impl.h:25:22: error: dllimport cannot be applied to non-inline function definition
+// 25 | RIME_DEPRECATED void RimeSetup(RimeTraits* traits)
+#include <rime_api_impl.h>
 #endif
 
 #include "qjs_helper.h"
@@ -37,10 +41,14 @@ public:
     };
     rime::SetupDeployer(&traits);
     rime::LoadModules(static_cast<const char**>(kDefaultModules));
-    Service::instance().StartService();
+    rime::Service::instance().StartService();
   }
 
+#ifndef _WIN32
+  // not working on Windows since the related header <rime_api_impl.h> is not included
+  // just drop it off on Windows, and run only the memory leak detection on macOS CI.
   void TearDown() override { RimeFinalize(); }
+#endif
 };
 
 int main(int argc, char** argv) {
