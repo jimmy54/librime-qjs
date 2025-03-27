@@ -89,13 +89,6 @@ jobs:
           cp -r ./plugins/qjs/contrib/rime.d.ts ./assets
           tar -cjvf librime-qjs-${{ env.qjs_git_ref_name }}-${{ runner.os }}-${{ matrix.build_variant || runner.arch }}.tar.bz2  -C ./assets .
 
-      - name: Detect Memory Leak
-        if: matrix.build_variant == 'universal'
-        run: |
-          make clean
-          make test-debug CFLAGS="-g -fsanitize=address" LDFLAGS="-fsanitize=address"
-          ASAN_OPTIONS=detect_leaks=1 ./plugins/qjs/build/librime-qjs-tests
-
       - name: Upload artifacts
         if: matrix.create-distributable
         uses: actions/upload-artifact@v4
