@@ -6,6 +6,9 @@
 
 #ifdef _WIN32
 #include <windows.h>
+// C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\um\winsvc.h(1653,23): note: expanded from macro 'StartService'
+//  1653 | #define StartService  StartServiceA
+#undef StartService
 #else
 // this include breaks building on Windows:
 // src\rime_api_impl.h:25:22: error: dllimport cannot be applied to non-inline function definition
@@ -67,7 +70,7 @@ int main(int argc, char** argv) {
   // Register the Rime types to quickjs again, since the ones registered in
   // module.cc are not available in the tests. It seems two diffrent quickjs
   // engines/contexts are created. Probably in diffrent process?
-  initQjsTypes(QjsHelper::getInstance().getContext());
+  rime::initQjsTypes(QjsHelper::getInstance().getContext());
 
   // "librime-qjs-tests" start time: Feb 17 10:18 CST
   // Output:
