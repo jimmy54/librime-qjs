@@ -3,6 +3,7 @@
 #include <rime/service.h>
 #include <rime/setup.h>
 #include <rime_api.h>
+#include <rime_api_impl.h>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -15,12 +16,36 @@
 
 using rime::kDefaultModules;
 
-using namespace rime;
+class GlobalEnvironment : public testing::Environment {
+public:
+  void SetUp() override {
+    rime::SetupLogging("rime.test");
 
-// copied from ../../../test/rime_test_main.cc
-// to make `Engine::Create()` not crashing the tests
+    RimeTraits traits = {
+        .data_size = sizeof(RimeTraits) - sizeof((traits).data_size),
+        .shared_data_dir = ".",
+        .user_data_dir = ".",
+        .distribution_name = nullptr,
+        .distribution_code_name = nullptr,
+        .distribution_version = nullptr,
+        .app_name = nullptr,
+        .modules = nullptr,
+        .min_log_level = 0,
+        .log_dir = nullptr,
+        .prebuilt_data_dir = ".",
+        .staging_dir = ".",
+    };
+    rime::SetupDeployer(&traits);
+    rime::LoadModules(static_cast<const char**>(kDefaultModules));
+    Service::instance().StartService();
+  }
+
+  void TearDown() override { RimeFinalize(); }
+};
+
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
+  testing::AddGlobalTestEnvironment(new GlobalEnvironment);
 
 #ifdef _WIN32
   // Enables UTF-8 output in the Windows console
@@ -29,18 +54,12 @@ int main(int argc, char** argv) {
   SetConsoleOutputCP(CP_UTF8);
 #endif
 
-  rime::SetupLogging("rime.test");
-  rime::LoadModules(static_cast<const char**>(kDefaultModules));
-  // Do not StartService, otherwise it would leak memory.
-  // rime::Service::instance().StartService();
-
   setJsBasePathForTest(__FILE__, "/js");
 
   // Register the Rime types to quickjs again, since the ones registered in
   // module.cc are not available in the tests. It seems two diffrent quickjs
   // engines/contexts are created. Probably in diffrent process?
-  auto* ctx = QjsHelper::getInstance().getContext();
-  initQjsTypes(ctx);
+  initQjsTypes(QjsHelper::getInstance().getContext());
 
   // "librime-qjs-tests" start time: Feb 17 10:18 CST
   // Output:

@@ -33,9 +33,7 @@ protected:
 TEST_F(QuickJSTypesTest, WrapUnwrapRimeGears) {
   auto* ctx = QjsHelper::getInstance().getContext();
 
-  auto* engine = Engine::Create();
-  // engine->ApplySchema(&schema); // ApplySchema 会触发回调函数，导致 segfault
-  // engine->schema()->schema_id() = .default, engine->schema()->schema_name() = .default
+  the<Engine> engine(Engine::Create());
   ASSERT_TRUE(engine->schema() != nullptr);
   auto* config = engine->schema()->config();
   ASSERT_TRUE(config != nullptr);
@@ -57,7 +55,7 @@ TEST_F(QuickJSTypesTest, WrapUnwrapRimeGears) {
   ASSERT_TRUE(context != nullptr);
   context->set_input("hello");
 
-  JSValueRAII env = QjsEnvironment::create(ctx, engine, "namespace");
+  JSValueRAII env = QjsEnvironment::create(ctx, engine.get(), "namespace");
 
   auto folderPath = getFolderPath(__FILE__);
   JS_SetPropertyStr(ctx, env, "currentFolder", JS_NewString(ctx, folderPath.c_str()));
@@ -73,7 +71,7 @@ TEST_F(QuickJSTypesTest, WrapUnwrapRimeGears) {
 
   JSValueRAII retJsEngine = JS_GetPropertyStr(ctx, retValue, "engine");
   Engine* retEngine = QjsEngine::unwrap(ctx, retJsEngine);
-  ASSERT_EQ(retEngine, engine);
+  ASSERT_EQ(retEngine, engine.get());
   ASSERT_EQ(retEngine->schema()->schema_name(), engine->schema()->schema_name());
   JSValueRAII retJsCandidate = JS_GetPropertyStr(ctx, retValue, "candidate");
   an<Candidate> retCandidate = QjsCandidate::unwrap(ctx, retJsCandidate);

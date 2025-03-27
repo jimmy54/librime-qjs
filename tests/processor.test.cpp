@@ -23,18 +23,18 @@ protected:
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
 TEST_F(QuickJSProcessorTest, ProcessKeyEvent) {
-  auto* engine = Engine::Create();
+  the<Engine> engine(Engine::Create());
   ASSERT_TRUE(engine->schema() != nullptr);
 
   auto* config = engine->schema()->config();
   ASSERT_TRUE(config != nullptr);
   config->SetString("greet", "hello from c++");
 
-  addSegment(engine, "prompt");
+  addSegment(engine.get(), "prompt");
 
-  Ticket ticket(engine, "processor_test", "qjs_processor@processor_test");
+  Ticket ticket(engine.get(), "processor_test", "qjs_processor@processor_test");
   auto* ctx = QjsHelper::getInstance().getContext();
-  JSValue environment = QjsEnvironment::create(ctx, engine, "processor_test");
+  JSValue environment = QjsEnvironment::create(ctx, engine.get(), "processor_test");
   auto processor = New<QuickJSProcessor>(ticket, environment);
 
   // Test key event that should be accepted
@@ -54,15 +54,15 @@ TEST_F(QuickJSProcessorTest, ProcessKeyEvent) {
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
 TEST_F(QuickJSProcessorTest, NonExistentModule) {
-  auto* engine = Engine::Create();
+  the<Engine> engine(Engine::Create());
   ASSERT_TRUE(engine->schema() != nullptr);
 
-  addSegment(engine, "prompt");
+  addSegment(engine.get(), "prompt");
 
   // Create a ticket with a non-existent module
-  Ticket ticket(engine, "non_existent", "qjs_processor@non_existent");
+  Ticket ticket(engine.get(), "non_existent", "qjs_processor@non_existent");
   auto* ctx = QjsHelper::getInstance().getContext();
-  JSValue environment = QjsEnvironment::create(ctx, engine, "non_existent");
+  JSValue environment = QjsEnvironment::create(ctx, engine.get(), "non_existent");
   auto processor = New<QuickJSProcessor>(ticket, environment);
 
   // Test key event - should return noop due to unloaded module

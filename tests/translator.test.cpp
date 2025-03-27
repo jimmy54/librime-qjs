@@ -29,7 +29,7 @@ protected:
 TEST_F(QuickJSTranslatorTest, QueryTranslation) {
   auto* ctx = QjsHelper::getInstance().getContext();
 
-  auto* engine = Engine::Create();
+  the<Engine> engine(Engine::Create());
   ASSERT_TRUE(engine->schema() != nullptr);
 
   auto* config = engine->schema()->config();
@@ -37,8 +37,8 @@ TEST_F(QuickJSTranslatorTest, QueryTranslation) {
   config->SetString("greet", "hello from c++");
   config->SetString("expectedInput", "test_input");
 
-  Ticket ticket(engine, "translator", "qjs_translator@translator_test");
-  JSValue environment = QjsEnvironment::create(ctx, engine, "translator_test");
+  Ticket ticket(engine.get(), "translator", "qjs_translator@translator_test");
+  JSValue environment = QjsEnvironment::create(ctx, engine.get(), "translator_test");
   auto translator = New<QuickJSTranslator>(ticket, environment);
 
   // Create a segment for testing
@@ -81,7 +81,7 @@ TEST_F(QuickJSTranslatorTest, QueryTranslation) {
 TEST_F(QuickJSTranslatorTest, EmptyResult) {
   auto* ctx = QjsHelper::getInstance().getContext();
 
-  auto* engine = Engine::Create();
+  the<Engine> engine(Engine::Create());
   ASSERT_TRUE(engine->schema() != nullptr);
 
   auto* config = engine->schema()->config();
@@ -89,8 +89,8 @@ TEST_F(QuickJSTranslatorTest, EmptyResult) {
   config->SetString("greet", "hello from c++");
   config->SetString("expectedInput", "empty_input");
 
-  Ticket ticket(engine, "translator", "qjs_translator@translator_test");
-  JSValue environment = QjsEnvironment::create(ctx, engine, "translator_test");
+  Ticket ticket(engine.get(), "translator", "qjs_translator@translator_test");
+  JSValue environment = QjsEnvironment::create(ctx, engine.get(), "translator_test");
   auto translator = New<QuickJSTranslator>(ticket, environment);
 
   // Create a segment for testing
@@ -111,12 +111,12 @@ TEST_F(QuickJSTranslatorTest, EmptyResult) {
 TEST_F(QuickJSTranslatorTest, NonExistentModule) {
   auto* ctx = QjsHelper::getInstance().getContext();
 
-  auto* engine = Engine::Create();
+  the<Engine> engine(Engine::Create());
   ASSERT_TRUE(engine->schema() != nullptr);
 
   // Create a ticket with a non-existent module
-  Ticket ticket(engine, "translator", "qjs_translator@non_existent");
-  JSValue environment = QjsEnvironment::create(ctx, engine, "non_existent");
+  Ticket ticket(engine.get(), "translator", "qjs_translator@non_existent");
+  JSValue environment = QjsEnvironment::create(ctx, engine.get(), "non_existent");
   auto translator = New<QuickJSTranslator>(ticket, environment);
 
   // Create a segment for testing
@@ -135,11 +135,11 @@ TEST_F(QuickJSTranslatorTest, NonExistentModule) {
 
 TEST_F(QuickJSTranslatorTest, NoReturnShouldNotCrash) {
   auto* ctx = QjsHelper::getInstance().getContext();
-  auto* engine = Engine::Create();
+  the<Engine> engine(Engine::Create());
 
   // Create a ticket with a poor implemented plugin
-  Ticket ticket(engine, "translator", "qjs_translator@translator_no_return");
-  JSValue environment = QjsEnvironment::create(ctx, engine, "translator_no_return");
+  Ticket ticket(engine.get(), "translator", "qjs_translator@translator_no_return");
+  JSValue environment = QjsEnvironment::create(ctx, engine.get(), "translator_no_return");
   auto translator = New<QuickJSTranslator>(ticket, environment);
   Segment segment = createSegment();
   auto translation = translator->query("test_input", segment, environment);

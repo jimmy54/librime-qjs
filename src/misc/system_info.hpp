@@ -54,8 +54,9 @@ private:
 #ifdef _WIN32
   static std::string getWindowsVersion() {
     RTL_OSVERSIONINFOW osvi = {sizeof(osvi)};
-    typedef LONG (WINAPI* RtlGetVersionPtr)(PRTL_OSVERSIONINFOW);
-    RtlGetVersionPtr rtlGetVersion = (RtlGetVersionPtr)GetProcAddress(GetModuleHandle(TEXT("ntdll.dll")), "RtlGetVersion");
+    typedef LONG(WINAPI * RtlGetVersionPtr)(PRTL_OSVERSIONINFOW);
+    RtlGetVersionPtr rtlGetVersion =
+        (RtlGetVersionPtr)GetProcAddress(GetModuleHandle(TEXT("ntdll.dll")), "RtlGetVersion");
     if (rtlGetVersion && rtlGetVersion(&osvi) == 0) {
       return std::to_string(osvi.dwMajorVersion) + "." + std::to_string(osvi.dwMinorVersion) + "." +
              std::to_string(osvi.dwBuildNumber);
