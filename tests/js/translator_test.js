@@ -4,11 +4,7 @@ export class TestTranslator {
   constructor(env) {
     console.log('translator_test init')
     assertEquals(env.namespace, 'translator_test')
-    if (env.os.name === 'Windows') {
-      assert(env.userDataDir.endsWith('qjs\\tests\\'))
-    } else {
-      assert(env.userDataDir.endsWith('qjs/tests/'))
-    }
+    assert(env.userDataDir.endsWith('qjs/tests/'))
     assertEquals(env.sharedDataDir, '.')
     const config = env.engine.schema.config
     assertEquals(config.getString('greet'), 'hello from c++')
