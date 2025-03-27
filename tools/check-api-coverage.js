@@ -61,17 +61,15 @@ function parseCppExports() {
 }
 
 // 2. Parse TypeScript declarations
-const ignoredInterfaces = ['Environment', 'Module', 'Processor', 'Translator', 'Filter']
-
 function parseDtsDeclarations() {
   const dtsContent = readFileSync(DTS_FILE, 'utf-8')
   const declarations = new Map()
 
-  dtsContent.split(/interface/).forEach((block) => {
-    const interfaceMatch = block.match(/\s*(\w+)\s*{(.+)}/s)
+  const blocks = dtsContent.split(/(?=interface|declare)/g);
+  blocks.forEach((block) => {
+    const interfaceMatch = block?.replace(/extends \w+/g, '').match(/\s*(\w+)\s*{(.+)}/s)
     if (interfaceMatch) {
       const [_, name, content] = interfaceMatch
-      if (ignoredInterfaces.includes(name)) return
 
       const props = new Set()
       const getters = new Set()
@@ -84,7 +82,7 @@ function parseDtsDeclarations() {
         const getterMatch = line.match(/^\s+readonly\s(\w+)\??:/)
         if (getterMatch) getters.add(getterMatch[1])
 
-        const methodMatch = line.match(/^\s*(new|\w+)\s*\(/)
+        const methodMatch = line.match(/^\s*(new|\w+)(\s*|\?)\(/)
         if (methodMatch) methods.add(methodMatch[1].replace('new', 'constructor'))
       })
       declarations.set(name, { props, getters, methods })
@@ -134,6 +132,41 @@ function compareExports(declaration, otherDeclaration, errorType) {
 
 // Main execution
 const cppExports = parseCppExports()
+
+const interfacesOutsideTypes = [
+  {
+    name: 'Environment',
+    getters: ['engine', 'namespace', 'userDataDir', 'sharedDataDir', 'os'],
+    methods: ['loadFile', 'fileExists', 'getRimeInfo', 'popen'],
+  },
+  {
+    name: 'SystemInfo',
+    getters: ['name', 'version', 'architecture'],
+  },
+  {
+    name: 'Module',
+    methods: ['constructor', 'finalizer'],
+  },
+  {
+    name: 'Processor',
+    methods: ['process'],
+  },
+  {
+    name: 'Translator',
+    methods: ['translate'],
+  },
+  {
+    name: 'Filter',
+    methods: ['filter'],
+  },
+]
+
+interfacesOutsideTypes.forEach((i) => cppExports.set(i.name, {
+  props: new Set(i.props),
+  getters: new Set(i.getters),
+  methods: new Set(i.methods),
+}))
+
 const dtsDeclarations = parseDtsDeclarations()
 const errors =
   compareExports(cppExports, dtsDeclarations, 'rime.d.ts missed') +
