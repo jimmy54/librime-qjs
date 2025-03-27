@@ -1,6 +1,7 @@
 #include <rime/common.h>
 #include <rime/registry.h>
 #include <rime_api.h>
+#include <filesystem>
 
 #include "node_module_loader.h"
 #include "qjs_component.hpp"
@@ -17,8 +18,10 @@ static void rime_qjs_initialize() {
   LOG(INFO) << "[qjs] registering components from module 'qjs'.";
   Registry& r = Registry::instance();
 
-  std::string baseFolder = string(rime_get_api()->get_user_data_dir()) + "/js";
-  setQjsBaseFolder(baseFolder.c_str());
+  std::filesystem::path path(rime_get_api()->get_user_data_dir());
+  path.append("js");
+  setQjsBaseFolder(path.generic_string().c_str());
+
   auto* ctx = QjsHelper::getInstance().getContext();
   initQjsTypes(ctx);
 

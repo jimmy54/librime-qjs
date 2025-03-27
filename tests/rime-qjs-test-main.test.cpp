@@ -4,6 +4,11 @@
 #include <rime/setup.h>
 #include <rime_api.h>
 
+#include <filesystem>
+#include <string>
+
+#include "node_module_loader.h"
+
 #ifdef _WIN32
 #include <windows.h>
 // C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\um\winsvc.h(1653,23): note: expanded from macro 'StartService'
@@ -19,19 +24,24 @@
 #include "qjs_helper.h"
 #include "qjs_types.h"
 
-#include "test_helper.hpp"
-
 using rime::kDefaultModules;
 
 class GlobalEnvironment : public testing::Environment {
+private:
+  std::string userDataDir_;
+
 public:
   void SetUp() override {
     rime::SetupLogging("rime.test");
 
+    std::filesystem::path path(__FILE__);
+    path.remove_filename();
+    userDataDir_ = path.generic_string();
+
     RimeTraits traits = {
         .data_size = sizeof(RimeTraits) - sizeof((traits).data_size),
         .shared_data_dir = ".",
-        .user_data_dir = ".",
+        .user_data_dir = userDataDir_.c_str(),
         .distribution_name = nullptr,
         .distribution_code_name = nullptr,
         .distribution_version = nullptr,
@@ -50,13 +60,21 @@ public:
 #ifndef _WIN32
   // not working on Windows since the related header <rime_api_impl.h> is not included
   // just drop it off on Windows, and run only the memory leak detection on macOS CI.
-  void TearDown() override { RimeFinalize(); }
+  void TearDown() override {
+    setQjsBaseFolder(nullptr);
+    RimeFinalize();
+  }
 #endif
 };
 
-int main(int argc, char** argv) {
+int main(int argc, char** argv) noexcept {
   testing::InitGoogleTest(&argc, argv);
-  testing::AddGlobalTestEnvironment(new GlobalEnvironment);
+  try {
+    testing::AddGlobalTestEnvironment(new GlobalEnvironment);
+  } catch (const std::bad_alloc& e) {
+    LOG(ERROR) << "Failed to allocate GlobalEnvironment: " << e.what();
+    std::exit(1);
+  }
 
 #ifdef _WIN32
   // Enables UTF-8 output in the Windows console
@@ -65,7 +83,9 @@ int main(int argc, char** argv) {
   SetConsoleOutputCP(CP_UTF8);
 #endif
 
-  setJsBasePathForTest(__FILE__, "/js");
+  std::filesystem::path path(__FILE__);
+  path.remove_filename().append("js");
+  setQjsBaseFolder(path.generic_string().c_str());
 
   // Register the Rime types to quickjs again, since the ones registered in
   // module.cc are not available in the tests. It seems two diffrent quickjs

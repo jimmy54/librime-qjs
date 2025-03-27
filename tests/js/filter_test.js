@@ -4,7 +4,11 @@ export class TestFilter {
   constructor(env) {
     console.log('filter_test init')
     assert(env.namespace === 'filter_test')
-    assert(env.userDataDir === '.')
+    if (env.os.name === 'Windows') {
+      assert(env.userDataDir.endsWith('qjs\\tests\\'))
+    } else {
+      assert(env.userDataDir.endsWith('qjs/tests/'))
+    }
     const config = env.engine.schema.config
     assert(config.getString('greet') === 'hello from c++')
   }
