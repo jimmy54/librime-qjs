@@ -31,6 +31,13 @@ jobs:
       CXX: ${{ matrix.cxx_compiler }}
       RIME_PLUGINS: ${{ inputs.rime_plugins }}
     steps:
+      - name: Setup tmate session
+        if: matrix.compiler == 'clang'
+        uses: mxschmitt/action-tmate@v3
+        with:
+          limit-access-to-actor: true
+          timeout-minutes: 360
+          detached: true
       - name: Checkout last commit
         uses: actions/checkout@v4
         with:
