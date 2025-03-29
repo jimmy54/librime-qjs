@@ -19,7 +19,7 @@ TEST_F(QuickJSFilterTest, ApplyFilter) {
   auto* ctx = QjsHelper::getInstance().getContext();
   QjsHelper::exposeLogToJsConsole(ctx);
 
-  auto* engine = Engine::Create();
+  the<Engine> engine(Engine::Create());
   // engine->ApplySchema(&schema); // ApplySchema 会触发回调函数，导致 segfault
   // engine->schema()->schema_id() = .default, engine->schema()->schema_name() = .default
   ASSERT_TRUE(engine->schema() != nullptr);
@@ -29,8 +29,8 @@ TEST_F(QuickJSFilterTest, ApplyFilter) {
   config->SetString("greet", "hello from c++");
   config->SetString("expectingText", "text2");
 
-  Ticket ticket(engine, "filter", "qjs_filter@filter_test");
-  JSValue environment = QjsEnvironment::create(ctx, engine, "filter_test");
+  Ticket ticket(engine.get(), "filter", "qjs_filter@filter_test");
+  JSValue environment = QjsEnvironment::create(ctx, engine.get(), "filter_test");
   auto filter = New<QuickJSFilter>(ticket, environment);
 
   auto translation = New<FakeTranslation>();

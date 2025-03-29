@@ -1,8 +1,12 @@
 #include <gtest/gtest.h>
 #include <rime/registry.h>
-#include <rime/service.h>
 #include <rime/setup.h>
 #include <rime_api.h>
+
+#include <filesystem>
+#include <string>
+
+#include "node_module_loader.h"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -11,16 +15,47 @@
 #include "qjs_helper.h"
 #include "qjs_types.h"
 
-#include "test_helper.hpp"
-
 using rime::kDefaultModules;
 
-using namespace rime;
+class GlobalEnvironment : public testing::Environment {
+private:
+  std::string userDataDir_;
 
-// copied from ../../../test/rime_test_main.cc
-// to make `Engine::Create()` not crashing the tests
-int main(int argc, char** argv) {
+public:
+  void SetUp() override {
+    std::filesystem::path path(__FILE__);
+    path.remove_filename();
+    userDataDir_ = path.generic_string();
+
+    RimeTraits traits = {
+        .data_size = sizeof(RimeTraits) - sizeof((traits).data_size),
+        .shared_data_dir = ".",
+        .user_data_dir = userDataDir_.c_str(),
+        .distribution_name = nullptr,
+        .distribution_code_name = nullptr,
+        .distribution_version = nullptr,
+        .app_name = "rime.test",
+        .modules = nullptr,
+        .min_log_level = 0,
+        .log_dir = nullptr,
+        .prebuilt_data_dir = ".",
+        .staging_dir = ".",
+    };
+    rime_get_api()->setup(&traits);
+    rime_get_api()->initialize(&traits);
+  }
+
+  void TearDown() override { rime_get_api()->finalize(); }
+};
+
+int main(int argc, char** argv) noexcept {
   testing::InitGoogleTest(&argc, argv);
+  try {
+    testing::AddGlobalTestEnvironment(new GlobalEnvironment);
+  } catch (const std::bad_alloc& e) {
+    LOG(ERROR) << "Failed to allocate GlobalEnvironment: " << e.what();
+    std::exit(1);
+  }
 
 #ifdef _WIN32
   // Enables UTF-8 output in the Windows console
@@ -29,18 +64,14 @@ int main(int argc, char** argv) {
   SetConsoleOutputCP(CP_UTF8);
 #endif
 
-  rime::SetupLogging("rime.test");
-  rime::LoadModules(static_cast<const char**>(kDefaultModules));
-  // Do not StartService, otherwise it would leak memory.
-  // rime::Service::instance().StartService();
-
-  setJsBasePathForTest(__FILE__, "/js");
+  std::filesystem::path path(__FILE__);
+  path.remove_filename().append("js");
+  setQjsBaseFolder(path.generic_string().c_str());
 
   // Register the Rime types to quickjs again, since the ones registered in
   // module.cc are not available in the tests. It seems two diffrent quickjs
   // engines/contexts are created. Probably in diffrent process?
-  auto* ctx = QjsHelper::getInstance().getContext();
-  initQjsTypes(ctx);
+  rime::initQjsTypes(QjsHelper::getInstance().getContext());
 
   // "librime-qjs-tests" start time: Feb 17 10:18 CST
   // Output:

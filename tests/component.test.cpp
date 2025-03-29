@@ -31,7 +31,8 @@ public:
 TEST(QuickJSComponentTest, ShareComponentAcrossRimeSessions) {
   QuickJSComponent<MockFilter, Filter> component;
 
-  Ticket ticket(Engine::Create(), "test_namespace", "test");
+  the<Engine> engine1(Engine::Create());
+  Ticket ticket(engine1.get(), "test_namespace", "test");
 
   auto* instance1 = component.Create(ticket);
   auto actualInstance1 = instance1->actual();
@@ -42,7 +43,8 @@ TEST(QuickJSComponentTest, ShareComponentAcrossRimeSessions) {
       << "delete instance1 should not destroy the actual filter instance";
   delete instance2;  // Rime session 2 ends
 
-  Ticket ticket2(Engine::Create(), "test_namespace", "test");
+  the<Engine> engine2(Engine::Create());
+  Ticket ticket2(engine2.get(), "test_namespace", "test");
   auto* instance3 = component.Create(ticket2);
   ASSERT_EQ(actualInstance1, instance3->actual())
       << "delete instance1 should not destroy the actual filter instance";
@@ -53,7 +55,8 @@ TEST(QuickJSComponentTest, ShareComponentAcrossRimeSessions) {
 TEST(QuickJSComponentTest, CreateComponent) {
   QuickJSComponent<MockFilter, Filter> component;
 
-  Ticket ticket(Engine::Create(), "test_namespace", "test");
+  the<Engine> engine1(Engine::Create());
+  Ticket ticket(engine1.get(), "test_namespace", "test");
   auto* instance1 = component.Create(ticket);
   ASSERT_NE(nullptr, instance1);
 
@@ -61,12 +64,14 @@ TEST(QuickJSComponentTest, CreateComponent) {
   ASSERT_EQ(instance1->actual(), instance2->actual())
       << "should return the same actual filter with the same ticket";
 
-  Ticket ticket2(Engine::Create(), "test_namespace", "test");
+  the<Engine> engine2(Engine::Create());
+  Ticket ticket2(engine2.get(), "test_namespace", "test");
   auto* instance3 = component.Create(ticket2);
   ASSERT_EQ(instance1->actual(), instance3->actual())
       << "should return the same actual filter with the same ticket namespace";
 
-  Ticket ticket3(Engine::Create(), "test_namespace2", "test");
+  the<Engine> engine3(Engine::Create());
+  Ticket ticket3(engine3.get(), "test_namespace2", "test");
   auto* instance4 = component.Create(ticket3);
   ASSERT_TRUE(instance4 != nullptr);
   ASSERT_NE(instance1->actual(), instance4->actual())
