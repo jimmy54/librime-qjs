@@ -1,6 +1,5 @@
 #include <gtest/gtest.h>
 #include <rime/registry.h>
-#include <rime/service.h>
 #include <rime/setup.h>
 #include <rime_api.h>
 
@@ -11,14 +10,6 @@
 
 #ifdef _WIN32
 #include <windows.h>
-// C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\um\winsvc.h(1653,23): note: expanded from macro 'StartService'
-//  1653 | #define StartService  StartServiceA
-#undef StartService
-#else
-// this include breaks building on Windows:
-// src\rime_api_impl.h:25:22: error: dllimport cannot be applied to non-inline function definition
-// 25 | RIME_DEPRECATED void RimeSetup(RimeTraits* traits)
-#include <rime_api_impl.h>
 #endif
 
 #include "qjs_helper.h"
@@ -32,8 +23,6 @@ private:
 
 public:
   void SetUp() override {
-    rime::SetupLogging("rime.test");
-
     std::filesystem::path path(__FILE__);
     path.remove_filename();
     userDataDir_ = path.generic_string();
@@ -45,23 +34,18 @@ public:
         .distribution_name = nullptr,
         .distribution_code_name = nullptr,
         .distribution_version = nullptr,
-        .app_name = nullptr,
+        .app_name = "rime.test",
         .modules = nullptr,
         .min_log_level = 0,
         .log_dir = nullptr,
         .prebuilt_data_dir = ".",
         .staging_dir = ".",
     };
-    rime::SetupDeployer(&traits);
-    rime::LoadModules(static_cast<const char**>(kDefaultModules));
-    rime::Service::instance().StartService();
+    rime_get_api()->setup(&traits);
+    rime_get_api()->initialize(&traits);
   }
 
-#ifndef _WIN32
-  // not working on Windows since the related header <rime_api_impl.h> is not included
-  // just drop it off on Windows, and run only the memory leak detection on macOS CI.
-  void TearDown() override { RimeFinalize(); }
-#endif
+  void TearDown() override { rime_get_api()->finalize(); }
 };
 
 int main(int argc, char** argv) noexcept {
