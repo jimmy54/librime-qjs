@@ -31,6 +31,11 @@ jobs:
       CXX: ${{ matrix.cxx_compiler }}
       RIME_PLUGINS: ${{ inputs.rime_plugins }}
     steps:
+      - name: Configure tmate scrolling
+        run: |
+          mkdir -p ~/.tmate
+          echo "set -g history-limit 50000" > ~/.tmate.conf
+          echo "set -g terminal-overrides 'xterm*:smcup@:rmcup@'" >> ~/.tmate.conf
       - name: Setup tmate session
         if: matrix.compiler == 'clang'
         uses: mxschmitt/action-tmate@v3
