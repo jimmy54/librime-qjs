@@ -32,6 +32,7 @@ jobs:
       RIME_PLUGINS: ${{ inputs.rime_plugins }}
     steps:
       - name: Configure tmate scrolling
+        # in copy mode (press Ctrl-b [ then use arrow keys or Page Up/Page Down)
         run: |
           mkdir -p ~/.tmate
           echo "set -g history-limit 50000" > ~/.tmate.conf

@@ -8,20 +8,17 @@
 enum { PATH_MAX = 1024 };
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-static char* qjsBaseFolder = NULL;
+static char qjsBaseFolder[PATH_MAX] = {0};
 
 void setQjsBaseFolder(const char* path) {
-  if (qjsBaseFolder) {
-    free(qjsBaseFolder);
-  }
-  qjsBaseFolder = path ? strdup(path) : NULL;
+  strncpy(qjsBaseFolder, path, PATH_MAX);
 }
 
 #ifdef _WIN32
 #include <windows.h>
 __attribute__((constructor)) void initBaseFolder() {
-  char path[MAX_PATH];
-  GetModuleFileNameA(NULL, path, MAX_PATH);
+  char path[PATH_MAX];
+  GetModuleFileNameA(NULL, path, PATH_MAX);
   char* last_slash = strrchr(path, '\\');
   if (last_slash) {
     *last_slash = '\0';
@@ -256,7 +253,7 @@ char* loadFile(const char* absolutePath) {
 }
 
 char* readJsCode(JSContext* ctx, const char* relativePath) {
-  if (!qjsBaseFolder || strlen(qjsBaseFolder) == 0) {
+  if (strlen(qjsBaseFolder) == 0) {
     logError("basePath is empty in loading js file: %s", relativePath);
     JS_ThrowReferenceError(ctx, "basePath is empty in loading js file: %s",
                            relativePath);

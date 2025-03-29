@@ -60,10 +60,7 @@ public:
 #ifndef _WIN32
   // not working on Windows since the related header <rime_api_impl.h> is not included
   // just drop it off on Windows, and run only the memory leak detection on macOS CI.
-  void TearDown() override {
-    setQjsBaseFolder(nullptr);
-    RimeFinalize();
-  }
+  void TearDown() override { RimeFinalize(); }
 #endif
 };
 
