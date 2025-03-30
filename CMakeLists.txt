@@ -119,15 +119,12 @@ aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/helpers SRC_HELPERS)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/patch/quickjs SRC_PATCHES)
 
 include_directories(
-    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/yas/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gears
     ${CMAKE_CURRENT_SOURCE_DIR}/src/types
     ${CMAKE_CURRENT_SOURCE_DIR}/src/helpers
     ${CMAKE_CURRENT_SOURCE_DIR}/src/misc
     ${CMAKE_CURRENT_SOURCE_DIR}/src/patch/quickjs
-    ${CMAKE_CURRENT_SOURCE_DIR}/tests/
 )
 
 # create a dynamic library
