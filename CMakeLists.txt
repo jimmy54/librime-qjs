@@ -112,23 +112,35 @@ set(plugin_objs $<TARGET_OBJECTS:librime-qjs-objs> PARENT_SCOPE)
 set(plugin_deps ${rime_library} ${rime_gears_library} qjs PARENT_SCOPE)
 set(plugin_modules "qjs" PARENT_SCOPE)
 
+include_directories(
+  ${CMAKE_CURRENT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/engines
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/engines/quickjs
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/gears
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/types
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/helpers
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/misc
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/patch/quickjs
+)
+
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src SRC)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/gears SRC_GEARS)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/types SRC_TYPES)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/helpers SRC_HELPERS)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/patch/quickjs SRC_PATCHES)
-
-include_directories(
-    ${CMAKE_CURRENT_SOURCE_DIR}/src
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gears
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/types
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/helpers
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/misc
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/patch/quickjs
-)
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/engines SRC_ENGINES)
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/engines/quickjs SRC_ENGINE_QUICKJS)
 
 # create a dynamic library
-add_library(librime-qjs-objs OBJECT ${SRC} ${SRC_GEARS} ${SRC_TYPES} ${SRC_HELPERS} ${SRC_PATCHES})
+add_library(librime-qjs-objs OBJECT
+  ${SRC}
+  ${SRC_GEARS}
+  ${SRC_TYPES}
+  ${SRC_HELPERS}
+  ${SRC_PATCHES}
+  ${SRC_ENGINES}
+  ${SRC_ENGINE_QUICKJS}
+)
 if(BUILD_SHARED_LIBS)
   set_target_properties(librime-qjs-objs PROPERTIES POSITION_INDEPENDENT_CODE ON)
 endif()

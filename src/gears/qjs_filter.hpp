@@ -1,46 +1,44 @@
-#ifndef RIME_QJS_FILTER_H_
-#define RIME_QJS_FILTER_H_
+#pragma once
 
 #include <rime/engine.h>
 #include <rime/filter.h>
 #include <rime/gear/filter_commons.h>
+#include <memory>
 
 #include "qjs_component.hpp"
 #include "qjs_module.h"
 #include "qjs_translation.h"
-#include "quickjs.h"
 
-namespace rime {
-
-class QuickJSFilter : public QjsModule {
+template <typename T_JS_VALUE>
+class QuickJSFilter : public QjsModule<T_JS_VALUE> {
 public:
-  explicit QuickJSFilter(const Ticket& ticket, JSValue& environment)
-      : QjsModule(ticket.name_space, environment, "filter") {}
+  explicit QuickJSFilter(const rime::Ticket& ticket, T_JS_VALUE& environment)
+      : QjsModule<T_JS_VALUE>(ticket.name_space, environment, "filter") {}
 
-  an<Translation> apply(an<Translation> translation, const JSValue& environment) {
-    if (!isLoaded()) {
+  std::shared_ptr<rime::Translation> apply(std::shared_ptr<rime::Translation> translation,
+                                           const T_JS_VALUE& environment) {
+    if (!this->isLoaded()) {
       return translation;
     }
 
-    return New<QuickJSTranslation>(translation, getInstance(), getMainFunc(), environment);
+    return std::make_shared<QuickJSTranslation<T_JS_VALUE>>(translation, this->getInstance(),
+                                                            this->getMainFunc(), environment);
   }
 };
 
 // Specialization for Filter
-template <typename T_ACTUAL>
-class ComponentWrapper<T_ACTUAL, Filter> : public ComponentWrapperBase<T_ACTUAL, Filter> {
+template <typename T_ACTUAL, typename T_JS_VALUE>
+class rime::ComponentWrapper<T_ACTUAL, rime::Filter, T_JS_VALUE>
+    : public ComponentWrapperBase<T_ACTUAL, rime::Filter, T_JS_VALUE> {
 public:
-  explicit ComponentWrapper(const Ticket& ticket,
-                            const an<T_ACTUAL>& actual,
-                            const JSValue& environment)
-      : ComponentWrapperBase<T_ACTUAL, Filter>(ticket, actual, environment) {}
+  explicit ComponentWrapper(const rime::Ticket& ticket,
+                            const rime::an<T_ACTUAL>& actual,
+                            const T_JS_VALUE& environment)
+      : ComponentWrapperBase<T_ACTUAL, rime::Filter, T_JS_VALUE>(ticket, actual, environment) {}
 
   // NOLINTNEXTLINE(readability-identifier-naming)
-  virtual an<Translation> Apply(an<Translation> translation, CandidateList* candidates) {
+  virtual rime::an<rime::Translation> Apply(rime::an<rime::Translation> translation,
+                                            rime::CandidateList* candidates) {
     return this->actual()->apply(translation, this->environment());
   }
 };
-
-}  // namespace rime
-
-#endif  // RIME_QJS_FILTER_H_

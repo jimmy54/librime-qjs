@@ -1,9 +1,5 @@
-#ifndef RIME_QJS_MACROS_H_
-#define RIME_QJS_MACROS_H_
+#pragma once
 
-#include <quickjs.h>
-
-#include "jsstring_raii.hpp"
 #include "qjs_type_registry.h"  // IWYU pragma: export
 
 #define NO_CONSTRUCTOR_TO_REGISTER \
@@ -56,32 +52,16 @@
 
 #define countof(x) (sizeof(x) / sizeof((x)[0]))
 
-// ========== class declaration ==========
-#define DECLARE_WRAP_UNWRAP_RAW_POINTER(class_name)     \
-  static JSValue wrap(JSContext* ctx, class_name* obj); \
-  static class_name* unwrap(JSContext* ctx, JSValue value);
-
-#define DECLARE_WRAP_UNWRAP_SHARED_POINTER(class_name)                         \
-  static JSValue wrap(JSContext* ctx, const std::shared_ptr<class_name>& obj); \
-  static std::shared_ptr<class_name> unwrap(JSContext* ctx, JSValue value);
-
-#define DECLARE_JS_CLASS(class_name, declareWrapUnwrap) \
-  namespace rime {                                      \
-  class Qjs##class_name : public QjsTypeRegistry {      \
-  public:                                               \
-    void expose(JSContext* ctx) override;               \
-    const char* getClassName() const override {         \
-      return #class_name;                               \
-    }                                                   \
-    declareWrapUnwrap                                   \
-  };                                                    \
+#define DECLARE_JS_CLASS(class_name)               \
+  namespace rime {                                 \
+  class Qjs##class_name : public QjsTypeRegistry { \
+  public:                                          \
+    void expose(JSContext* ctx) override;          \
+    const char* getClassName() const override {    \
+      return #class_name;                          \
+    }                                              \
+  };                                               \
   }  // namespace rime
-
-#define DECLARE_JS_CLASS_WITH_RAW_POINTER(class_name) \
-  DECLARE_JS_CLASS(class_name, DECLARE_WRAP_UNWRAP_RAW_POINTER(class_name))
-
-#define DECLARE_JS_CLASS_WITH_SHARED_POINTER(class_name) \
-  DECLARE_JS_CLASS(class_name, DECLARE_WRAP_UNWRAP_SHARED_POINTER(class_name))
 
 // ========== class implementation ==========
 #define DEFINE_CONSTRUCTOR(class_name, constructor, expectingArgc)                             \

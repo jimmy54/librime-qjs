@@ -1,38 +1,76 @@
-#ifndef RIME_QJS_TRANSLATOR_H_
-#define RIME_QJS_TRANSLATOR_H_
+#pragma once
 
 #include <rime/gear/translator_commons.h>
 #include <rime/translator.h>
 
+#include <rime/composition.h>
+#include <rime/context.h>
+#include <rime/translation.h>
+
+#include "engines/engine_manager.h"
+#include "engines/js_macros.h"
 #include "qjs_component.hpp"
 #include "qjs_module.h"
-#include "quickjs.h"
 
-namespace rime {
+using namespace rime;
 
-class QuickJSTranslator : public QjsModule {
+template <typename T_JS_VALUE>
+class QuickJSTranslator : public QjsModule<T_JS_VALUE> {
 public:
-  explicit QuickJSTranslator(const Ticket& ticket, JSValue& environment)
-      : QjsModule(ticket.name_space, environment, "translate") {}
+  explicit QuickJSTranslator(const rime::Ticket& ticket, T_JS_VALUE& environment)
+      : QjsModule<T_JS_VALUE>(ticket.name_space, environment, "translate") {}
 
-  an<Translation> query(const string& input, const Segment& segment, const JSValue& environment);
-};
+  rime::an<rime::Translation> query(const std::string& input,
+                                    const rime::Segment& segment,
+                                    const T_JS_VALUE& environment) {
+    auto translation = New<FifoTranslation>();
+    if (!this->isLoaded()) {
+      return translation;
+    }
 
-// Specialization for Translator
-template <typename T_ACTUAL>
-class ComponentWrapper<T_ACTUAL, Translator> : public ComponentWrapperBase<T_ACTUAL, Translator> {
-public:
-  explicit ComponentWrapper(const Ticket& ticket,
-                            const an<T_ACTUAL>& actual,
-                            const JSValue& environment)
-      : ComponentWrapperBase<T_ACTUAL, Translator>(ticket, actual, environment) {}
+    auto& engine = getJsEngine<T_JS_VALUE>();
+    T_JS_VALUE jsInput = engine.toJsString(input.c_str());
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
+    T_JS_VALUE jsSegment = engine.wrap(const_cast<Segment*>(&segment));
+    T_JS_VALUE args[] = {jsInput, jsSegment, environment};
+    T_JS_VALUE resultArray =
+        engine.callFunction(this->getMainFunc(), this->getInstance(), countof(args), args);
+    engine.freeValue(jsInput);
+    engine.freeValue(jsSegment);
+    if (engine.isException(resultArray)) {
+      return translation;
+    }
 
-  // NOLINTNEXTLINE(readability-identifier-naming)
-  virtual an<Translation> Query(const string& input, const Segment& segment) {
-    return this->actual()->query(input, segment, this->environment());
+    size_t length = engine.getArrayLength(resultArray);
+
+    for (uint32_t i = 0; i < length; i++) {
+      T_JS_VALUE item = engine.getArrayItem(resultArray, i);
+      if (an<Candidate> candidate = engine.template unwrapShared<Candidate>(item)) {
+        translation->Append(candidate);
+      } else {
+        LOG(ERROR) << "[qjs] Failed to unwrap candidate at index " << i;
+      }
+      engine.freeValue(item);
+    }
+
+    engine.freeValue(resultArray);
+    return translation;
   }
 };
 
-}  // namespace rime
+// Specialization for Translator
+template <typename T_ACTUAL, typename T_JS_VALUE>
+class rime::ComponentWrapper<T_ACTUAL, rime::Translator, T_JS_VALUE>
+    : public ComponentWrapperBase<T_ACTUAL, rime::Translator, T_JS_VALUE> {
+public:
+  explicit ComponentWrapper(const rime::Ticket& ticket,
+                            const rime::an<T_ACTUAL>& actual,
+                            const T_JS_VALUE& environment)
+      : ComponentWrapperBase<T_ACTUAL, rime::Translator, T_JS_VALUE>(ticket, actual, environment) {}
 
-#endif  // RIME_QJS_TRANSLATOR_H_
+  // NOLINTNEXTLINE(readability-identifier-naming)
+  virtual rime::an<rime::Translation> Query(const std::string& input,
+                                            const rime::Segment& segment) {
+    return this->actual()->query(input, segment, this->environment());
+  }
+};

@@ -6,9 +6,9 @@
 #include <rime/schema.h>
 #include <rime/translation.h>
 
+#include <quickjs.h>
 #include "fake_translation.hpp"
 #include "qjs_filter.hpp"
-#include "quickjs.h"
 
 using namespace rime;
 
@@ -16,12 +16,7 @@ class QuickJSFilterTest : public ::testing::Test {};
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
 TEST_F(QuickJSFilterTest, ApplyFilter) {
-  auto* ctx = QjsHelper::getInstance().getContext();
-  QjsHelper::exposeLogToJsConsole(ctx);
-
   the<Engine> engine(Engine::Create());
-  // engine->ApplySchema(&schema); // ApplySchema 会触发回调函数，导致 segfault
-  // engine->schema()->schema_id() = .default, engine->schema()->schema_name() = .default
   ASSERT_TRUE(engine->schema() != nullptr);
 
   auto* config = engine->schema()->config();
@@ -30,8 +25,8 @@ TEST_F(QuickJSFilterTest, ApplyFilter) {
   config->SetString("expectingText", "text2");
 
   Ticket ticket(engine.get(), "filter", "qjs_filter@filter_test");
-  JSValue environment = QjsEnvironment::create(ctx, engine.get(), "filter_test");
-  auto filter = New<QuickJSFilter>(ticket, environment);
+  JSValue environment = QjsEnvironment<JSValue>::create(engine.get(), "filter_test");
+  auto filter = New<QuickJSFilter<JSValue>>(ticket, environment);
 
   auto translation = New<FakeTranslation>();
   translation->append(New<SimpleCandidate>("mock", 0, 1, "text1", "comment1"));
@@ -51,5 +46,6 @@ TEST_F(QuickJSFilterTest, ApplyFilter) {
   ASSERT_TRUE(candidate == nullptr);
   ASSERT_FALSE(filtered->Next());
 
-  JS_FreeValue(ctx, environment);
+  auto& jsEngine = JsEngine<JSValue>::getInstance();
+  jsEngine.freeValue(environment);
 }

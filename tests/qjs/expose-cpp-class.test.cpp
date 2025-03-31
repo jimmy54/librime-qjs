@@ -3,10 +3,10 @@
 #include <sstream>
 #include <string>
 #include <utility>
+#include "engines/js_macros.h"
+#include "engines/quickjs/quickjs_engine.h"
 
-#include "qjs_helper.h"
-#include "qjs_macros.h"
-#include "quickjs.h"
+#include <quickjs.h>
 
 class MyClass {
 public:
@@ -155,7 +155,8 @@ void registerMyclass(JSContext* ctx) {
 class QuickJSExposeClassTest : public ::testing::Test {
 protected:
   void SetUp() override {
-    auto* ctx = QjsHelper::getInstance().getContext();
+    auto& jsEngine = JsEngine<JSValue>::getInstance();
+    auto& ctx = jsEngine.getContext();
     registerMyclass(ctx);
   }
 };
@@ -173,7 +174,8 @@ TEST_F(QuickJSExposeClassTest, TestExposeClassToQuickJS) {
         testExposedCppClass();  // Execute immediately to avoid reference issues
     )";
 
-  auto* ctx = QjsHelper::getInstance().getContext();
+  auto& jsEngine = JsEngine<JSValue>::getInstance();
+  auto& ctx = jsEngine.getContext();
   JSValue result = JS_Eval(ctx, script, strlen(script), "<input>", JS_EVAL_TYPE_GLOBAL);
   // Handle the result
   const char* resultStr = JS_ToCString(ctx, result);

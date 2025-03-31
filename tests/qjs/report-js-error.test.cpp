@@ -3,7 +3,7 @@
 
 #include <string>
 
-#include "qjs_helper.h"
+#include "engines/quickjs/quickjs_engine.h"
 
 std::string trim(const std::string& str) {
   const auto start = str.find_first_not_of(" \t\n\r");
@@ -18,8 +18,9 @@ std::string trim(const std::string& str) {
 class QuickJSErrorTest : public ::testing::Test {};
 
 TEST_F(QuickJSErrorTest, TestJsRuntimeError) {
-  JSContext* ctx = QjsHelper::getInstance().getContext();
-  JSValue module = QjsHelper::loadJsModuleToGlobalThis(ctx, "runtime-error.js");
+  auto& jsEngine = JsEngine<JSValue>::getInstance();
+  auto& ctx = jsEngine.getContext();
+  JSValue module = QuickJSCodeLoader::loadJsModuleToGlobalThis(ctx, "runtime-error.js");
   JSValue globalObj = JS_GetGlobalObject(ctx);
   JSValue func = JS_GetPropertyStr(ctx, globalObj, "funcWithRuntimeError");
   ASSERT_FALSE(JS_IsException(func));
@@ -39,12 +40,8 @@ TEST_F(QuickJSErrorTest, TestJsRuntimeError) {
   std::string trimmedStackTrace = trim(stackTrace);
   ASSERT_STREQ(trimmedStackTrace.c_str(), "at <anonymous> (runtime-error.js:7:19)");
   JS_FreeCString(ctx, stackTrace);
-  JS_FreeValue(ctx, stack);
 
-  JS_FreeValue(ctx, exception);
-  JS_FreeValue(ctx, result);
-
-  JS_FreeValue(ctx, func);
-  JS_FreeValue(ctx, globalObj);
-  JS_FreeValue(ctx, module);
+  for (auto obj : {module, globalObj, func, result, exception, stack}) {
+    JS_FreeValue(ctx, obj);
+  }
 }

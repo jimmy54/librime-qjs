@@ -3,13 +3,14 @@
 #include <rime_api.h>
 #include <filesystem>
 
+#include "engines/engine_manager.h"
 #include "node_module_loader.h"
 #include "qjs_component.hpp"
 #include "qjs_filter.hpp"
-#include "qjs_helper.h"
 #include "qjs_processor.h"
 #include "qjs_translator.h"
 #include "qjs_types.h"
+#include "quickjs.h"
 
 using namespace rime;
 
@@ -22,12 +23,13 @@ static void rime_qjs_initialize() {
   path.append("js");
   setQjsBaseFolder(path.generic_string().c_str());
 
-  auto* ctx = QjsHelper::getInstance().getContext();
-  initQjsTypes(ctx);
+  registerTypesToJsEngine(getJsEngine<JSValue>());
 
-  r.Register("qjs_processor", new QuickJSComponent<QuickJSProcessor, Processor>());
-  r.Register("qjs_filter", new QuickJSComponent<QuickJSFilter, Filter>());
-  r.Register("qjs_translator", new QuickJSComponent<QuickJSTranslator, Translator>());
+  r.Register("qjs_processor",
+             new QuickJSComponent<QuickJSProcessor<JSValue>, Processor, JSValue>());
+  r.Register("qjs_filter", new QuickJSComponent<QuickJSFilter<JSValue>, Filter, JSValue>());
+  r.Register("qjs_translator",
+             new QuickJSComponent<QuickJSTranslator<JSValue>, Translator, JSValue>());
 }
 
 static void rime_qjs_finalize() {}

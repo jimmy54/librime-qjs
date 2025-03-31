@@ -17,7 +17,6 @@ protected:
   void TearDown() override { trieDataHelper_.cleanupDummyFiles(); }
 };
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
 TEST_F(TrieTest, LoadTextFileAndLookup) {
   rime::Trie trie;
   auto helper = getTrieDataHelper();

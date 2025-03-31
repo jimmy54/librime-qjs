@@ -29,7 +29,7 @@ public:
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 TEST(QuickJSComponentTest, ShareComponentAcrossRimeSessions) {
-  QuickJSComponent<MockFilter, Filter> component;
+  QuickJSComponent<MockFilter, Filter, JSValue> component;
 
   the<Engine> engine1(Engine::Create());
   Ticket ticket(engine1.get(), "test_namespace", "test");
@@ -53,7 +53,7 @@ TEST(QuickJSComponentTest, ShareComponentAcrossRimeSessions) {
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 TEST(QuickJSComponentTest, CreateComponent) {
-  QuickJSComponent<MockFilter, Filter> component;
+  QuickJSComponent<MockFilter, Filter, JSValue> component;
 
   the<Engine> engine1(Engine::Create());
   Ticket ticket(engine1.get(), "test_namespace", "test");

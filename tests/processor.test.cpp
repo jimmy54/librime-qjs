@@ -5,10 +5,9 @@
 #include <rime/key_event.h>
 #include <rime/schema.h>
 
+#include <quickjs.h>
 #include "qjs_environment.h"
-#include "qjs_helper.h"
 #include "qjs_processor.h"
-#include "quickjs.h"
 
 using namespace rime;
 
@@ -33,9 +32,8 @@ TEST_F(QuickJSProcessorTest, ProcessKeyEvent) {
   addSegment(engine.get(), "prompt");
 
   Ticket ticket(engine.get(), "processor_test", "qjs_processor@processor_test");
-  auto* ctx = QjsHelper::getInstance().getContext();
-  JSValue environment = QjsEnvironment::create(ctx, engine.get(), "processor_test");
-  auto processor = New<QuickJSProcessor>(ticket, environment);
+  JSValue environment = QjsEnvironment<JSValue>::create(engine.get(), "processor_test");
+  auto processor = New<QuickJSProcessor<JSValue>>(ticket, environment);
 
   // Test key event that should be accepted
   KeyEvent acceptEvent("space");
@@ -49,7 +47,8 @@ TEST_F(QuickJSProcessorTest, ProcessKeyEvent) {
   KeyEvent noopEvent("invalid_key");
   EXPECT_EQ(processor->processKeyEvent(noopEvent, environment), kNoop);
 
-  JS_FreeValue(ctx, environment);
+  auto& jsEngine = JsEngine<JSValue>::getInstance();
+  jsEngine.freeValue(environment);
 }
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
@@ -61,13 +60,13 @@ TEST_F(QuickJSProcessorTest, NonExistentModule) {
 
   // Create a ticket with a non-existent module
   Ticket ticket(engine.get(), "non_existent", "qjs_processor@non_existent");
-  auto* ctx = QjsHelper::getInstance().getContext();
-  JSValue environment = QjsEnvironment::create(ctx, engine.get(), "non_existent");
-  auto processor = New<QuickJSProcessor>(ticket, environment);
+  JSValue environment = QjsEnvironment<JSValue>::create(engine.get(), "non_existent");
+  auto processor = New<QuickJSProcessor<JSValue>>(ticket, environment);
 
   // Test key event - should return noop due to unloaded module
   KeyEvent event("space");
   EXPECT_EQ(processor->processKeyEvent(event, environment), kNoop);
 
-  JS_FreeValue(ctx, environment);
+  auto& jsEngine = JsEngine<JSValue>::getInstance();
+  jsEngine.freeValue(environment);
 }

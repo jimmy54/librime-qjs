@@ -8,8 +8,8 @@
 #include <rime/segmentation.h>
 #include <rime/translation.h>
 
+#include <quickjs.h>
 #include "qjs_translator.h"
-#include "quickjs.h"
 
 using namespace rime;
 
@@ -27,8 +27,6 @@ protected:
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
 TEST_F(QuickJSTranslatorTest, QueryTranslation) {
-  auto* ctx = QjsHelper::getInstance().getContext();
-
   the<Engine> engine(Engine::Create());
   ASSERT_TRUE(engine->schema() != nullptr);
 
@@ -38,8 +36,8 @@ TEST_F(QuickJSTranslatorTest, QueryTranslation) {
   config->SetString("expectedInput", "test_input");
 
   Ticket ticket(engine.get(), "translator", "qjs_translator@translator_test");
-  JSValue environment = QjsEnvironment::create(ctx, engine.get(), "translator_test");
-  auto translator = New<QuickJSTranslator>(ticket, environment);
+  JSValue environment = QjsEnvironment<JSValue>::create(engine.get(), "translator_test");
+  auto translator = New<QuickJSTranslator<JSValue>>(ticket, environment);
 
   // Create a segment for testing
   Segment segment = createSegment();
@@ -74,13 +72,11 @@ TEST_F(QuickJSTranslatorTest, QueryTranslation) {
   candidate = translation->Peek();
   EXPECT_TRUE(candidate == nullptr);
 
-  JS_FreeValue(ctx, environment);
+  JsEngine<JSValue>::getInstance().freeValue(environment);
 }
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
 TEST_F(QuickJSTranslatorTest, EmptyResult) {
-  auto* ctx = QjsHelper::getInstance().getContext();
-
   the<Engine> engine(Engine::Create());
   ASSERT_TRUE(engine->schema() != nullptr);
 
@@ -90,8 +86,8 @@ TEST_F(QuickJSTranslatorTest, EmptyResult) {
   config->SetString("expectedInput", "empty_input");
 
   Ticket ticket(engine.get(), "translator", "qjs_translator@translator_test");
-  JSValue environment = QjsEnvironment::create(ctx, engine.get(), "translator_test");
-  auto translator = New<QuickJSTranslator>(ticket, environment);
+  JSValue environment = QjsEnvironment<JSValue>::create(engine.get(), "translator_test");
+  auto translator = New<QuickJSTranslator<JSValue>>(ticket, environment);
 
   // Create a segment for testing
   Segment segment = createSegment();
@@ -104,20 +100,18 @@ TEST_F(QuickJSTranslatorTest, EmptyResult) {
   auto candidate = translation->Peek();
   EXPECT_TRUE(candidate == nullptr);
 
-  JS_FreeValue(ctx, environment);
+  JsEngine<JSValue>::getInstance().freeValue(environment);
 }
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
 TEST_F(QuickJSTranslatorTest, NonExistentModule) {
-  auto* ctx = QjsHelper::getInstance().getContext();
-
   the<Engine> engine(Engine::Create());
   ASSERT_TRUE(engine->schema() != nullptr);
 
   // Create a ticket with a non-existent module
   Ticket ticket(engine.get(), "translator", "qjs_translator@non_existent");
-  JSValue environment = QjsEnvironment::create(ctx, engine.get(), "non_existent");
-  auto translator = New<QuickJSTranslator>(ticket, environment);
+  JSValue environment = QjsEnvironment<JSValue>::create(engine.get(), "non_existent");
+  auto translator = New<QuickJSTranslator<JSValue>>(ticket, environment);
 
   // Create a segment for testing
   Segment segment = createSegment();
@@ -130,17 +124,16 @@ TEST_F(QuickJSTranslatorTest, NonExistentModule) {
   auto candidate = translation->Peek();
   EXPECT_TRUE(candidate == nullptr);
 
-  JS_FreeValue(ctx, environment);
+  JsEngine<JSValue>::getInstance().freeValue(environment);
 }
 
 TEST_F(QuickJSTranslatorTest, NoReturnShouldNotCrash) {
-  auto* ctx = QjsHelper::getInstance().getContext();
   the<Engine> engine(Engine::Create());
 
   // Create a ticket with a poor implemented plugin
   Ticket ticket(engine.get(), "translator", "qjs_translator@translator_no_return");
-  JSValue environment = QjsEnvironment::create(ctx, engine.get(), "translator_no_return");
-  auto translator = New<QuickJSTranslator>(ticket, environment);
+  JSValue environment = QjsEnvironment<JSValue>::create(engine.get(), "translator_no_return");
+  auto translator = New<QuickJSTranslator<JSValue>>(ticket, environment);
   Segment segment = createSegment();
   auto translation = translator->query("test_input", segment, environment);
   ASSERT_TRUE(translation != nullptr);
@@ -148,5 +141,5 @@ TEST_F(QuickJSTranslatorTest, NoReturnShouldNotCrash) {
   EXPECT_FALSE(translation->Next());
   EXPECT_EQ(translation->Peek(), nullptr);
 
-  JS_FreeValue(ctx, environment);
+  JsEngine<JSValue>::getInstance().freeValue(environment);
 }

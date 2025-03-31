@@ -22,5 +22,6 @@ compile_commands.json
 
 .vscode
 .editorconfig
+.cache
 
 requirement.md
