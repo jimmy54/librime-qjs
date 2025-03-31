@@ -20,6 +20,7 @@ filename=$(basename "$file")
   -I${root}/src/helpers \
   -I${root}/src/types \
   -I${root}/../../src \
+  -I${root}/../../build/src \
   -I${root}/../../include \
   -I${root}/../../include/glog \
   -I${root}/thirdparty/quickjs \
