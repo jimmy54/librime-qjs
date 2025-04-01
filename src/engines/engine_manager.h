@@ -11,14 +11,15 @@
 
 template <typename T_JS_VALUE>
 inline JsEngine<T_JS_VALUE>& getJsEngine() {
-  if constexpr (std::is_same_v<T_JS_VALUE, JSValue>) {
-    return JsEngine<JSValue>::getInstance();
 #ifdef __APPLE__
-  } else if constexpr (std::is_same_v<T_JS_VALUE, JSValueRef>) {
+  if constexpr (std::is_same_v<T_JS_VALUE, JSValueRef>) {
     return JsEngine<JSValueRef>::getInstance();
+  } else
 #endif
+      if constexpr (std::is_same_v<T_JS_VALUE, JSValue>) {
+    return JsEngine<JSValue>::getInstance();
   } else {
-    // compile time error
-    static_assert(false, "Unsupported JS engine");
+    // Ensure type safety at compile time
+    static_assert(std::is_same_v<T_JS_VALUE, JSValue>, "Unsupported JS engine type");
   }
 }
