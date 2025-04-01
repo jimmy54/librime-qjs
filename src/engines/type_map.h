@@ -4,16 +4,16 @@
 
 template <typename T>
 struct TypeMap {  // Default mapping
-  using RuntimeType = void;
-  using ContextType = void;
+  using RuntimeType = void*;
+  using ContextType = void*;
   using FunctionPionterType = void*;
-  using FinalizerFunctionPionterType = void*;
-  using ExposeFunctionType = void;
-  using ExposePropertyType = void;
-  using GetterFunctionType = void;
-  using SetterFunctionType = void;
+  using ConstructorFunctionPionterType = void*;
+  using ExposeFunctionType = void*;
+  using ExposePropertyType = void*;
+  using GetterFunctionType = void*;
+  using SetterFunctionType = void*;
 
-  const char* engineName = "unknown";  // Engine name for logging and debugging
+  const char* engineName = "Unsupported";  // Engine name for logging and debugging
 };
 
 // Specializations
@@ -22,6 +22,7 @@ struct TypeMap<JSValue> {
   using RuntimeType = JSRuntime;
   using ContextType = JSContext*;
   using FunctionPionterType = JSCFunction*;
+  using ConstructorFunctionPionterType = JSCFunction*;
   using FinalizerFunctionPionterType = JSClassFinalizer*;
   using ExposeFunctionType = const JSCFunctionListEntry;
   using ExposePropertyType = const JSCFunctionListEntry;
@@ -29,3 +30,25 @@ struct TypeMap<JSValue> {
   using SetterFunctionType = JSValue (*)(JSContext*, JSValueConst, JSValue);
   const char* engineName = "QuickJS-NG";
 };
+
+#ifdef __APPLE__
+
+#include <JavaScriptCore/JavaScript.h>
+#include <JavaScriptCore/JavaScriptCore.h>
+
+// Specializations
+template <>
+struct TypeMap<JSValueRef> {
+  using RuntimeType = void*;
+  using ContextType = JSContextRef;
+  using FunctionPionterType = JSObjectCallAsFunctionCallback;
+  using ConstructorFunctionPionterType = JSObjectCallAsConstructorCallback;
+  using FinalizerFunctionPionterType = void (*)(JSObjectRef);
+  using ExposeFunctionType = JSStaticFunction;
+  using ExposePropertyType = JSStaticValue;
+  using GetterFunctionType = JSValueRef (*)(JSContextRef, JSObjectRef, JSStringRef, JSValueRef*);
+  using SetterFunctionType =
+      bool (*)(JSContextRef, JSObjectRef, JSStringRef, JSValueRef, JSValueRef*);
+  const char* engineName = "JavaScriptCore";
+};
+#endif

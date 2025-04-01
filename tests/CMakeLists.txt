@@ -29,7 +29,7 @@ target_link_libraries(librime-qjs-tests PUBLIC
 
 if(APPLE)
   find_library(JAVASCRIPTCORE JavaScriptCore REQUIRED)
-  include_directories(${AVASCRIPTCORE}/Headers)
+  include_directories(${JAVASCRIPTCORE}/Headers)
   target_link_libraries(librime-qjs-tests PRIVATE ${JAVASCRIPTCORE})
 endif()
 

@@ -107,11 +107,6 @@ endif()
 set(CMAKE_CURRENT_LIST_DIR ${CMAKE_CURRENT_SOURCE_DIR}/CMakeFiles/list)
 set(CMAKE_CURRENT_BINARY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build)
 
-set(plugin_name "rime-qjs" PARENT_SCOPE)
-set(plugin_objs $<TARGET_OBJECTS:librime-qjs-objs> PARENT_SCOPE)
-set(plugin_deps ${rime_library} ${rime_gears_library} qjs PARENT_SCOPE)
-set(plugin_modules "qjs" PARENT_SCOPE)
-
 include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/src
   ${CMAKE_CURRENT_SOURCE_DIR}/src/engines
@@ -131,6 +126,11 @@ aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/patch/quickjs SRC_PATCHES)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/engines SRC_ENGINES)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/engines/quickjs SRC_ENGINE_QUICKJS)
 
+set(SRC_ENGINE_JAVASCRIPTCORE "")
+if(APPLE)
+  aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/engines/javascriptcore SRC_ENGINE_JAVASCRIPTCORE)
+endif()
+
 # create a dynamic library
 add_library(librime-qjs-objs OBJECT
   ${SRC}
@@ -140,6 +140,7 @@ add_library(librime-qjs-objs OBJECT
   ${SRC_PATCHES}
   ${SRC_ENGINES}
   ${SRC_ENGINE_QUICKJS}
+  ${SRC_ENGINE_JAVASCRIPTCORE}
 )
 if(BUILD_SHARED_LIBS)
   set_target_properties(librime-qjs-objs PROPERTIES POSITION_INDEPENDENT_CODE ON)
@@ -147,6 +148,12 @@ endif()
 
 if(WIN32)
   target_compile_definitions(librime-qjs-objs PRIVATE RIME_IMPORTS)
+endif()
+
+if(APPLE)
+  find_library(JAVASCRIPTCORE JavaScriptCore REQUIRED)
+  include_directories(${JAVASCRIPTCORE}/Headers)
+  target_link_libraries(librime-qjs-objs PRIVATE ${JAVASCRIPTCORE})
 endif()
 
 # Link QuickJS to librime-qjs
@@ -157,3 +164,8 @@ if(BUILD_SHARED_LIBS)
     add_subdirectory(tests)
   endif()
 endif()
+
+set(plugin_name "rime-qjs" PARENT_SCOPE)
+set(plugin_objs $<TARGET_OBJECTS:librime-qjs-objs> PARENT_SCOPE)
+set(plugin_deps ${rime_library} ${rime_gears_library} qjs ${JAVASCRIPTCORE} PARENT_SCOPE)
+set(plugin_modules "qjs" PARENT_SCOPE)

@@ -19,11 +19,13 @@ static void rime_qjs_initialize() {
   LOG(INFO) << "[qjs] registering components from module 'qjs'.";
   Registry& r = Registry::instance();
 
+  auto& quickjsEngine = getJsEngine<JSValue>();
+
   std::filesystem::path path(rime_get_api()->get_user_data_dir());
   path.append("js");
-  setQjsBaseFolder(path.generic_string().c_str());
+  quickjsEngine.setBaseFolderPath(path.generic_string().c_str());
 
-  registerTypesToJsEngine(getJsEngine<JSValue>());
+  registerTypesToJsEngine(quickjsEngine);
 
   r.Register("qjs_processor",
              new QuickJSComponent<QuickJSProcessor<JSValue>, Processor, JSValue>());

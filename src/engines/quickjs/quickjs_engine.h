@@ -298,6 +298,8 @@ public:
     return jsobj;
   }
 
+  void setBaseFolderPath(const char* absolutePath) { setQjsBaseFolder(absolutePath); }
+
   JSValue loadJsFile(const char* fileName) {
     return QuickJSCodeLoader::loadJsModuleToNamespace(ctx_, fileName);
   }

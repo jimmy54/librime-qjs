@@ -5,7 +5,9 @@
 template <typename T_JS_VALUE>
 class JsWrapperBase {
 public:
-  virtual typename TypeMap<T_JS_VALUE>::FunctionPionterType getConstructor() { return nullptr; }
+  virtual typename TypeMap<T_JS_VALUE>::ConstructorFunctionPionterType getConstructor() {
+    return nullptr;
+  }
   int getConstructorArgc() { return constructorArgc_; }
 
   virtual typename TypeMap<T_JS_VALUE>::FinalizerFunctionPionterType getFinalizer() {

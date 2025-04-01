@@ -22,6 +22,8 @@ class JsEngine {
 public:
   typename TypeMap<T_JS_VALUE>::ContextType& getContext();
 
+  void setBaseFolderPath(const char* absolutePath);
+
   T_JS_VALUE loadJsFile(const char* fileName);
   T_JS_VALUE getJsClassHavingMethod(const T_JS_VALUE& container, const char* methodName);
   T_JS_VALUE getMethodOfClass(T_JS_VALUE jsClass, const char* methodName);
