@@ -25,6 +25,11 @@ public:
     return instance;
   }
 
+  int64_t getMemoryUsage() {
+    // TODO: find an API to get the memory usage of JavaScriptCore
+    return -1;
+  }
+
   typename TypeMap<JSValueRef>::ContextType& getContext() { return ctx_; }
 
   JSObjectRef jsValueToObject(JSValueRef value) {
@@ -41,15 +46,11 @@ public:
   }
 
   template <typename T>
-  void* getOpaque(JSValueRef value) {
-    JSObjectRef obj = JSValueToObject(ctx_, value, nullptr);
-    return JSObjectGetPrivate(obj);
+  void* getOpaque(JSObjectRef value) {
+    return JSObjectGetPrivate(value);
   }
 
-  void setOpaque(JSValueRef value, void* opaque) {
-    JSObjectRef obj = JSValueToObject(ctx_, value, nullptr);
-    JSObjectSetPrivate(obj, opaque);
-  }
+  void setOpaque(JSObjectRef value, void* opaque) { JSObjectSetPrivate(value, opaque); }
 
   JSValueRef null() { return JSValueMakeNull(ctx_); }
   JSValueRef undefined() { return JSValueMakeUndefined(ctx_); }
@@ -57,10 +58,7 @@ public:
   JSValueRef jsTrue() { return JSValueMakeBoolean(ctx_, true); }
   JSValueRef jsFalse() { return JSValueMakeBoolean(ctx_, false); }
 
-  JSValueRef newArray() {
-    JSObjectRef array = JSObjectMakeArray(ctx_, 0, nullptr, nullptr);
-    return array;
-  }
+  JSValueRef newArray() { return JSObjectMakeArray(ctx_, 0, nullptr, nullptr); }
 
   size_t getArrayLength(const JSValueRef& array) {
     JSObjectRef arrayObj = JSValueToObject(ctx_, array, nullptr);
@@ -80,38 +78,34 @@ public:
     return JSObjectGetPropertyAtIndex(ctx_, arrayObj, index, nullptr);
   }
 
-  JSValueRef newObject() {
-    JSObjectRef obj = JSObjectMake(ctx_, nullptr, nullptr);
-    return obj;
-  }
+  JSObjectRef newObject() { return JSObjectMake(ctx_, nullptr, nullptr); }
 
-  JSValueRef getObjectProperty(const JSValueRef& obj, const char* propertyName) {
-    JSObjectRef objRef = JSValueToObject(ctx_, obj, nullptr);
+  JSValueRef getObjectProperty(const JSObjectRef& obj, const char* propertyName) {
     JSStringRef propertyStr = JSStringCreateWithUTF8CString(propertyName);
-    JSValueRef value = JSObjectGetProperty(ctx_, objRef, propertyStr, nullptr);
+    JSValueRef value = JSObjectGetProperty(ctx_, obj, propertyStr, nullptr);
     JSStringRelease(propertyStr);
     return value;
   }
 
-  int setObjectProperty(JSValueRef obj, const char* propertyName, const JSValueRef& value) {
-    JSObjectRef objRef = JSValueToObject(ctx_, obj, nullptr);
+  int setObjectProperty(JSObjectRef obj, const char* propertyName, const JSValueRef& value) {
     JSStringRef propertyStr = JSStringCreateWithUTF8CString(propertyName);
-    JSObjectSetProperty(ctx_, objRef, propertyStr, value, kJSPropertyAttributeNone, nullptr);
+    JSObjectSetProperty(ctx_, obj, propertyStr, value, kJSPropertyAttributeNone, nullptr);
     JSStringRelease(propertyStr);
     return 0;
   }
 
-  int setObjectFunction(JSValueRef obj,
+  int setObjectFunction(JSObjectRef obj,
                         const char* functionName,
                         JSObjectCallAsFunctionCallback cppFunction,
                         int expectingArgc) {
-    JSObjectRef objRef = JSValueToObject(ctx_, obj, nullptr);
     JSStringRef funcNameStr = JSStringCreateWithUTF8CString(functionName);
     JSObjectRef func = JSObjectMakeFunctionWithCallback(ctx_, funcNameStr, cppFunction);
-    JSObjectSetProperty(ctx_, objRef, funcNameStr, func, kJSPropertyAttributeNone, nullptr);
+    JSObjectSetProperty(ctx_, obj, funcNameStr, func, kJSPropertyAttributeNone, nullptr);
     JSStringRelease(funcNameStr);
     return 0;
   }
+
+  JSObjectRef toObject(const JSValueRef& value) { return JSValueToObject(ctx_, value, nullptr); }
 
   JSValueRef toJsString(const char* str) {
     JSStringRef jsStr = JSStringCreateWithUTF8CString(str);
@@ -128,10 +122,12 @@ public:
     std::vector<char> buffer(bufferSize);
     JSStringGetUTF8CString(jsStr, buffer.data(), bufferSize);
     JSStringRelease(jsStr);
-    return std::string(buffer.data());
+    return buffer.data();
   }
 
   JSValueRef toJsBool(bool value) { return JSValueMakeBoolean(ctx_, value); }
+
+  bool toBool(const JSValueRef& value) { return JSValueToBoolean(ctx_, value); }
 
   JSValueRef toJsInt(size_t value) { return JSValueMakeNumber(ctx_, static_cast<double>(value)); }
 
@@ -143,11 +139,9 @@ public:
 
   double toDouble(const JSValueRef& value) { return JSValueToNumber(ctx_, value, nullptr); }
 
-  JSValueRef callFunction(JSValueRef func, JSValueRef thisArg, int argc, JSValueRef* argv) {
-    JSObjectRef funcObj = JSValueToObject(ctx_, func, nullptr);
-    JSObjectRef thisObj = JSValueToObject(ctx_, thisArg, nullptr);
+  JSValueRef callFunction(JSObjectRef func, JSObjectRef thisArg, int argc, JSValueRef* argv) {
     JSValueRef exception = nullptr;
-    JSValueRef result = JSObjectCallAsFunction(ctx_, funcObj, thisObj, argc, argv, &exception);
+    JSValueRef result = JSObjectCallAsFunction(ctx_, func, thisArg, argc, argv, &exception);
     if (exception != nullptr) {
       logErrorStackTrace(exception);
       return nullptr;
@@ -155,10 +149,9 @@ public:
     return result;
   }
 
-  JSValueRef callConstructor(JSValueRef func, int argc, JSValueRef* argv) {
-    JSObjectRef funcObj = JSValueToObject(ctx_, func, nullptr);
+  JSObjectRef callConstructor(JSObjectRef func, int argc, JSValueRef* argv) {
     JSValueRef exception = nullptr;
-    JSObjectRef result = JSObjectCallAsConstructor(ctx_, funcObj, argc, argv, &exception);
+    JSObjectRef result = JSObjectCallAsConstructor(ctx_, func, argc, argv, &exception);
     if (exception != nullptr) {
       logErrorStackTrace(exception);
       return nullptr;
@@ -197,10 +190,9 @@ public:
     return nullptr;
   }
 
-  JSValueRef getMethodOfClass(JSValueRef jsClass, const char* methodName) {
-    JSObjectRef classObj = JSValueToObject(ctx_, jsClass, nullptr);
+  JSValueRef getMethodOfClass(JSObjectRef jsClass, const char* methodName) {
     JSStringRef methodStr = JSStringCreateWithUTF8CString(methodName);
-    JSValueRef method = JSObjectGetProperty(ctx_, classObj, methodStr, nullptr);
+    JSValueRef method = JSObjectGetProperty(ctx_, jsClass, methodStr, nullptr);
     JSStringRelease(methodStr);
     return method;
   }
@@ -256,7 +248,7 @@ public:
         nullptr,  // staticValues
         nullptr,  // staticFunctions
         nullptr,  // initialize
-        wrapper.getFinalizer(),
+        wrapper.getFinalizerJsc(),
         nullptr,  // hasProperty
         nullptr,  // getProperty
         nullptr,  // setProperty
@@ -272,10 +264,10 @@ public:
     clazzes[key] = std::make_tuple(typeName, jsClass, classDef);
 
     JSObjectRef proto = JSObjectMake(ctx_, nullptr, nullptr);
-    JSObjectRef constructor = JSObjectMakeConstructor(ctx_, jsClass, wrapper.getConstructor());
+    JSObjectRef constructor = JSObjectMakeConstructor(ctx_, jsClass, wrapper.getConstructorJsc());
 
     // Set properties and functions
-    auto properties = wrapper.getProperties();
+    auto properties = wrapper.getPropertiesJsc();
     for (size_t i = 0; i < wrapper.getPropertiesCount(); ++i) {
       JSStringRef nameStr = JSStringCreateWithUTF8CString(properties[i].name);
       JSValueRef value = properties[i].getProperty(ctx_, proto, nameStr, nullptr);
@@ -283,7 +275,7 @@ public:
       JSStringRelease(nameStr);
     }
 
-    auto functions = wrapper.getFunctions();
+    auto functions = wrapper.getFunctionsJsc();
     for (size_t i = 0; i < wrapper.getFunctionsCount(); ++i) {
       JSStringRef nameStr = JSStringCreateWithUTF8CString(functions[i].name);
       JSObjectRef func =
@@ -320,8 +312,7 @@ public:
       return nullptr;
     }
 
-    JSObjectRef obj = JSValueToObject(ctx_, value, nullptr);
-    if (void* ptr = JSObjectGetPrivate(obj)) {
+    if (void* ptr = JSObjectGetPrivate(toObject(value))) {
       return static_cast<T*>(ptr);
     }
     return nullptr;
@@ -329,8 +320,7 @@ public:
 
   template <typename T>
   std::shared_ptr<T> unwrapShared(const JSValueRef& value) {
-    JSObjectRef obj = JSValueToObject(ctx_, value, nullptr);
-    if (void* ptr = JSObjectGetPrivate(obj)) {
+    if (void* ptr = JSObjectGetPrivate(toObject(value))) {
       if (auto sharedPtr = static_cast<std::shared_ptr<T>*>(ptr)) {
         return *sharedPtr;
       }
@@ -339,7 +329,7 @@ public:
   }
 
   template <typename T>
-  JSValueRef wrap(T* ptrValue) {
+  JSObjectRef wrap(T* ptrValue) {
     if (!ptrValue) {
       return nullptr;
     }
@@ -351,12 +341,11 @@ public:
     }
 
     JSClassRef jsClass = std::get<1>(clazzes[key]);
-    JSObjectRef jsobj = JSObjectMake(ctx_, jsClass, ptrValue);
-    return jsobj;
+    return JSObjectMake(ctx_, jsClass, ptrValue);
   }
 
   template <typename T>
-  JSValueRef wrapShared(const std::shared_ptr<T>& value) {
+  JSObjectRef wrapShared(const std::shared_ptr<T>& value) {
     if (!value) {
       return nullptr;
     }
@@ -369,8 +358,7 @@ public:
 
     JSClassRef jsClass = std::get<1>(clazzes[key]);
     auto ptr = std::make_unique<std::shared_ptr<T>>(value);
-    JSObjectRef jsobj = JSObjectMake(ctx_, jsClass, ptr.release());
-    return jsobj;
+    return JSObjectMake(ctx_, jsClass, ptr.release());
   }
 
   void setBaseFolderPath(const char* absolutePath) { baseFolderPath_ = absolutePath; }

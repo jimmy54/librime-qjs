@@ -27,6 +27,12 @@ public:
     return instance;
   }
 
+  int64_t getMemoryUsage() {
+    JSMemoryUsage qjsMemStats;
+    JS_ComputeMemoryUsage(rt_, &qjsMemStats);
+    return qjsMemStats.memory_used_size;
+  }
+
   typename TypeMap<JSValue>::ContextType& getContext() { return ctx_; }
 
   template <typename T>
@@ -85,6 +91,8 @@ public:
                              JS_NewCFunction(ctx_, cppFunction, functionName, expectingArgc));
   }
 
+  JSValue toObject(const JSValue& value) { return value; }
+
   JSValue toJsString(const char* str) { return JS_NewString(ctx_, str); }
   JSValue toJsString(const std::string& str) { return JS_NewString(ctx_, str.c_str()); }
 
@@ -96,6 +104,8 @@ public:
   }
 
   JSValue toJsBool(bool value) { return JS_NewBool(ctx_, value); }
+
+  bool toBool(const JSValue& value) { return JS_ToBool(ctx_, value); }
 
   JSValue toJsInt(size_t value) { return JS_NewInt64(ctx_, static_cast<int64_t>(value)); }
 

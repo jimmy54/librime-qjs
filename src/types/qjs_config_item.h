@@ -26,7 +26,7 @@ class JsWrapper<rime::ConfigItem, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE>
       default:
         strType = "unknown";
     }
-    return JS_NewString(ctx, strType);
+    return engine.toJsBool(strType);
   })
 
 public:

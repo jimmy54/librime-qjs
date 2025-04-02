@@ -25,10 +25,10 @@ class JsWrapper<rime::Trie, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE> {
       obj->loadTextFile(absolutePath, size);
     } catch (const std::exception& e) {
       LOG(ERROR) << "loadTextFile of " << absolutePath << " failed: " << e.what();
-      return JS_ThrowPlainError(ctx, "%s", e.what());
+      return engine.throwError(JsErrorType::GENERIC, "%s", e.what());
     }
 
-    return JS_UNDEFINED;
+    return engine.undefined();
   })
 
   DEFINE_CFUNCTION_ARGC(loadBinaryFile, 1, {
@@ -40,7 +40,7 @@ class JsWrapper<rime::Trie, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE> {
       LOG(ERROR) << "loadBinaryFileMmap of " << absolutePath << " failed: " << e.what();
       return engine.throwError(JsErrorType::GENERIC, "%s", e.what());
     }
-    return JS_UNDEFINED;
+    return engine.undefined();
   })
 
   DEFINE_CFUNCTION_ARGC(saveToBinaryFile, 1, {
@@ -52,7 +52,7 @@ class JsWrapper<rime::Trie, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE> {
       LOG(ERROR) << "saveToBinaryFile of " << absolutePath << " failed: " << e.what();
       return engine.throwError(JsErrorType::GENERIC, "%s", e.what());
     }
-    return JS_UNDEFINED;
+    return engine.undefined();
   })
 
   DEFINE_CFUNCTION_ARGC(find, 1, {

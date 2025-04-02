@@ -6,6 +6,7 @@ template <typename T>
 struct TypeMap {  // Default mapping
   using RuntimeType = void*;
   using ContextType = void*;
+  using ObjectType = void*;
   using FunctionPionterType = void*;
   using ConstructorFunctionPionterType = void*;
   using ExposeFunctionType = void*;
@@ -21,6 +22,7 @@ template <>
 struct TypeMap<JSValue> {
   using RuntimeType = JSRuntime;
   using ContextType = JSContext*;
+  using ObjectType = JSValue;
   using FunctionPionterType = JSCFunction*;
   using ConstructorFunctionPionterType = JSCFunction*;
   using FinalizerFunctionPionterType = JSClassFinalizer*;
@@ -41,6 +43,7 @@ template <>
 struct TypeMap<JSValueRef> {
   using RuntimeType = void*;
   using ContextType = JSContextRef;
+  using ObjectType = JSObjectRef;
   using FunctionPionterType = JSObjectCallAsFunctionCallback;
   using ConstructorFunctionPionterType = JSObjectCallAsConstructorCallback;
   using FinalizerFunctionPionterType = void (*)(JSObjectRef);

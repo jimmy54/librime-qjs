@@ -4,33 +4,28 @@
 #include <cstdint>
 #include <string>
 
+#include "engines/js_exception.h"
 #include "engines/type_map.h"
 #include "types/js_wrapper.h"
 
-enum class JsErrorType : std::uint8_t {
-  SYNTAX,
-  RANGE,
-  REFERENCE,
-  TYPE,
-  EVAL,
-  GENERIC,
-  UNKNOWN,
-};
-
 template <typename T_JS_VALUE>
 class JsEngine {
+  using T_JS_OBJECT = typename TypeMap<T_JS_VALUE>::ObjectType;
+
 public:
   typename TypeMap<T_JS_VALUE>::ContextType& getContext();
 
   void setBaseFolderPath(const char* absolutePath);
+
+  int64_t getMemoryUsage();
 
   T_JS_VALUE loadJsFile(const char* fileName);
   T_JS_VALUE getJsClassHavingMethod(const T_JS_VALUE& container, const char* methodName);
   T_JS_VALUE getMethodOfClass(T_JS_VALUE jsClass, const char* methodName);
 
   template <typename T>
-  void* getOpaque(T_JS_VALUE value);
-  void setOpaque(T_JS_VALUE value, void* opaque);
+  void* getOpaque(T_JS_OBJECT value);
+  void setOpaque(T_JS_OBJECT value, void* opaque);
 
   T_JS_VALUE null();
   T_JS_VALUE undefined();
@@ -42,24 +37,26 @@ public:
   int insertItemToArray(T_JS_VALUE array, size_t index, const T_JS_VALUE& value);
   T_JS_VALUE getArrayItem(const T_JS_VALUE& array, size_t index);
 
-  T_JS_VALUE newObject();
-  T_JS_VALUE getObjectProperty(const T_JS_VALUE& obj, const char* propertyName);
-  int setObjectProperty(T_JS_VALUE obj, const char* propertyName, const T_JS_VALUE& value);
+  T_JS_OBJECT newObject();
+  T_JS_VALUE getObjectProperty(const T_JS_OBJECT& obj, const char* propertyName);
+  int setObjectProperty(T_JS_OBJECT obj, const char* propertyName, const T_JS_VALUE& value);
 
   using ExposeFunction = T_JS_VALUE (*)(typename TypeMap<T_JS_VALUE>::ContextType ctx,
                                         T_JS_VALUE thisVal,
                                         int argc,
                                         T_JS_VALUE* argv);
-  int setObjectFunction(T_JS_VALUE obj,
+  int setObjectFunction(T_JS_OBJECT obj,
                         const char* functionName,
                         ExposeFunction cppFunction,
                         int expectingArgc);
 
+  T_JS_OBJECT toObject(const T_JS_VALUE& value);
   T_JS_VALUE toJsString(const char* str);
   T_JS_VALUE toJsString(const std::string& str);
   std::string toStdString(const T_JS_VALUE& value);
 
   T_JS_VALUE toJsBool(bool value);
+  bool toBool(T_JS_VALUE value);
 
   T_JS_VALUE toJsInt(size_t value);
   size_t toInt(const T_JS_VALUE& value);
@@ -74,9 +71,9 @@ public:
   bool isNull(const T_JS_VALUE& value);
   bool isUndefined(const T_JS_VALUE& value);
   bool isException(const T_JS_VALUE& value);
-  T_JS_VALUE throwError(JsErrorType errorType, const char* format, ...);
+  T_JS_OBJECT throwError(JsErrorType errorType, const char* format, ...);
 
-  void logErrorStackTrace(const JsErrorType& exception);
+  void logErrorStackTrace(const T_JS_OBJECT& exception);
 
   void freeValue(const T_JS_VALUE& value);
 
@@ -93,12 +90,12 @@ public:
       typename TypeMap<T_JS_VALUE>::SetterFunctionType setter);
 
   template <typename T>
-  T_JS_VALUE wrap(T* ptrValue);
+  T_JS_OBJECT wrap(T* ptrValue);
   template <typename T>
   T* unwrap(const T_JS_VALUE& value);
 
   template <typename T>
-  T_JS_VALUE wrapShared(const std::shared_ptr<T>& value);
+  T_JS_OBJECT wrapShared(const std::shared_ptr<T>& value);
   template <typename T>
   std::shared_ptr<T> unwrapShared(const T_JS_VALUE& value);
 };

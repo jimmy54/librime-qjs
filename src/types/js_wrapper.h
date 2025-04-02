@@ -5,23 +5,37 @@
 template <typename T_JS_VALUE>
 class JsWrapperBase {
 public:
-  virtual typename TypeMap<T_JS_VALUE>::ConstructorFunctionPionterType getConstructor() {
+  virtual typename TypeMap<JSValue>::ConstructorFunctionPionterType getConstructor() {
     return nullptr;
   }
   int getConstructorArgc() { return constructorArgc_; }
 
-  virtual typename TypeMap<T_JS_VALUE>::FinalizerFunctionPionterType getFinalizer() {
+  virtual typename TypeMap<JSValue>::FinalizerFunctionPionterType getFinalizer() { return nullptr; }
+
+  virtual typename TypeMap<JSValue>::ExposeFunctionType* getFunctions() { return nullptr; }
+  int getFunctionsCount() { return functionCount_; }
+
+  virtual typename TypeMap<JSValue>::ExposePropertyType* getProperties() { return nullptr; }
+  int getPropertiesCount() { return propertyCount_; }
+
+  virtual typename TypeMap<JSValue>::ExposePropertyType* getGetters() { return nullptr; }
+  int getGettersCount() { return getterCount_; }
+
+#ifdef __APPLE__
+  virtual typename TypeMap<JSValueRef>::ConstructorFunctionPionterType getConstructorJsc() {
     return nullptr;
   }
 
-  virtual typename TypeMap<T_JS_VALUE>::ExposeFunctionType* getFunctions() { return nullptr; }
-  int getFunctionsCount() { return functionCount_; }
+  virtual typename TypeMap<JSValueRef>::FinalizerFunctionPionterType getFinalizerJsc() {
+    return nullptr;
+  }
 
-  virtual typename TypeMap<T_JS_VALUE>::ExposePropertyType* getProperties() { return nullptr; }
-  int getPropertiesCount() { return propertyCount_; }
+  virtual typename TypeMap<JSValueRef>::ExposeFunctionType* getFunctionsJsc() { return nullptr; }
 
-  virtual typename TypeMap<T_JS_VALUE>::ExposePropertyType* getGetters() { return nullptr; }
-  int getGettersCount() { return getterCount_; }
+  virtual typename TypeMap<JSValueRef>::ExposePropertyType* getPropertiesJsc() { return nullptr; }
+
+  virtual typename TypeMap<JSValueRef>::ExposePropertyType* getGettersJsc() { return nullptr; }
+#endif
 
 protected:
   void setFunctionCount(int count) { functionCount_ = count; }

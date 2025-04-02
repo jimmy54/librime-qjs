@@ -3,6 +3,7 @@
 #include <rime/engine.h>
 #include <rime/schema.h>
 
+#include <cstdint>
 #include <string>
 
 #include <rime_api.h>
@@ -10,6 +11,7 @@
 #include <cstddef>
 #include <cstdio>
 
+#include "engines/type_map.h"
 #include "node_module_loader.h"
 #include "process_memory.hpp"
 #include "system_info.hpp"
@@ -49,14 +51,16 @@ class QjsEnvironment {
     size_t residentSet = 0;  // memory usage in bytes
     getMemoryUsage(vmUsage, residentSet);
 
-    JSMemoryUsage qjsMemStats;
-    JS_ComputeMemoryUsage(JS_GetRuntime(ctx), &qjsMemStats);
-
     std::stringstream ss{};
     ss << "libRime v" << rime_get_api()->get_version() << " | "
        << "libRime-qjs v" << RIME_QJS_VERSION << " | "
-       << "Process RSS Mem: " << formatMemoryUsage(residentSet) << " | "
-       << "QuickJS Mem: " << formatMemoryUsage(qjsMemStats.memory_used_size);
+       << "Process RSS Mem: " << formatMemoryUsage(residentSet);
+
+    int64_t bytes = engine.getMemoryUsage();
+    if (bytes >= 0) {
+      TypeMap<T_JS_VALUE> typeMap;
+      ss << " | " << typeMap.engineName << " Mem: " << formatMemoryUsage(bytes);
+    }
 
     return engine.toJsString(ss.str().c_str());
   })
@@ -74,6 +78,22 @@ class QjsEnvironment {
     return engine.toJsBool(std::filesystem::exists(path));
   })
 
+  static FILE* popenx(const std::string& command) {
+#ifdef _WIN32
+    return _popen(command.c_str(), "r");
+#else
+    return ::popen(command.c_str(), "r");
+#endif
+  }
+
+  static int pclosex(FILE* pipe) {
+#ifdef _WIN32
+    return _pclose(pipe);
+#else
+    return ::pclose(pipe);
+#endif
+  }
+
   DEFINE_CFUNCTION(popen, {
     if (argc < 1) {
       return engine.throwError(JsErrorType::SYNTAX, "The command argument is required");
@@ -84,13 +104,7 @@ class QjsEnvironment {
       return engine.throwError(JsErrorType::SYNTAX, "The command argument should be a string");
     }
 
-    DLOG(INFO) << "[qjs] popen command: " << command;
-    // Open a pipe to the command
-#ifdef _WIN32
-    FILE* pipe = _popen(command.c_str(), "r");
-#else
-    FILE* pipe = ::popen(command.c_str(), "r");
-#endif
+    FILE* pipe = popenx(command);
     if (pipe == nullptr) {
       LOG(ERROR) << "Failed to run command: " << command;
       return engine.throwError(JsErrorType::GENERIC, "Failed to run command %s", command.c_str());
@@ -104,15 +118,8 @@ class QjsEnvironment {
       result += static_cast<char*>(buffer);
     }
 
-    // Close the pipe
-#ifdef _WIN32
-    int status = _pclose(pipe);
-#else
-    int status = ::pclose(pipe);
-#endif
-    if (status == 0) {
-      DLOG(INFO) << "[qjs] Command output: " << result;
-    } else {
+    int status = pclosex(pipe);
+    if (status != 0) {
       LOG(ERROR) << "[qjs] Command failed with status: " << status;
       return engine.throwError(JsErrorType::GENERIC, "Command failed with status: %d", status);
     }

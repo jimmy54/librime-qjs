@@ -51,7 +51,7 @@ function testEnvUtilities(env) {
   assert(info.includes('libRime v'))
   assert(info.includes('libRime-qjs v'))
   assert(info.includes('Process RSS Mem: '))
-  assert(info.includes('QuickJS Mem: '))
+  assert(info.includes('QuickJS-NG Mem: '))
 
   console.log(`env.os = ${JSON.stringify(env.os)}`)
   assert('macOS|Windows|Linux'.includes(env.os.name), 'os.name should be one of macOS|Windows|Linux')

@@ -63,7 +63,7 @@ class JsWrapper<rime::Config, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE> {
   DEFINE_CFUNCTION_ARGC(setBool, 2, {
     std::string key = engine.toStdString(argv[0]);
     auto obj = engine.unwrap<rime::Config>(thisVal);
-    bool value = JS_ToBool(ctx, argv[1]);
+    bool value = engine.toBool(argv[1]);
     bool success = obj->SetBool(key, value);
     return engine.toJsBool(success);
   })
@@ -71,8 +71,7 @@ class JsWrapper<rime::Config, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE> {
   DEFINE_CFUNCTION_ARGC(setInt, 2, {
     std::string key = engine.toStdString(argv[0]);
     auto obj = engine.unwrap<rime::Config>(thisVal);
-    int32_t value;
-    JS_ToInt32(ctx, &value, argv[1]);
+    int value = engine.toInt(argv[1]);
     bool success = obj->SetInt(key, value);
     return engine.toJsBool(success);
   })
@@ -80,8 +79,7 @@ class JsWrapper<rime::Config, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE> {
   DEFINE_CFUNCTION_ARGC(setDouble, 2, {
     std::string key = engine.toStdString(argv[0]);
     auto obj = engine.unwrap<rime::Config>(thisVal);
-    double value;
-    JS_ToFloat64(ctx, &value, argv[1]);
+    double value = engine.toDouble(argv[1]);
     bool success = obj->SetDouble(key, value);
     return engine.toJsBool(success);
   })
