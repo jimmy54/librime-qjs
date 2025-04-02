@@ -1,7 +1,6 @@
 #pragma once
 
 #include <rime/composition.h>
-#include "engines/engine_manager.h"
 #include "engines/js_macros.h"
 #include "js_wrapper.h"
 
@@ -22,15 +21,5 @@ class JsWrapper<rime::Preedit, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE> {
 public:
   static const char* getTypeName() { return "Preedit"; }
 
-  typename TypeMap<T_JS_VALUE>::ExposePropertyType* getProperties() override {
-    auto& engine = getJsEngine<T_JS_VALUE>();
-    static typename TypeMap<T_JS_VALUE>::ExposePropertyType properties[] = {
-        engine.defineProperty("text", get_text, set_text),
-        engine.defineProperty("caretPos", get_caretPos, set_caretPos),
-        engine.defineProperty("selectStart", get_selectStart, set_selectStart),
-        engine.defineProperty("selectEnd", get_selectEnd, set_selectEnd),
-    };
-    this->setPropertyCount(countof(properties));
-    return properties;
-  }
+  EXPORT_PROPERTIES(text, caretPos, selectStart, selectEnd);
 };

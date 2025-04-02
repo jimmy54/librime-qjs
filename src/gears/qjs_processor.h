@@ -26,7 +26,7 @@ public:
     T_JS_VALUE jsKeyEvt = engine.wrap(const_cast<rime::KeyEvent*>(&keyEvent));
     T_JS_VALUE args[] = {jsKeyEvt, environment};
     T_JS_VALUE jsResult = engine.callFunction(this->getMainFunc(), this->getInstance(), 2, args);
-    if (JS_IsException(jsResult)) {
+    if (engine.isException(jsResult)) {
       return rime::kNoop;
     }
     engine.freeValue(jsKeyEvt);

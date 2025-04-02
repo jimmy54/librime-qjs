@@ -2,6 +2,10 @@
 
 #include <quickjs.h>
 
+#include "engines/engine_manager.h"  // IWYU pragma: export
+#include "engines/for_each_macros.h"
+#include "engines/js_engine.h"  // IWYU pragma: export
+
 #ifdef __APPLE__
 #include "engines/javascriptcore/jsc_macros.h"
 #else
@@ -22,6 +26,8 @@
 #define EXPORT_CONSTRUCTOR(funcName, funcBody) EXPORT_CONSTRUCTOR_QJS(funcName, funcBody)
 #define EXPORT_FINALIZER(funcName, funcBody) EXPORT_FINALIZER_QJS(funcName, funcBody)
 #define EXPORT_PROPERTIES(...) EXPORT_PROPERTIES_QJS(__VA_ARGS__)
+#define EXPORT_FUNCTIONS(...) EXPORT_FUNCTIONS_QJS({__VA_ARGS__})
+#define EXPORT_GETTERS(...) EXPORT_GETTER_QJS(__VA_ARGS__)
 #endif
 
 #define countof(array) (sizeof(array) / sizeof(array[0]))
@@ -131,6 +137,16 @@
     funcBody;                                                                       \
   }
 
+#define EXPORT_SHARED_FINALIZER(T_RIME_TYPE, funcName)               \
+  EXPORT_FINALIZER(funcName, {                                       \
+    if (void* ptr = engine.template getOpaque<T_RIME_TYPE>(val)) {   \
+      auto* ppObj = static_cast<std::shared_ptr<T_RIME_TYPE>*>(ptr); \
+      ppObj->reset();                                                \
+      delete ppObj;                                                  \
+      engine.setOpaque(val, nullptr);                                \
+    }                                                                \
+  })
+
 #define DEFINE_PROPERTY(name) engine.defineProperty(#name, get_##name, set_##name),
 
 #define EXPORT_PROPERTIES_QJS(...)                                          \
@@ -141,40 +157,29 @@
                                                                             \
     this->setPropertyCount(countof(properties));                            \
                                                                             \
-    return properties;                                                      \
+    return static_cast<TypeMap<JSValue>::ExposePropertyType*>(properties);  \
   }
 
-// =============== FOR_EACH ===============
-#define EXPAND(...) __VA_ARGS__
-#define FOR_EACH_1(macro, x) macro(x)
-#define FOR_EACH_2(macro, x, ...) macro(x) EXPAND(FOR_EACH_1(macro, __VA_ARGS__))
-#define FOR_EACH_3(macro, x, ...) macro(x) EXPAND(FOR_EACH_2(macro, __VA_ARGS__))
-#define FOR_EACH_4(macro, x, ...) macro(x) EXPAND(FOR_EACH_3(macro, __VA_ARGS__))
-#define FOR_EACH_5(macro, x, ...) macro(x) EXPAND(FOR_EACH_4(macro, __VA_ARGS__))
-#define FOR_EACH_6(macro, x, ...) macro(x) EXPAND(FOR_EACH_5(macro, __VA_ARGS__))
-#define FOR_EACH_7(macro, x, ...) macro(x) EXPAND(FOR_EACH_6(macro, __VA_ARGS__))
-#define FOR_EACH_8(macro, x, ...) macro(x) EXPAND(FOR_EACH_7(macro, __VA_ARGS__))
-#define FOR_EACH_9(macro, x, ...) macro(x) EXPAND(FOR_EACH_8(macro, __VA_ARGS__))
-#define FOR_EACH_10(macro, x, ...) macro(x) EXPAND(FOR_EACH_9(macro, __VA_ARGS__))
-#define FOR_EACH_11(macro, x, ...) macro(x) EXPAND(FOR_EACH_10(macro, __VA_ARGS__))
-#define FOR_EACH_12(macro, x, ...) macro(x) EXPAND(FOR_EACH_11(macro, __VA_ARGS__))
-#define FOR_EACH_13(macro, x, ...) macro(x) EXPAND(FOR_EACH_12(macro, __VA_ARGS__))
-#define FOR_EACH_14(macro, x, ...) macro(x) EXPAND(FOR_EACH_13(macro, __VA_ARGS__))
-#define FOR_EACH_15(macro, x, ...) macro(x) EXPAND(FOR_EACH_14(macro, __VA_ARGS__))
-#define FOR_EACH_16(macro, x, ...) macro(x) EXPAND(FOR_EACH_15(macro, __VA_ARGS__))
-#define FOR_EACH_17(macro, x, ...) macro(x) EXPAND(FOR_EACH_16(macro, __VA_ARGS__))
-#define FOR_EACH_18(macro, x, ...) macro(x) EXPAND(FOR_EACH_17(macro, __VA_ARGS__))
-#define FOR_EACH_19(macro, x, ...) macro(x) EXPAND(FOR_EACH_18(macro, __VA_ARGS__))
-#define FOR_EACH_20(macro, x, ...) macro(x) EXPAND(FOR_EACH_19(macro, __VA_ARGS__))
+#define DEFINE_GETTER_QJS(name) engine.defineProperty(#name, get_##name, nullptr),
 
-// Get number of arguments
-#define COUNT_ARGS_(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15, _16, _17, \
-                    _18, _19, _20, N, ...)                                                      \
-  N
-#define COUNT_ARGS(...) \
-  COUNT_ARGS_(__VA_ARGS__, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1)
+#define EXPORT_GETTER_QJS(...)                                           \
+  typename TypeMap<JSValue>::ExposePropertyType* getGetters() override { \
+    auto& engine = getJsEngine<JSValue>();                               \
+    static typename TypeMap<JSValue>::ExposePropertyType getters[] = {   \
+        FOR_EACH(DEFINE_GETTER_QJS, __VA_ARGS__)};                       \
+                                                                         \
+    this->setGetterCount(countof(getters));                              \
+                                                                         \
+    return static_cast<TypeMap<JSValue>::ExposePropertyType*>(getters);  \
+  }
 
-// Select the appropriate FOR_EACH macro based on argument count
-#define _FOR_EACH_N(N, macro, ...) FOR_EACH_##N(macro, __VA_ARGS__)
-#define FOR_EACH_N(N, macro, ...) _FOR_EACH_N(N, macro, __VA_ARGS__)
-#define FOR_EACH(macro, ...) FOR_EACH_N(COUNT_ARGS(__VA_ARGS__), macro, __VA_ARGS__)
+#define DEFINE_FUNCTION_QJS(name, argc) engine.defineFunction(#name, argc, name),
+
+#define EXPORT_FUNCTIONS_QJS(...)                                          \
+  typename TypeMap<JSValue>::ExposeFunctionType* getFunctions() override { \
+    auto& engine = getJsEngine<JSValue>();                                 \
+    static typename TypeMap<JSValue>::ExposeFunctionType functions[] = {   \
+        FOR_EACH_PAIR(DEFINE_FUNCTION_QJS, __VA_ARGS__)};                  \
+    this->setFunctionCount(countof(functions));                            \
+    return static_cast<TypeMap<JSValue>::ExposeFunctionType*>(functions);  \
+  }

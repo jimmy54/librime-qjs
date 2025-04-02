@@ -1,7 +1,6 @@
 #pragma once
 
 #include <rime/config/config_types.h>
-#include "engines/engine_manager.h"
 #include "engines/js_macros.h"
 #include "js_wrapper.h"
 
@@ -32,12 +31,5 @@ class JsWrapper<rime::ConfigItem, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE>
 public:
   static const char* getTypeName() { return "ConfigItem"; }
 
-  typename TypeMap<T_JS_VALUE>::ExposeFunctionType* getFunctions() override {
-    auto& engine = getJsEngine<T_JS_VALUE>();
-    static typename TypeMap<T_JS_VALUE>::ExposeFunctionType functions[] = {
-        engine.defineFunction("getType", 0, getType),
-    };
-    this->setFunctionCount(countof(functions));
-    return functions;
-  }
+  EXPORT_FUNCTIONS(getType, 0);
 };

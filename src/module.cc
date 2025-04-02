@@ -3,14 +3,14 @@
 #include <rime_api.h>
 #include <filesystem>
 
+#include <quickjs.h>
+
 #include "engines/engine_manager.h"
-#include "node_module_loader.h"
 #include "qjs_component.hpp"
 #include "qjs_filter.hpp"
 #include "qjs_processor.h"
 #include "qjs_translator.h"
 #include "qjs_types.h"
-#include "quickjs.h"
 
 using namespace rime;
 
@@ -19,12 +19,11 @@ static void rime_qjs_initialize() {
   LOG(INFO) << "[qjs] registering components from module 'qjs'.";
   Registry& r = Registry::instance();
 
-  auto& quickjsEngine = getJsEngine<JSValue>();
-
   std::filesystem::path path(rime_get_api()->get_user_data_dir());
   path.append("js");
-  quickjsEngine.setBaseFolderPath(path.generic_string().c_str());
 
+  auto& quickjsEngine = getJsEngine<JSValue>();
+  quickjsEngine.setBaseFolderPath(path.generic_string().c_str());
   registerTypesToJsEngine(quickjsEngine);
 
   r.Register("qjs_processor",
@@ -32,6 +31,18 @@ static void rime_qjs_initialize() {
   r.Register("qjs_filter", new QuickJSComponent<QuickJSFilter<JSValue>, Filter, JSValue>());
   r.Register("qjs_translator",
              new QuickJSComponent<QuickJSTranslator<JSValue>, Translator, JSValue>());
+
+#ifdef __APPLE__
+  auto& jscEngine = getJsEngine<JSValueRef>();
+  jscEngine.setBaseFolderPath(path.generic_string().c_str());
+  registerTypesToJsEngine(jscEngine);
+
+  r.Register("jsc_processor",
+             new QuickJSComponent<QuickJSProcessor<JSValueRef>, Processor, JSValueRef>());
+  r.Register("jsc_filter", new QuickJSComponent<QuickJSFilter<JSValueRef>, Filter, JSValueRef>());
+  r.Register("jsc_translator",
+             new QuickJSComponent<QuickJSTranslator<JSValueRef>, Translator, JSValueRef>());
+#endif
 }
 
 static void rime_qjs_finalize() {}

@@ -6,7 +6,8 @@
 #include <rime/schema.h>
 
 #include <quickjs.h>
-#include "qjs_environment.h"
+#include "engines/engine_manager.h"
+#include "environment.h"
 #include "test_helper.hpp"
 #include "trie_data_helper.hpp"
 
@@ -50,22 +51,23 @@ TEST_F(QuickJSTypesTest, WrapUnwrapRimeTypes) {
   ASSERT_TRUE(context != nullptr);
   context->set_input("hello");
 
-  auto& jsEngine = JsEngine<JSValue>::getInstance();
+  auto& jsEngine = getJsEngine<JSValue>();
   JSContext* ctx = jsEngine.getContext();
 
-  JSValue env = QjsEnvironment<JSValue>::create(engine.get(), "namespace");
+  auto env = std::make_shared<Environment>(engine.get(), "namespace");
+  JSValue environment = jsEngine.wrapShared(env);
 
   auto folderPath = getFolderPath(__FILE__);
-  JS_SetPropertyStr(ctx, env, "currentFolder", JS_NewString(ctx, folderPath.c_str()));
+  JS_SetPropertyStr(ctx, environment, "currentFolder", JS_NewString(ctx, folderPath.c_str()));
 
   auto candidate = New<SimpleCandidate>("mock", 0, 1, "text", "comment");
-  JS_SetPropertyStr(ctx, env, "candidate", jsEngine.wrapShared<Candidate>(candidate));
+  JS_SetPropertyStr(ctx, environment, "candidate", jsEngine.wrapShared<Candidate>(candidate));
 
   JSValue module = QuickJSCodeLoader::loadJsModuleToGlobalThis(ctx, "types_test.js");
 
   JSValue global = JS_GetGlobalObject(ctx);
   JSValue jsFunc = JS_GetPropertyStr(ctx, global, "checkArgument");
-  JSValue retValue = JS_Call(ctx, jsFunc, JS_UNDEFINED, 1, &env);
+  JSValue retValue = JS_Call(ctx, jsFunc, JS_UNDEFINED, 1, &environment);
 
   JSValue retJsEngine = JS_GetPropertyStr(ctx, retValue, "engine");
   auto* retEngine = jsEngine.unwrap<Engine>(retJsEngine);
@@ -95,8 +97,8 @@ TEST_F(QuickJSTypesTest, WrapUnwrapRimeTypes) {
   ASSERT_EQ(newCandidate->quality(), 888);
 
   // free all js objects
-  JSValue objects[] = {env,      module,      global,         jsFunc,
-                       retValue, retJsEngine, retJsCandidate, retJsNewCandidate};
+  JSValue objects[] = {environment, module,      global,         jsFunc,
+                       retValue,    retJsEngine, retJsCandidate, retJsNewCandidate};
   for (auto obj : objects) {
     jsEngine.freeValue(obj);
   }

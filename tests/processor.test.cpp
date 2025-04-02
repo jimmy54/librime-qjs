@@ -6,7 +6,8 @@
 #include <rime/schema.h>
 
 #include <quickjs.h>
-#include "qjs_environment.h"
+#include <memory>
+#include "environment.h"
 #include "qjs_processor.h"
 
 using namespace rime;
@@ -22,6 +23,8 @@ protected:
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
 TEST_F(QuickJSProcessorTest, ProcessKeyEvent) {
+  auto& jsEngine = getJsEngine<JSValue>();
+
   the<Engine> engine(Engine::Create());
   ASSERT_TRUE(engine->schema() != nullptr);
 
@@ -32,7 +35,8 @@ TEST_F(QuickJSProcessorTest, ProcessKeyEvent) {
   addSegment(engine.get(), "prompt");
 
   Ticket ticket(engine.get(), "processor_test", "qjs_processor@processor_test");
-  JSValue environment = QjsEnvironment<JSValue>::create(engine.get(), "processor_test");
+  auto env = std::make_shared<Environment>(engine.get(), "processor_test");
+  JSValue environment = jsEngine.wrapShared(env);
   auto processor = New<QuickJSProcessor<JSValue>>(ticket, environment);
 
   // Test key event that should be accepted
@@ -47,12 +51,13 @@ TEST_F(QuickJSProcessorTest, ProcessKeyEvent) {
   KeyEvent noopEvent("invalid_key");
   EXPECT_EQ(processor->processKeyEvent(noopEvent, environment), kNoop);
 
-  auto& jsEngine = JsEngine<JSValue>::getInstance();
   jsEngine.freeValue(environment);
 }
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
 TEST_F(QuickJSProcessorTest, NonExistentModule) {
+  auto& jsEngine = getJsEngine<JSValue>();
+
   the<Engine> engine(Engine::Create());
   ASSERT_TRUE(engine->schema() != nullptr);
 
@@ -60,13 +65,13 @@ TEST_F(QuickJSProcessorTest, NonExistentModule) {
 
   // Create a ticket with a non-existent module
   Ticket ticket(engine.get(), "non_existent", "qjs_processor@non_existent");
-  JSValue environment = QjsEnvironment<JSValue>::create(engine.get(), "non_existent");
+  auto env = std::make_shared<Environment>(engine.get(), "non_existent");
+  JSValue environment = jsEngine.wrapShared(env);
   auto processor = New<QuickJSProcessor<JSValue>>(ticket, environment);
 
   // Test key event - should return noop due to unloaded module
   KeyEvent event("space");
   EXPECT_EQ(processor->processKeyEvent(event, environment), kNoop);
 
-  auto& jsEngine = JsEngine<JSValue>::getInstance();
   jsEngine.freeValue(environment);
 }

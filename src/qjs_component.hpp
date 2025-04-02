@@ -10,7 +10,7 @@
 #include <map>
 #include <memory>
 #include <utility>
-#include "qjs_environment.h"
+#include "environment.h"
 
 #include "engines/engine_manager.h"
 
@@ -56,11 +56,14 @@ private:
 template <typename T_ACTUAL, typename T_BASE, typename T_JS_VALUE>
 class QuickJSComponent : public T_BASE::Component {
   using KeyType = std::pair<std::string, std::string>;
+  // using T_JS_OBJECT = typename TypeMap<T_JS_VALUE>::ObjectType;
 
 public:
   // NOLINTNEXTLINE(readability-identifier-naming)
   ComponentWrapper<T_ACTUAL, T_BASE, T_JS_VALUE>* Create(const rime::Ticket& a) {
-    T_JS_VALUE environment = QjsEnvironment<T_JS_VALUE>::create(a.engine, a.name_space);
+    auto environment = std::make_shared<Environment>(a.engine, a.name_space);
+    auto& engine = getJsEngine<T_JS_VALUE>();
+    T_JS_VALUE jsEnvironment = engine.wrapShared(environment);
 
     // The same plugin could have difference configurations for different schemas, and then behave differently.
     // So we need to create a new component for each schema.
@@ -68,10 +71,10 @@ public:
     KeyType key = std::make_pair(schemaId, a.name_space);
     if (!components_.count(key)) {
       LOG(INFO) << "[qjs] creating component '" << a.name_space << "' for schema " << schemaId;
-      components_[key] = std::make_shared<T_ACTUAL>(a, environment);
+      components_[key] = std::make_shared<T_ACTUAL>(a, jsEnvironment);
     }
 
-    return new ComponentWrapper<T_ACTUAL, T_BASE, T_JS_VALUE>(a, components_[key], environment);
+    return new ComponentWrapper<T_ACTUAL, T_BASE, T_JS_VALUE>(a, components_[key], jsEnvironment);
   }
 
 private:

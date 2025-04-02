@@ -27,6 +27,8 @@ protected:
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
 TEST_F(QuickJSTranslatorTest, QueryTranslation) {
+  auto& jsEngine = JsEngine<JSValue>::getInstance();
+
   the<Engine> engine(Engine::Create());
   ASSERT_TRUE(engine->schema() != nullptr);
 
@@ -36,7 +38,8 @@ TEST_F(QuickJSTranslatorTest, QueryTranslation) {
   config->SetString("expectedInput", "test_input");
 
   Ticket ticket(engine.get(), "translator", "qjs_translator@translator_test");
-  JSValue environment = QjsEnvironment<JSValue>::create(engine.get(), "translator_test");
+  auto env = std::make_shared<Environment>(engine.get(), "translator_test");
+  JSValue environment = jsEngine.wrapShared(env);
   auto translator = New<QuickJSTranslator<JSValue>>(ticket, environment);
 
   // Create a segment for testing
@@ -72,11 +75,13 @@ TEST_F(QuickJSTranslatorTest, QueryTranslation) {
   candidate = translation->Peek();
   EXPECT_TRUE(candidate == nullptr);
 
-  JsEngine<JSValue>::getInstance().freeValue(environment);
+  jsEngine.freeValue(environment);
 }
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
 TEST_F(QuickJSTranslatorTest, EmptyResult) {
+  auto& jsEngine = JsEngine<JSValue>::getInstance();
+
   the<Engine> engine(Engine::Create());
   ASSERT_TRUE(engine->schema() != nullptr);
 
@@ -86,7 +91,8 @@ TEST_F(QuickJSTranslatorTest, EmptyResult) {
   config->SetString("expectedInput", "empty_input");
 
   Ticket ticket(engine.get(), "translator", "qjs_translator@translator_test");
-  JSValue environment = QjsEnvironment<JSValue>::create(engine.get(), "translator_test");
+  auto env = std::make_shared<Environment>(engine.get(), "translator_test");
+  JSValue environment = jsEngine.wrapShared(env);
   auto translator = New<QuickJSTranslator<JSValue>>(ticket, environment);
 
   // Create a segment for testing
@@ -100,17 +106,19 @@ TEST_F(QuickJSTranslatorTest, EmptyResult) {
   auto candidate = translation->Peek();
   EXPECT_TRUE(candidate == nullptr);
 
-  JsEngine<JSValue>::getInstance().freeValue(environment);
+  jsEngine.freeValue(environment);
 }
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
 TEST_F(QuickJSTranslatorTest, NonExistentModule) {
+  auto& jsEngine = JsEngine<JSValue>::getInstance();
   the<Engine> engine(Engine::Create());
   ASSERT_TRUE(engine->schema() != nullptr);
 
   // Create a ticket with a non-existent module
   Ticket ticket(engine.get(), "translator", "qjs_translator@non_existent");
-  JSValue environment = QjsEnvironment<JSValue>::create(engine.get(), "non_existent");
+  auto env = std::make_shared<Environment>(engine.get(), "non_existent");
+  JSValue environment = jsEngine.wrapShared(env);
   auto translator = New<QuickJSTranslator<JSValue>>(ticket, environment);
 
   // Create a segment for testing
@@ -124,15 +132,18 @@ TEST_F(QuickJSTranslatorTest, NonExistentModule) {
   auto candidate = translation->Peek();
   EXPECT_TRUE(candidate == nullptr);
 
-  JsEngine<JSValue>::getInstance().freeValue(environment);
+  jsEngine.freeValue(environment);
 }
 
 TEST_F(QuickJSTranslatorTest, NoReturnShouldNotCrash) {
+  auto& jsEngine = JsEngine<JSValue>::getInstance();
+
   the<Engine> engine(Engine::Create());
 
   // Create a ticket with a poor implemented plugin
   Ticket ticket(engine.get(), "translator", "qjs_translator@translator_no_return");
-  JSValue environment = QjsEnvironment<JSValue>::create(engine.get(), "translator_no_return");
+  auto env = std::make_shared<Environment>(engine.get(), "translator_no_return");
+  JSValue environment = jsEngine.wrapShared(env);
   auto translator = New<QuickJSTranslator<JSValue>>(ticket, environment);
   Segment segment = createSegment();
   auto translation = translator->query("test_input", segment, environment);
@@ -141,5 +152,5 @@ TEST_F(QuickJSTranslatorTest, NoReturnShouldNotCrash) {
   EXPECT_FALSE(translation->Next());
   EXPECT_EQ(translation->Peek(), nullptr);
 
-  JsEngine<JSValue>::getInstance().freeValue(environment);
+  jsEngine.freeValue(environment);
 }

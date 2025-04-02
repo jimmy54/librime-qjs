@@ -275,6 +275,14 @@ public:
       JSStringRelease(nameStr);
     }
 
+    auto getters = wrapper.getGettersJsc();
+    for (size_t i = 0; i < wrapper.getGettersCount(); ++i) {
+      JSStringRef nameStr = JSStringCreateWithUTF8CString(getters[i].name);
+      JSValueRef value = getters[i].getProperty(ctx_, proto, nameStr, nullptr);
+      JSObjectSetProperty(ctx_, proto, nameStr, value, kJSPropertyAttributeNone, nullptr);
+      JSStringRelease(nameStr);
+    }
+
     auto functions = wrapper.getFunctionsJsc();
     for (size_t i = 0; i < wrapper.getFunctionsCount(); ++i) {
       JSStringRef nameStr = JSStringCreateWithUTF8CString(functions[i].name);

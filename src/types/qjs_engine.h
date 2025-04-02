@@ -1,12 +1,10 @@
 #pragma once
 
 #include <rime/engine.h>
-#include "js_wrapper.h"
-
 #include <rime/key_event.h>
 
-#include "engines/engine_manager.h"
 #include "engines/js_macros.h"
+#include "js_wrapper.h"
 
 using namespace rime;
 
@@ -42,26 +40,6 @@ class JsWrapper<rime::Engine, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE> {
 public:
   static const char* getTypeName() { return "Engine"; }
 
-  typename TypeMap<T_JS_VALUE>::ExposePropertyType* getGetters() override {
-    auto& engine = getJsEngine<T_JS_VALUE>();
-    static typename TypeMap<T_JS_VALUE>::ExposePropertyType getters[] = {
-        engine.defineProperty("schema", get_schema, nullptr),
-        engine.defineProperty("activeEngine", get_activeEngine, nullptr),
-        engine.defineProperty("context", get_context, nullptr),
-    };
-    this->setGetterCount(countof(getters));
-
-    return getters;
-  }
-
-  typename TypeMap<T_JS_VALUE>::ExposeFunctionType* getFunctions() override {
-    auto& engine = getJsEngine<T_JS_VALUE>();
-    static typename TypeMap<T_JS_VALUE>::ExposeFunctionType functions[] = {
-        engine.defineFunction("processKey", 1, processKey),
-        engine.defineFunction("commitText", 1, commitText),
-        engine.defineFunction("applySchema", 1, applySchema),
-    };
-    this->setFunctionCount(countof(functions));
-    return functions;
-  }
+  EXPORT_GETTERS(schema, context, activeEngine);
+  EXPORT_FUNCTIONS(processKey, 1, commitText, 1, applySchema, 1);
 };

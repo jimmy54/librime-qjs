@@ -11,8 +11,6 @@ using namespace rime;
 
 template <typename T_JS_VALUE>
 class JsWrapper<rime::Trie, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE> {
-  DEFINE_CFUNCTION(makeTrie, { return engine.wrapShared(std::make_shared<Trie>()); })
-
   DEFINE_CFUNCTION_ARGC(loadTextFile, 1, {
     std::string absolutePath = engine.toStdString(argv[0]);
     size_t size = 0;
@@ -80,18 +78,25 @@ class JsWrapper<rime::Trie, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE> {
 public:
   static const char* getTypeName() { return "Trie"; }
 
-  typename TypeMap<T_JS_VALUE>::FunctionPionterType getConstructor() override { return makeTrie; }
+  EXPORT_CONSTRUCTOR(makeTrie, { return engine.wrapShared<Trie>(std::make_shared<Trie>()); });
 
-  typename TypeMap<T_JS_VALUE>::ExposeFunctionType* getFunctions() override {
-    auto& engine = getJsEngine<T_JS_VALUE>();
-    static typename TypeMap<T_JS_VALUE>::ExposeFunctionType functions[] = {
-        engine.defineFunction("loadTextFile", 1, loadTextFile),
-        engine.defineFunction("loadBinaryFile", 1, loadBinaryFile),
-        engine.defineFunction("saveToBinaryFile", 1, saveToBinaryFile),
-        engine.defineFunction("find", 1, find),
-        engine.defineFunction("prefixSearch", 1, prefixSearch),
-    };
-    this->setFunctionCount(countof(functions));
-    return functions;
-  }
+  EXPORT_FINALIZER(finalizer, {
+    if (void* ptr = engine.template getOpaque<rime::Trie>(val)) {
+      auto* ppObj = static_cast<std::shared_ptr<rime::Trie>*>(ptr);
+      ppObj->reset();
+      delete ppObj;
+      engine.setOpaque(val, nullptr);
+    }
+  });
+
+  EXPORT_FUNCTIONS(loadTextFile,
+                   1,
+                   loadBinaryFile,
+                   1,
+                   saveToBinaryFile,
+                   1,
+                   find,
+                   1,
+                   prefixSearch,
+                   1);
 };

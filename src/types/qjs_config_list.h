@@ -2,7 +2,6 @@
 
 #include <rime/config.h>
 #include <rime/config/config_types.h>
-#include "engines/engine_manager.h"
 #include "engines/js_macros.h"
 #include "js_wrapper.h"
 
@@ -48,15 +47,5 @@ class JsWrapper<rime::ConfigList, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE>
 public:
   static const char* getTypeName() { return "ConfigList"; }
 
-  typename TypeMap<T_JS_VALUE>::ExposeFunctionType* getFunctions() override {
-    auto& engine = getJsEngine<T_JS_VALUE>();
-    static typename TypeMap<T_JS_VALUE>::ExposeFunctionType functions[] = {
-        engine.defineFunction("getType", 0, getType),
-        engine.defineFunction("getSize", 0, getSize),
-        engine.defineFunction("getItemAt", 1, getItemAt),
-        engine.defineFunction("getValueAt", 1, getValueAt),
-    };
-    this->setFunctionCount(countof(functions));
-    return functions;
-  }
+  EXPORT_FUNCTIONS(getType, 0, getSize, 0, getItemAt, 1, getValueAt, 1);
 };

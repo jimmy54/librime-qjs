@@ -1,7 +1,6 @@
 #pragma once
 
 #include <rime/schema.h>
-#include "engines/engine_manager.h"
 #include "engines/js_macros.h"
 #include "js_wrapper.h"
 
@@ -18,17 +17,5 @@ class JsWrapper<rime::Schema, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE> {
 public:
   static const char* getTypeName() { return "Schema"; }
 
-  typename TypeMap<T_JS_VALUE>::ExposePropertyType* getGetters() override {
-    auto& engine = getJsEngine<T_JS_VALUE>();
-    static typename TypeMap<T_JS_VALUE>::ExposePropertyType getters[] = {
-        engine.defineProperty("id", get_id, nullptr),
-        engine.defineProperty("name", get_name, nullptr),
-        engine.defineProperty("config", get_config, nullptr),
-        engine.defineProperty("pageSize", get_pageSize, nullptr),
-        engine.defineProperty("selectKeys", get_selectKeys, nullptr),
-    };
-    this->setGetterCount(countof(getters));
-
-    return getters;
-  }
+  EXPORT_GETTERS(id, name, config, pageSize, selectKeys);
 };

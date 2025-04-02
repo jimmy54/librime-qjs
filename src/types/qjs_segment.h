@@ -2,7 +2,6 @@
 
 #include <rime/menu.h>
 #include <rime/segmentation.h>
-#include "engines/engine_manager.h"
 #include "engines/js_macros.h"
 #include "js_wrapper.h"
 
@@ -41,37 +40,7 @@ class JsWrapper<rime::Segment, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE> {
 public:
   static const char* getTypeName() { return "Segment"; }
 
-  typename TypeMap<T_JS_VALUE>::ExposePropertyType* getProperties() override {
-    auto& engine = getJsEngine<T_JS_VALUE>();
-    static typename TypeMap<T_JS_VALUE>::ExposePropertyType properties[] = {
-        engine.defineProperty("selectedIndex", get_selectedIndex, set_selectedIndex),
-        engine.defineProperty("prompt", get_prompt, set_prompt),
-    };
-    this->setPropertyCount(countof(properties));
-
-    return properties;
-  }
-
-  typename TypeMap<T_JS_VALUE>::ExposePropertyType* getGetters() override {
-    auto& engine = getJsEngine<T_JS_VALUE>();
-    static typename TypeMap<T_JS_VALUE>::ExposePropertyType getters[] = {
-        engine.defineProperty("start", get_start, nullptr),
-        engine.defineProperty("end", get_end, nullptr),
-        engine.defineProperty("selectedCandidate", get_selectedCandidate, nullptr),
-        engine.defineProperty("candidateSize", get_candidateSize, nullptr),
-    };
-    this->setGetterCount(countof(getters));
-
-    return getters;
-  }
-
-  typename TypeMap<T_JS_VALUE>::ExposeFunctionType* getFunctions() override {
-    auto& engine = getJsEngine<T_JS_VALUE>();
-    static typename TypeMap<T_JS_VALUE>::ExposeFunctionType functions[] = {
-        engine.defineFunction("getCandidateAt", 1, getCandidateAt),
-        engine.defineFunction("hasTag", 1, hasTag),
-    };
-    this->setFunctionCount(countof(functions));
-    return functions;
-  }
+  EXPORT_PROPERTIES(selectedIndex, prompt);
+  EXPORT_GETTERS(start, end, selectedCandidate, candidateSize);
+  EXPORT_FUNCTIONS(getCandidateAt, 1, hasTag, 1);
 };

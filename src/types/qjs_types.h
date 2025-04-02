@@ -9,7 +9,9 @@
 #include "qjs_config_value.h"
 #include "qjs_context.h"
 #include "qjs_engine.h"
+#include "qjs_environment.h"
 #include "qjs_key_event.h"
+#include "qjs_os_info.h"
 #include "qjs_preedit.h"
 #include "qjs_schema.h"
 #include "qjs_segment.h"
@@ -59,4 +61,10 @@ void registerTypesToJsEngine(JsEngine<T_JS_VALUE>& engine) {
 
   auto configMap = std::make_unique<JsWrapper<rime::ConfigMap, T_JS_VALUE>>();
   engine.template registerType<rime::ConfigMap>(*configMap.get());
+
+  auto environment = std::make_unique<JsWrapper<Environment, T_JS_VALUE>>();
+  engine.template registerType<Environment>(*environment.get());
+
+  auto osInfo = std::make_unique<JsWrapper<SystemInfo, T_JS_VALUE>>();
+  engine.template registerType<SystemInfo>(*osInfo.get());
 }

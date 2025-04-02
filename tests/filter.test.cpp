@@ -16,6 +16,8 @@ class QuickJSFilterTest : public ::testing::Test {};
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
 TEST_F(QuickJSFilterTest, ApplyFilter) {
+  auto& jsEngine = JsEngine<JSValue>::getInstance();
+
   the<Engine> engine(Engine::Create());
   ASSERT_TRUE(engine->schema() != nullptr);
 
@@ -25,7 +27,8 @@ TEST_F(QuickJSFilterTest, ApplyFilter) {
   config->SetString("expectingText", "text2");
 
   Ticket ticket(engine.get(), "filter", "qjs_filter@filter_test");
-  JSValue environment = QjsEnvironment<JSValue>::create(engine.get(), "filter_test");
+  auto env = std::make_shared<Environment>(engine.get(), "filter_test");
+  JSValue environment = jsEngine.wrapShared(env);
   auto filter = New<QuickJSFilter<JSValue>>(ticket, environment);
 
   auto translation = New<FakeTranslation>();
@@ -46,6 +49,5 @@ TEST_F(QuickJSFilterTest, ApplyFilter) {
   ASSERT_TRUE(candidate == nullptr);
   ASSERT_FALSE(filtered->Next());
 
-  auto& jsEngine = JsEngine<JSValue>::getInstance();
   jsEngine.freeValue(environment);
 }

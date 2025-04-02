@@ -3,15 +3,11 @@
 #include <rime/candidate.h>
 #include <rime/gear/translator_commons.h>
 #include <memory>
-#include "engines/engine_manager.h"
-#include "engines/js_engine.h"
 #include "engines/js_exception.h"
 #include "engines/js_macros.h"
 #include "js_wrapper.h"
 
 using namespace rime;
-
-constexpr int MIN_ARGC_NEW_CANDIDATE = 5;
 
 template <typename T_JS_VALUE>
 class JsWrapper<rime::Candidate, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE> {
@@ -54,6 +50,8 @@ class JsWrapper<rime::Candidate, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE> 
 public:
   static const char* getTypeName() { return "Candidate"; }
 
+  static constexpr int MIN_ARGC_NEW_CANDIDATE = 5;
+
   JsWrapper<rime::Candidate, T_JS_VALUE>() { this->setConstructorArgc(MIN_ARGC_NEW_CANDIDATE); }
 
   EXPORT_CONSTRUCTOR(makeCandidate, {
@@ -73,14 +71,6 @@ public:
     return engine.wrapShared<rime::Candidate>(obj);
   });
 
-  EXPORT_FINALIZER(finalizer, {
-    if (void* ptr = engine.template getOpaque<rime::Candidate>(val)) {
-      auto* ppObj = static_cast<std::shared_ptr<rime::Candidate>*>(ptr);
-      ppObj->reset();
-      delete ppObj;
-      engine.setOpaque(val, nullptr);
-    }
-  });
-
+  EXPORT_SHARED_FINALIZER(rime::Candidate, finalizer);
   EXPORT_PROPERTIES(text, comment, type, start, end, quality, preedit);
 };

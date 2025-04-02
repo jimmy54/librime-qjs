@@ -24,17 +24,6 @@ public:
   }
   ~QuickJSTranslation() override = default;
 
-  // an<Candidate> Peek() override { return cache_.empty() ? nullptr : cache_.front(); }
-
-  // bool Next() override {
-  //   if (!cache_.empty()) {
-  //     cache_.pop_front();
-  //     return true;
-  //   }
-  //   set_exhausted(true);
-  //   return false;
-  // }
-
 protected:
   bool Replenish() override { return replenished_; }
 
@@ -55,7 +44,8 @@ private:
     }
 
     T_JS_VALUE args[] = {jsArray, environment};
-    T_JS_VALUE resultArray = engine.callFunction(filterFunc, filterObj, 2, args);
+    T_JS_VALUE resultArray =
+        engine.callFunction(engine.toObject(filterFunc), engine.toObject(filterObj), 2, args);
     engine.freeValue(jsArray);
     if (engine.isException(resultArray)) {
       return false;

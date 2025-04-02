@@ -3,7 +3,6 @@
 #include <rime/config.h>
 #include <filesystem>
 #include <string>
-#include "engines/engine_manager.h"
 #include "engines/js_macros.h"
 #include "js_wrapper.h"
 
@@ -95,22 +94,26 @@ class JsWrapper<rime::Config, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE> {
 public:
   static const char* getTypeName() { return "Config"; }
 
-  typename TypeMap<T_JS_VALUE>::ExposeFunctionType* getFunctions() override {
-    auto& engine = getJsEngine<T_JS_VALUE>();
-    static typename TypeMap<T_JS_VALUE>::ExposeFunctionType functions[] = {
-        engine.defineFunction("loadFromFile", 1, loadFromFile),
-        engine.defineFunction("saveToFile", 1, saveToFile),
-        engine.defineFunction("getBool", 1, getBool),
-        engine.defineFunction("getInt", 1, getInt),
-        engine.defineFunction("getDouble", 1, getDouble),
-        engine.defineFunction("getString", 1, getString),
-        engine.defineFunction("getList", 1, getList),
-        engine.defineFunction("setBool", 2, setBool),
-        engine.defineFunction("setInt", 2, setInt),
-        engine.defineFunction("setDouble", 2, setDouble),
-        engine.defineFunction("setString", 2, setString),
-    };
-    this->setFunctionCount(countof(functions));
-    return functions;
-  }
+  EXPORT_FUNCTIONS(loadFromFile,
+                   1,
+                   saveToFile,
+                   1,
+                   getBool,
+                   1,
+                   getInt,
+                   1,
+                   getDouble,
+                   1,
+                   getString,
+                   1,
+                   getList,
+                   1,
+                   setBool,
+                   2,
+                   setInt,
+                   2,
+                   setDouble,
+                   2,
+                   setString,
+                   2);
 };
