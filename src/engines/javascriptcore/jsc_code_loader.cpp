@@ -155,7 +155,7 @@ JSValueRef JscCodeLoader::jsLog(JSContextRef ctx,
     size_t bufferSize = JSStringGetMaximumUTF8CStringSize(strRef);
     char* buffer = new char[bufferSize];
     JSStringGetUTF8CString(strRef, buffer, bufferSize);
-    std::cout << buffer;
+    std::cout << "$jsc$ " << buffer;
     if (i < argumentCount - 1)
       std::cout << " ";
     delete[] buffer;
@@ -177,7 +177,7 @@ JSValueRef JscCodeLoader::jsError(JSContextRef ctx,
     size_t bufferSize = JSStringGetMaximumUTF8CStringSize(strRef);
     char* buffer = new char[bufferSize];
     JSStringGetUTF8CString(strRef, buffer, bufferSize);
-    std::cerr << buffer;
+    std::cerr << "$jsc$ " << buffer;
     if (i < argumentCount - 1)
       std::cerr << " ";
     delete[] buffer;

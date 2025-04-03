@@ -216,7 +216,10 @@ public:
 
   bool isUndefined(const JSValueRef& value) { return JSValueIsUndefined(ctx_, value); }
 
-  bool isException(const JSValueRef& value) { return value != nullptr; }
+  bool isException(const JSValueRef& value) {
+    // nullptr is returned if an exception is thrown in `callFunction` and `callConstructor`
+    return value == nullptr;
+  }
 
   void logErrorStackTrace(const JSValueRef& exception) {
     JSStringRef exceptionStr = JSValueToStringCopy(ctx_, exception, nullptr);
@@ -236,68 +239,42 @@ public:
     const char* key = typeid(T_RIME_TYPE).name();
     const char* typeName = JsWrapper<T_RIME_TYPE, JSValueRef>::getTypeName();
     if (clazzes.find(key) != clazzes.end()) {
-      LOG(INFO) << "type: " << typeName << " has already been registered.";
+      LOG(INFO) << "[jsc] type: " << typeName << " has already been registered.";
       return;
     }
+    LOG(INFO) << "[jsc] registering type: " << typeName;
 
-    JSClassDefinition classDef = {
-        0,  // version
-        kJSClassAttributeNone,
-        typeName,
-        nullptr,  // parentClass
-        nullptr,  // staticValues
-        nullptr,  // staticFunctions
-        nullptr,  // initialize
-        wrapper.getFinalizerJsc(),
-        nullptr,  // hasProperty
-        nullptr,  // getProperty
-        nullptr,  // setProperty
-        nullptr,  // deleteProperty
-        nullptr,  // getPropertyNames
-        nullptr,  // callAsFunction
-        nullptr,  // callAsConstructor
-        nullptr,  // hasInstance
-        nullptr,  // convertToType
-    };
+    // todo: add getters to properties
+    JSClassDefinition classDef = {.version = 0,
+                                  .attributes = kJSClassAttributeNone,
+                                  .className = typeName,
+                                  .parentClass = nullptr,
+                                  .staticValues = wrapper.getPropertiesJsc(),
+                                  .staticFunctions = wrapper.getFunctionsJsc(),
+                                  .initialize = nullptr,
+                                  .finalize = wrapper.getFinalizerJsc(),
+                                  .hasProperty = nullptr,
+                                  .getProperty = nullptr,
+                                  .setProperty = nullptr,
+                                  .deleteProperty = nullptr,
+                                  .getPropertyNames = nullptr,
+                                  .callAsFunction = nullptr,
+                                  .callAsConstructor = wrapper.getConstructorJsc(),
+                                  .hasInstance = nullptr,
+                                  .convertToType = nullptr};
+
+    LOG(INFO) << "[jsc] registering type: " << typeName << " with " << wrapper.getPropertiesCount()
+              << " properties and " << wrapper.getFunctionsCount() << " functions";
 
     JSClassRef jsClass = JSClassCreate(&classDef);
     clazzes[key] = std::make_tuple(typeName, jsClass, classDef);
 
-    JSObjectRef proto = JSObjectMake(ctx_, nullptr, nullptr);
-    JSObjectRef constructor = JSObjectMakeConstructor(ctx_, jsClass, wrapper.getConstructorJsc());
-
-    // Set properties and functions
-    auto properties = wrapper.getPropertiesJsc();
-    for (size_t i = 0; i < wrapper.getPropertiesCount(); ++i) {
-      JSStringRef nameStr = JSStringCreateWithUTF8CString(properties[i].name);
-      JSValueRef value = properties[i].getProperty(ctx_, proto, nameStr, nullptr);
-      JSObjectSetProperty(ctx_, proto, nameStr, value, kJSPropertyAttributeNone, nullptr);
-      JSStringRelease(nameStr);
-    }
-
-    auto getters = wrapper.getGettersJsc();
-    for (size_t i = 0; i < wrapper.getGettersCount(); ++i) {
-      JSStringRef nameStr = JSStringCreateWithUTF8CString(getters[i].name);
-      JSValueRef value = getters[i].getProperty(ctx_, proto, nameStr, nullptr);
-      JSObjectSetProperty(ctx_, proto, nameStr, value, kJSPropertyAttributeNone, nullptr);
-      JSStringRelease(nameStr);
-    }
-
-    auto functions = wrapper.getFunctionsJsc();
-    for (size_t i = 0; i < wrapper.getFunctionsCount(); ++i) {
-      JSStringRef nameStr = JSStringCreateWithUTF8CString(functions[i].name);
-      JSObjectRef func =
-          JSObjectMakeFunctionWithCallback(ctx_, nameStr, functions[i].callAsFunction);
-      JSObjectSetProperty(ctx_, proto, nameStr, func, kJSPropertyAttributeNone, nullptr);
-      JSStringRelease(nameStr);
-    }
-
-    // Expose to global object
     JSObjectRef globalObj = JSContextGetGlobalObject(ctx_);
-    JSStringRef typeNameStr = JSStringCreateWithUTF8CString(typeName);
-    JSObjectSetProperty(ctx_, globalObj, typeNameStr, constructor, kJSPropertyAttributeNone,
+    JSStringRef classNameStr = JSStringCreateWithUTF8CString(typeName);
+    JSObjectRef constructor = JSObjectMakeConstructor(ctx_, jsClass, nullptr);
+    JSObjectSetProperty(ctx_, globalObj, classNameStr, constructor, kJSPropertyAttributeNone,
                         nullptr);
-    JSStringRelease(typeNameStr);
+    JSStringRelease(classNameStr);
   }
 
   typename TypeMap<JSValueRef>::ExposeFunctionType
@@ -376,8 +353,25 @@ public:
     return JscCodeLoader::loadJsModuleToGlobalThis(ctx_, baseFolderPath_, fileName, &exception);
   }
 
+  JSValueRef eval(const char* code, const char* filename = "<eval>") {
+    JSStringRef jsCode = JSStringCreateWithUTF8CString(code);
+    JSValueRef exception = nullptr;
+    JSValueRef result = JSEvaluateScript(ctx_, jsCode, nullptr,
+                                         JSStringCreateWithUTF8CString(filename), 0, &exception);
+    JSStringRelease(jsCode);
+    if (exception != nullptr) {
+      logErrorStackTrace(exception);
+      return nullptr;
+    }
+    return result;
+  }
+
+  JSValueRef getGlobalObject() { return JSContextGetGlobalObject(ctx_); }
+
 private:
-  JsEngine<JSValueRef>() : ctx_(JSGlobalContextCreate(nullptr)) {}
+  JsEngine<JSValueRef>() : ctx_(JSGlobalContextCreate(nullptr)) {
+    JscCodeLoader::exposeLogToJsConsole(ctx_);
+  }
 
   ~JsEngine<JSValueRef>() { JSGlobalContextRelease((JSGlobalContextRef)ctx_); }
 

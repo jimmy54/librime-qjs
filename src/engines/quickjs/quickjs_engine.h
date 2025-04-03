@@ -314,6 +314,12 @@ public:
     return QuickJSCodeLoader::loadJsModuleToNamespace(ctx_, fileName);
   }
 
+  JSValue eval(const char* code, const char* filename = "<eval>") {
+    return JS_Eval(ctx_, code, strlen(code), filename, JS_EVAL_TYPE_GLOBAL);
+  }
+
+  JSValue getGlobalObject() { return JS_GetGlobalObject(ctx_); }
+
 private:
   template <typename T>
   static JSClassID getJsClassId() {

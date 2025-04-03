@@ -98,4 +98,8 @@ public:
   T_JS_OBJECT wrapShared(const std::shared_ptr<T>& value);
   template <typename T>
   std::shared_ptr<T> unwrapShared(const T_JS_VALUE& value);
+
+  virtual T_JS_VALUE eval(const char* code, const char* filename = "<eval>");
+
+  virtual T_JS_VALUE getGlobalObject();
 };

@@ -2,12 +2,16 @@
 #include <rime/candidate.h>
 #include <rime/translation.h>
 
+#include <JavaScriptCore/JavaScript.h>
 #include <quickjs.h>
 #include "fake_translation.hpp"
 #include "qjs_translation.h"
 
 using namespace rime;
 
+using JsTypes = ::testing::Types<JSValue, JSValueRef>;
+
+template <typename T>
 class QuickJSTranslationTest : public ::testing::Test {
 protected:
   static an<Translation> createMockTranslation() {
@@ -19,39 +23,43 @@ protected:
   }
 };
 
-TEST_F(QuickJSTranslationTest, Initialize) {
-  auto translation = createMockTranslation();
+TYPED_TEST_SUITE(QuickJSTranslationTest, JsTypes);
+
+TYPED_TEST(QuickJSTranslationTest, Initialize) {
+  auto translation = this->createMockTranslation();
   auto qjsTranslation =
-      New<QuickJSTranslation<JSValue>>(translation, JS_UNDEFINED, JS_UNDEFINED, JS_UNDEFINED);
+      New<QuickJSTranslation<TypeParam>>(translation, TypeParam(), TypeParam(), TypeParam());
   EXPECT_TRUE(qjsTranslation->exhausted());
   EXPECT_FALSE(qjsTranslation->Next());
   EXPECT_EQ(qjsTranslation->Peek(), nullptr);
 }
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
-TEST_F(QuickJSTranslationTest, FilterCandidates) {
-  auto translation = createMockTranslation();
+TYPED_TEST(QuickJSTranslationTest, FilterCandidates) {
+  auto translation = this->createMockTranslation();
   const char* jsCode = R"(
         function filterCandidates(candidates, env) {
             console.log(`filterCandidates: ${candidates.length}`)
             console.log(`env.expectingText: ${env.expectingText}`)
-            return candidates.filter((it, idx) => it.text === env.expectingText)
+            const ret = candidates.filter((it, idx) => {
+              console.log(`it.text = ${it.text}`)
+              return it.text === env.expectingText
+            })
+            console.log(`ret.length: ${ret.length}`)
+            return ret
         }
     )";
 
-  auto& jsEngine = JsEngine<JSValue>::getInstance();
-  auto& ctx = jsEngine.getContext();
-  JSValue result = JS_Eval(ctx, jsCode, strlen(jsCode), "<input>", JS_EVAL_TYPE_GLOBAL);
-  jsEngine.freeValue(result);
-  JSValue global = JS_GetGlobalObject(ctx);
-  JSValue filterFunc = JS_GetPropertyStr(ctx, global, "filterCandidates");
-  jsEngine.freeValue(global);
+  auto& jsEngine = JsEngine<TypeParam>::getInstance();
+  auto result = jsEngine.eval(jsCode, "<input>");
+  auto global = jsEngine.getGlobalObject();
+  auto filterFunc = jsEngine.getObjectProperty(jsEngine.toObject(global), "filterCandidates");
 
-  JSValue env = JS_NewObject(ctx);
-  JS_SetPropertyStr(ctx, env, "expectingText", JS_NewString(ctx, "text2"));
+  auto env = jsEngine.newObject();
+  jsEngine.setObjectProperty(env, "expectingText", jsEngine.toJsString("text2"));
 
   auto qjsTranslation =
-      New<QuickJSTranslation<JSValue>>(translation, JS_UNDEFINED, filterFunc, env);
+      New<QuickJSTranslation<TypeParam>>(translation, TypeParam(), filterFunc, env);
   auto candidate = qjsTranslation->Peek();
 
   ASSERT_TRUE(candidate != nullptr);
@@ -62,32 +70,34 @@ TEST_F(QuickJSTranslationTest, FilterCandidates) {
   ASSERT_TRUE(candidate == nullptr);
   ASSERT_FALSE(qjsTranslation->Next());
 
+  jsEngine.freeValue(global);
+  jsEngine.freeValue(result);
   jsEngine.freeValue(filterFunc);
 }
 
-TEST_F(QuickJSTranslationTest, EmptyTranslation) {
+TYPED_TEST(QuickJSTranslationTest, EmptyTranslation) {
   auto translation = New<FakeTranslation>();
   auto qjsTranslation =
-      New<QuickJSTranslation<JSValue>>(translation, JS_UNDEFINED, JS_UNDEFINED, JS_UNDEFINED);
+      New<QuickJSTranslation<TypeParam>>(translation, TypeParam(), TypeParam(), TypeParam());
   EXPECT_TRUE(qjsTranslation->exhausted());
   EXPECT_FALSE(qjsTranslation->Next());
   EXPECT_EQ(qjsTranslation->Peek(), nullptr);
 }
 
-TEST_F(QuickJSTranslationTest, NoReturnValueShouldNotCrash) {
-  auto translation = createMockTranslation();
+TYPED_TEST(QuickJSTranslationTest, NoReturnValueShouldNotCrash) {
+  auto translation = this->createMockTranslation();
   const char* jsCode = "function noReturn() { }";
 
-  auto& jsEngine = JsEngine<JSValue>::getInstance();
+  auto& jsEngine = JsEngine<TypeParam>::getInstance();
   auto& ctx = jsEngine.getContext();
-  JSValue result = JS_Eval(ctx, jsCode, strlen(jsCode), "<input>", JS_EVAL_TYPE_GLOBAL);
+  auto result = jsEngine.eval(jsCode, "<input>");
   jsEngine.freeValue(result);
-  JSValue global = JS_GetGlobalObject(ctx);
-  JSValue filterFunc = JS_GetPropertyStr(ctx, global, "noReturn");
+  auto global = jsEngine.getGlobalObject();
+  auto filterFunc = jsEngine.getObjectProperty(jsEngine.toObject(global), "noReturn");
   jsEngine.freeValue(global);
 
   auto qjsTranslation =
-      New<QuickJSTranslation<JSValue>>(translation, JS_UNDEFINED, filterFunc, JS_UNDEFINED);
+      New<QuickJSTranslation<TypeParam>>(translation, TypeParam(), filterFunc, TypeParam());
   EXPECT_TRUE(qjsTranslation->exhausted());
   EXPECT_FALSE(qjsTranslation->Next());
   EXPECT_EQ(qjsTranslation->Peek(), nullptr);

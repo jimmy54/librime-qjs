@@ -130,27 +130,25 @@
   typename TypeMap<JSValueRef>::ExposePropertyType* getPropertiesJsc() override { \
     auto& engine = getJsEngine<JSValueRef>();                                     \
     static typename TypeMap<JSValueRef>::ExposePropertyType properties[] = {      \
-        FOR_EACH(DEFINE_PROPERTY_JSC, __VA_ARGS__)};                              \
-                                                                                  \
-    this->setPropertyCount(countof(properties));                                  \
-                                                                                  \
+        FOR_EACH(DEFINE_PROPERTY_JSC, __VA_ARGS__){nullptr, nullptr, nullptr, 0}, \
+    };                                                                            \
+    this->setPropertyCount(countof(properties) - 1);                              \
     return static_cast<TypeMap<JSValueRef>::ExposePropertyType*>(properties);     \
   }
 
 #define DEFINE_GETTER_JSC(name) engine.defineProperty(#name, get_##name##Jsc, nullptr),
 
-#define EXPORT_GETTERS(...)                                                    \
-                                                                               \
-  EXPORT_GETTER_QJS(__VA_ARGS__)                                               \
-                                                                               \
-  typename TypeMap<JSValueRef>::ExposePropertyType* getGettersJsc() override { \
-    auto& engine = getJsEngine<JSValueRef>();                                  \
-    static typename TypeMap<JSValueRef>::ExposePropertyType getters[] = {      \
-        FOR_EACH(DEFINE_GETTER_JSC, __VA_ARGS__)};                             \
-                                                                               \
-    this->setGetterCount(countof(getters));                                    \
-                                                                               \
-    return static_cast<TypeMap<JSValueRef>::ExposePropertyType*>(getters);     \
+#define EXPORT_GETTERS(...)                                                     \
+                                                                                \
+  EXPORT_GETTER_QJS(__VA_ARGS__)                                                \
+                                                                                \
+  typename TypeMap<JSValueRef>::ExposePropertyType* getGettersJsc() override {  \
+    auto& engine = getJsEngine<JSValueRef>();                                   \
+    static typename TypeMap<JSValueRef>::ExposePropertyType getters[] = {       \
+        FOR_EACH(DEFINE_GETTER_JSC, __VA_ARGS__){nullptr, nullptr, nullptr, 0}, \
+    };                                                                          \
+    this->setGetterCount(countof(getters) - 1);                                 \
+    return static_cast<TypeMap<JSValueRef>::ExposePropertyType*>(getters);      \
   }
 
 #define DEFINE_FUNCTION_JSC(name, argc) engine.defineFunction(#name, argc, name##Jsc),
@@ -162,7 +160,8 @@
   typename TypeMap<JSValueRef>::ExposeFunctionType* getFunctionsJsc() override { \
     auto& engine = getJsEngine<JSValueRef>();                                    \
     static typename TypeMap<JSValueRef>::ExposeFunctionType functions[] = {      \
-        FOR_EACH_PAIR(DEFINE_FUNCTION_JSC, __VA_ARGS__)};                        \
-    this->setFunctionCount(countof(functions));                                  \
+        FOR_EACH_PAIR(DEFINE_FUNCTION_JSC, __VA_ARGS__){nullptr, nullptr, 0},    \
+    };                                                                           \
+    this->setFunctionCount(countof(functions) - 1);                              \
     return static_cast<TypeMap<JSValueRef>::ExposeFunctionType*>(functions);     \
   }

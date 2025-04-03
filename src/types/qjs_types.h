@@ -23,14 +23,15 @@ void registerTypesToJsEngine(JsEngine<T_JS_VALUE>& engine) {
   LOG(INFO) << "[qjs] registering rime types to the " << typeMap.engineName << " engine...";
 
   // expose all types
+
+  auto candidate = std::make_unique<JsWrapper<rime::Candidate, T_JS_VALUE>>();
+  engine.template registerType<rime::Candidate>(*candidate.get());
+
   auto trie = std::make_unique<JsWrapper<rime::Trie, T_JS_VALUE>>();
   engine.template registerType<rime::Trie>(*trie.get());
 
   auto segment = std::make_unique<JsWrapper<rime::Segment, T_JS_VALUE>>();
   engine.template registerType<rime::Segment>(*segment.get());
-
-  auto candidate = std::make_unique<JsWrapper<rime::Candidate, T_JS_VALUE>>();
-  engine.template registerType<rime::Candidate>(*candidate.get());
 
   auto keyEvt = std::make_unique<JsWrapper<rime::KeyEvent, T_JS_VALUE>>();
   engine.template registerType<rime::KeyEvent>(*keyEvt.get());
