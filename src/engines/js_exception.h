@@ -1,8 +1,8 @@
 #pragma once
 
+#include <cstdarg>
 #include <exception>
 #include <string>
-#include <utility>
 
 enum class JsErrorType : std::uint8_t {
   SYNTAX,
