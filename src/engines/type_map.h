@@ -42,7 +42,7 @@ struct TypeMap<JSValue> {
 template <>
 struct TypeMap<JSValueRef> {
   using RuntimeType = void*;
-  using ContextType = JSContextRef;
+  using ContextType = JSGlobalContextRef;
   using ObjectType = JSObjectRef;
   using FunctionPionterType = JSObjectCallAsFunctionCallback;
   using ConstructorFunctionPionterType = JSObjectCallAsConstructorCallback;

@@ -1,4 +1,5 @@
 #include "jsc_code_loader.h"
+#include <glog/logging.h>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -30,7 +31,13 @@ JSValueRef JscCodeLoader::loadJsModuleToGlobalThis(JSContextRef ctx,
   std::filesystem::path filePath = std::filesystem::path(baseFolderPath + "/dist/" + moduleName);
   std::ifstream file(filePath);
   if (!file.is_open()) {
-    throw std::runtime_error("Failed to open file: " + filePath.string());
+    std::string message = "Failed to open file: " + filePath.string();
+    LOG(ERROR) << "[jsc] " << message;
+
+    JSStringRef messageStr = JSStringCreateWithUTF8CString(message.c_str());
+    JSValueRef exception = JSValueMakeString(ctx, messageStr);
+    JSStringRelease(messageStr);
+    return exception;
   }
 
   std::stringstream buffer;
@@ -150,12 +157,13 @@ JSValueRef JscCodeLoader::jsLog(JSContextRef ctx,
                                 size_t argumentCount,
                                 const JSValueRef arguments[],
                                 JSValueRef* exception) {
+  std::cout << "$jsc$ ";
   for (size_t i = 0; i < argumentCount; i++) {
     JSStringRef strRef = JSValueToStringCopy(ctx, arguments[i], exception);
     size_t bufferSize = JSStringGetMaximumUTF8CStringSize(strRef);
     char* buffer = new char[bufferSize];
     JSStringGetUTF8CString(strRef, buffer, bufferSize);
-    std::cout << "$jsc$ " << buffer;
+    std::cout << buffer;
     if (i < argumentCount - 1)
       std::cout << " ";
     delete[] buffer;
@@ -172,12 +180,13 @@ JSValueRef JscCodeLoader::jsError(JSContextRef ctx,
                                   size_t argumentCount,
                                   const JSValueRef arguments[],
                                   JSValueRef* exception) {
+  std::cout << "$jsc$ ";
   for (size_t i = 0; i < argumentCount; i++) {
     JSStringRef strRef = JSValueToStringCopy(ctx, arguments[i], exception);
     size_t bufferSize = JSStringGetMaximumUTF8CStringSize(strRef);
     char* buffer = new char[bufferSize];
     JSStringGetUTF8CString(strRef, buffer, bufferSize);
-    std::cerr << "$jsc$ " << buffer;
+    std::cerr << buffer;
     if (i < argumentCount - 1)
       std::cerr << " ";
     delete[] buffer;

@@ -127,14 +127,17 @@ public:
     return JS_Call(ctx_, func, thisArg, argc, argv);
   }
 
-  JSValue callConstructor(JSValue func, int argc, JSValue* argv) {
-    return JS_CallConstructor(ctx_, func, argc, argv);
+  JSValue newClassInstance(const JSValue& clazz, int argc, JSValue* argv) {
+    JSValue constructor = getMethodOfClassOrInstance(clazz, JS_UNDEFINED, "constructor");
+    auto instance = JS_CallConstructor(ctx_, constructor, argc, argv);
+    JS_FreeValue(ctx_, constructor);
+    return instance;
   }
 
   JSValue getJsClassHavingMethod(const JSValue& module, const char* methodName) {
     return QuickJSCodeLoader::getExportedClassHavingMethodNameInModule(ctx_, module, methodName);
   }
-  JSValue getMethodOfClass(JSValue jsClass, const char* methodName) {
+  JSValue getMethodOfClassOrInstance(JSValue jsClass, JSValue instance, const char* methodName) {
     return QuickJSCodeLoader::getMethodByNameInClass(ctx_, jsClass, methodName);
   }
 
@@ -170,10 +173,12 @@ public:
   bool isUndefined(const JSValue& value) { return JS_IsUndefined(value); }
   bool isException(const JSValue& value) { return JS_IsException(value); }
 
-  void logErrorStackTrace(const JSValue& exception) {
+  void logErrorStackTrace(const JSValue& exception,
+                          const char* file = __FILE_NAME__,
+                          int line = __LINE__) {
     JSValue actualException = JS_GetException(ctx_);
     auto message = toStdString(actualException);
-    LOG(ERROR) << "[qjs] JS exception: " << message;
+    LOG(ERROR) << "[qjs] JS exception at " << file << ':' << line << " => " << message;
 
     JSValue stack = JS_GetPropertyStr(ctx_, actualException, "stack");
     auto stackTrace = toStdString(stack);

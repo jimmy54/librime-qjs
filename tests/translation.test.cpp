@@ -2,14 +2,11 @@
 #include <rime/candidate.h>
 #include <rime/translation.h>
 
-#include <JavaScriptCore/JavaScript.h>
-#include <quickjs.h>
 #include "fake_translation.hpp"
 #include "qjs_translation.h"
+#include "test_switch.h"
 
 using namespace rime;
-
-using JsTypes = ::testing::Types<JSValue, JSValueRef>;
 
 template <typename T>
 class QuickJSTranslationTest : public ::testing::Test {
@@ -23,7 +20,7 @@ protected:
   }
 };
 
-TYPED_TEST_SUITE(QuickJSTranslationTest, JsTypes);
+SETUP_JS_ENGINES(QuickJSTranslationTest);
 
 TYPED_TEST(QuickJSTranslationTest, Initialize) {
   auto translation = this->createMockTranslation();

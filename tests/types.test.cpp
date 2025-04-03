@@ -5,14 +5,15 @@
 #include <rime/engine.h>
 #include <rime/schema.h>
 
-#include <quickjs.h>
 #include "engines/engine_manager.h"
 #include "environment.h"
 #include "test_helper.hpp"
+#include "test_switch.h"
 #include "trie_data_helper.hpp"
 
 using namespace rime;
 
+template <typename T>
 class QuickJSTypesTest : public ::testing::Test {
 private:
   TrieDataHelper trieDataHelper_ =
@@ -27,8 +28,10 @@ protected:
   }
 };
 
+SETUP_JS_ENGINES(QuickJSTypesTest);
+
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
-TEST_F(QuickJSTypesTest, WrapUnwrapRimeTypes) {
+TYPED_TEST(QuickJSTypesTest, WrapUnwrapRimeTypes) {
   the<Engine> engine(Engine::Create());
   ASSERT_TRUE(engine->schema() != nullptr);
   auto* config = engine->schema()->config();
@@ -51,30 +54,33 @@ TEST_F(QuickJSTypesTest, WrapUnwrapRimeTypes) {
   ASSERT_TRUE(context != nullptr);
   context->set_input("hello");
 
-  auto& jsEngine = getJsEngine<JSValue>();
-  JSContext* ctx = jsEngine.getContext();
+  auto& jsEngine = getJsEngine<TypeParam>();
+  auto& ctx = jsEngine.getContext();
 
   auto env = std::make_shared<Environment>(engine.get(), "namespace");
-  JSValue environment = jsEngine.wrapShared(env);
+  TypeParam environment = jsEngine.wrapShared(env);
 
   auto folderPath = getFolderPath(__FILE__);
-  JS_SetPropertyStr(ctx, environment, "currentFolder", JS_NewString(ctx, folderPath.c_str()));
+  auto jsEnvironment = jsEngine.toObject(environment);
+  jsEngine.setObjectProperty(jsEnvironment, "currentFolder",
+                             jsEngine.toJsString(folderPath.c_str()));
 
   auto candidate = New<SimpleCandidate>("mock", 0, 1, "text", "comment");
-  JS_SetPropertyStr(ctx, environment, "candidate", jsEngine.wrapShared<Candidate>(candidate));
+  jsEngine.setObjectProperty(jsEnvironment, "candidate",
+                             jsEngine.template wrapShared<Candidate>(candidate));
 
-  JSValue module = QuickJSCodeLoader::loadJsModuleToGlobalThis(ctx, "types_test.js");
+  auto result = jsEngine.loadJsFile("types_test.js");
+  auto global = jsEngine.getGlobalObject();
+  auto jsFunc = jsEngine.getObjectProperty(jsEngine.toObject(global), "checkArgument");
+  auto retValue = jsEngine.callFunction(jsEngine.toObject(jsFunc),
+                                        jsEngine.toObject(jsEngine.undefined()), 1, &environment);
 
-  JSValue global = JS_GetGlobalObject(ctx);
-  JSValue jsFunc = JS_GetPropertyStr(ctx, global, "checkArgument");
-  JSValue retValue = JS_Call(ctx, jsFunc, JS_UNDEFINED, 1, &environment);
-
-  JSValue retJsEngine = JS_GetPropertyStr(ctx, retValue, "engine");
-  auto* retEngine = jsEngine.unwrap<Engine>(retJsEngine);
+  auto retJsEngine = jsEngine.getObjectProperty(jsEngine.toObject(retValue), "engine");
+  auto* retEngine = jsEngine.template unwrap<Engine>(retJsEngine);
   ASSERT_EQ(retEngine, engine.get());
   ASSERT_EQ(retEngine->schema()->schema_name(), engine->schema()->schema_name());
-  JSValue retJsCandidate = JS_GetPropertyStr(ctx, retValue, "candidate");
-  an<Candidate> retCandidate = jsEngine.unwrapShared<Candidate>(retJsCandidate);
+  auto retJsCandidate = jsEngine.getObjectProperty(jsEngine.toObject(retValue), "candidate");
+  an<Candidate> retCandidate = jsEngine.template unwrapShared<Candidate>(retJsCandidate);
   ASSERT_EQ(retCandidate->text(), "new text");
   ASSERT_EQ(retCandidate.get(), candidate.get());
 
@@ -87,8 +93,8 @@ TEST_F(QuickJSTypesTest, WrapUnwrapRimeTypes) {
   ASSERT_EQ(retContext->input(), "world");
 
   // js code: env.newCandidate = new Candidate('js', 32, 100, 'the text', 'the comment', 888)
-  JSValue retJsNewCandidate = JS_GetPropertyStr(ctx, retValue, "newCandidate");
-  auto newCandidate = jsEngine.unwrapShared<Candidate>(retJsNewCandidate);
+  auto retJsNewCandidate = jsEngine.getObjectProperty(jsEngine.toObject(retValue), "newCandidate");
+  auto newCandidate = jsEngine.template unwrapShared<Candidate>(retJsNewCandidate);
   ASSERT_EQ(newCandidate->type(), "js");
   ASSERT_EQ(newCandidate->start(), 32);
   ASSERT_EQ(newCandidate->end(), 100);
@@ -97,8 +103,8 @@ TEST_F(QuickJSTypesTest, WrapUnwrapRimeTypes) {
   ASSERT_EQ(newCandidate->quality(), 888);
 
   // free all js objects
-  JSValue objects[] = {environment, module,      global,         jsFunc,
-                       retValue,    retJsEngine, retJsCandidate, retJsNewCandidate};
+  TypeParam objects[] = {jsEnvironment, global,         jsFunc,           retValue,
+                         retJsEngine,   retJsCandidate, retJsNewCandidate};
   for (auto obj : objects) {
     jsEngine.freeValue(obj);
   }

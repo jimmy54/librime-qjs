@@ -5,10 +5,11 @@
 
 #include "qjs_component.hpp"
 #include "qjs_filter.hpp"
-#include "quickjs.h"
+#include "test_switch.h"
 
 using namespace rime;
 
+template <typename T>
 class MockFilter {
 public:
   MockFilter(const MockFilter&) = delete;
@@ -16,20 +17,23 @@ public:
   MockFilter& operator=(const MockFilter&) = delete;
   MockFilter& operator=(MockFilter&&) = delete;
 
-  explicit MockFilter(const Ticket& ticket, JSValue& environment) {
+  explicit MockFilter(const Ticket& ticket, T& environment) {
     LOG(INFO) << "MockFilter created with ticket: " << ticket.name_space;
   };
   ~MockFilter() { LOG(INFO) << "MockFilter destroyed"; }
 
   // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
-  an<Translation> apply(an<Translation> translation, const JSValue& environment) {
-    return translation;
-  }
+  an<Translation> apply(an<Translation> translation, const T& environment) { return translation; }
 };
 
+template <typename T>
+class QuickJSComponentTest : public ::testing::Test {};
+
+SETUP_JS_ENGINES(QuickJSComponentTest);
+
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-TEST(QuickJSComponentTest, ShareComponentAcrossRimeSessions) {
-  QuickJSComponent<MockFilter, Filter, JSValue> component;
+TYPED_TEST(QuickJSComponentTest, ShareComponentAcrossRimeSessions) {
+  QuickJSComponent<MockFilter<TypeParam>, Filter, TypeParam> component;
 
   the<Engine> engine1(Engine::Create());
   Ticket ticket(engine1.get(), "test_namespace", "test");
@@ -52,8 +56,8 @@ TEST(QuickJSComponentTest, ShareComponentAcrossRimeSessions) {
 }
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-TEST(QuickJSComponentTest, CreateComponent) {
-  QuickJSComponent<MockFilter, Filter, JSValue> component;
+TYPED_TEST(QuickJSComponentTest, CreateComponent) {
+  QuickJSComponent<MockFilter<TypeParam>, Filter, TypeParam> component;
 
   the<Engine> engine1(Engine::Create());
   Ticket ticket(engine1.get(), "test_namespace", "test");

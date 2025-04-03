@@ -1,11 +1,39 @@
-import { assert, assertEquals } from "./testutils"
-
+var __defProp = Object.defineProperty
+var __name = (target, value) => __defProp(target, 'name', { value, configurable: true })
+var totalTests = 0
+var passedTests = 0
+function assert(condition, message = '') {
+  totalTests++
+  if (condition) {
+    passedTests++
+    console.log('\u2713 ' + message)
+  } else {
+    console.log('\u2717 ' + message)
+    console.log('  Expected true, but got false')
+    throw new Error('Assertion failed' + (message ? ': ' + message : ''))
+  }
+}
+__name(assert, 'assert')
+function assertEquals(actual, expected, message = '') {
+  totalTests++
+  const actualStr = JSON.stringify(actual)
+  const expectedStr = JSON.stringify(expected)
+  if (actualStr === expectedStr) {
+    passedTests++
+    console.log('\u2713 ' + message)
+  } else {
+    console.log('\u2717 ' + message)
+    console.log('  Expected: ' + expectedStr)
+    console.log('  Actual:   ' + actualStr)
+    throw new Error('Assertion failed' + (message ? ': ' + message : ''))
+  }
+}
+__name(assertEquals, 'assertEquals')
 function checkArgument(env) {
   assertEquals(env.namespace, 'namespace')
   assertEquals(env.candidate.text, 'text')
   assertEquals(env.engine.schema.id, '.default')
   env.candidate.text = 'new text'
-
   const config = env.engine.schema.config
   assertEquals(config.getBool('key'), null)
   assertEquals(config.getBool('key1'), true)
@@ -13,93 +41,69 @@ function checkArgument(env) {
   assertEquals(config.getInt('key3'), 666)
   assertEquals(config.getDouble('key4'), 0.999)
   assertEquals(config.getString('key5'), 'string')
-
   const list = config.getList('list')
   assertEquals(list.getValueAt(0).getString(), 'item1')
   assertEquals(list.getValueAt(1).getString(), 'item2')
   assertEquals(list.getValueAt(2).getString(), 'item3')
   assertEquals(list.getValueAt(3), null)
-
   config.setString('greet', 'hello from js')
-
   const context = env.engine.context
   assertEquals(context.input, 'hello')
-
   assert(context.preedit !== null, 'preedit should not be null')
   assertEquals(context.preedit.text, 'hello', 'preedit should have text')
   assertEquals(context.preedit.caretPos, 5, 'preedit should have caretPos')
   assertEquals(context.preedit.selectStart, 0, 'preedit should have selectStart')
   assertEquals(context.preedit.selectEnd, 0, 'preedit should have selectEnd')
-
   context.input = 'world'
-
   env.newCandidate = new Candidate('js', 32, 100, 'the text', 'the comment', 888)
-
-  // ensure adding extra fields to the qjs object would not break the quickjs engine
   env.newCandidate.extraField = 'extra field'
   assertEquals(env.newCandidate.extraField, 'extra field')
-
   testEnvUtilities(env)
   testTrie(env)
-
   return env
 }
-
+__name(checkArgument, 'checkArgument')
 function testEnvUtilities(env) {
   const info = env.getRimeInfo()
   console.log(`Rime info = ${info}`)
   assert(info.includes('libRime v'))
   assert(info.includes('libRime-qjs v'))
   assert(info.includes('Process RSS Mem: '))
-
   assert('macOS|Windows|Linux'.includes(env.os.name), 'os.name should be one of macOS|Windows|Linux')
   assert(env.os.version.length > 0, 'os.version should not be empty')
   assert(env.os.architecture.length > 0, 'os.architecture should not be empty')
-
   console.error(`This is an error message.`)
-
-  // ensure engine.processKey would not crash the program
   env.engine.processKey('Down')
   env.engine.processKey('InvalidKey')
-
   assertEquals(env.popen(`echo libRime-qjs`).trim(), 'libRime-qjs')
-
   assertEquals(env.fileExists(env.currentFolder + '/js/types_test.js'), true)
   assertEquals(env.fileExists(env.currentFolder + '/js/not_found.js'), false)
-
-  // test load file with utf-8 chars
   const content = env.loadFile(env.currentFolder + '/js/types_test.js')
-  assert(content.includes('测试 UTF-8 编码'))
+  assert(content.includes('\u6D4B\u8BD5 UTF-8 \u7F16\u7801'))
 }
-
+__name(testEnvUtilities, 'testEnvUtilities')
 function testTrie(env) {
   const trie = new Trie()
   trie.loadTextFile(env.currentFolder + '/dummy_dict.txt', 6)
   checkTrieData(trie)
-
   trie.saveToBinaryFile(env.currentFolder + '/dumm.bin')
   const trie2 = new Trie()
   trie2.loadBinaryFile(env.currentFolder + '/dumm.bin')
   checkTrieData(trie2)
 }
-
+__name(testTrie, 'testTrie')
 function checkTrieData(trie) {
   const result1 = trie.find('accord')
-  assertEquals(result1, '[ә\'kɒ:d]; n. 一致, 调和, 协定\\n vt. 给与, 使一致\\n vi. 相符合')
+  assertEquals(
+    result1,
+    "[\u04D9'k\u0252:d]; n. \u4E00\u81F4, \u8C03\u548C, \u534F\u5B9A\\n vt. \u7ED9\u4E0E, \u4F7F\u4E00\u81F4\\n vi. \u76F8\u7B26\u5408",
+  )
   const result2 = trie.find('accordion')
-  assertEquals(result2, '[ә\'kɒ:djәn]; n. 手风琴\\n a. 可折叠的')
+  assertEquals(result2, "[\u04D9'k\u0252:dj\u04D9n]; n. \u624B\u98CE\u7434\\n a. \u53EF\u6298\u53E0\u7684")
   const result3 = trie.find('nonexistent-word')
   assertEquals(result3, null)
   const prefix_results = trie.prefixSearch('accord')
   assertEquals(prefix_results.length, 6)
 }
-
-
+__name(checkTrieData, 'checkTrieData')
 globalThis.checkArgument = checkArgument
-
-const load_file_test_data = [
-  'Hello, 世界!',
-  '测试 UTF-8 编码',
-  '🌟 Emoji test',
-  'Mixed content: あいうえお',
-]

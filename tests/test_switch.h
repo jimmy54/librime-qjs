@@ -1,0 +1,19 @@
+#pragma once
+
+#include <quickjs.h>
+
+#ifdef __APPLE__
+
+#include <JavaScriptCore/JavaScript.h>
+
+#define SETUP_JS_ENGINES(testSuite)                      \
+  using JsTypes = ::testing::Types<JSValue, JSValueRef>; \
+  TYPED_TEST_SUITE(testSuite, JsTypes);
+
+#else
+
+#define SETUP_JS_ENGINES(testSuite)          \
+  using JsTypes = ::testing::Types<JSValue>; \
+  TYPED_TEST_SUITE(testSuite, JsTypes);
+
+#endif

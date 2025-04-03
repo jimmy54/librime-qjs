@@ -4,7 +4,7 @@
 #include <iostream>
 #include <string>
 
-#include "engines/javascriptcore/javascriptcore_engine.h"
+#include "engines/engine_manager.h"
 #include "types/js_wrapper.h"
 #include "types/qjs_candidate.h"
 
@@ -14,7 +14,7 @@ protected:
     std::filesystem::path path = __FILE__;
     path = path.parent_path().parent_path() / "js";
 
-    auto& jsEngine = JsEngine<JSValueRef>::getInstance();
+    auto& jsEngine = getJsEngine<JSValueRef>();
     jsEngine.setBaseFolderPath(path.generic_string().c_str());
   }
 
@@ -24,13 +24,13 @@ protected:
                                         size_t argumentCount,
                                         const JSValueRef arguments[],
                                         JSValueRef* exception) {
-    auto& engine = JsEngine<JSValueRef>::getInstance();
+    auto& engine = getJsEngine<JSValueRef>();
     std::cout << "getRimeInfoCallback" << '\n';
     return engine.toJsString("rimeInfo");
   }
 
   static JSObjectRef createMockEnvObject() {
-    auto& engine = JsEngine<JSValueRef>::getInstance();
+    auto& engine = getJsEngine<JSValueRef>();
     JSObjectRef envObj = engine.newObject();
     JSObjectRef osObj = engine.newObject();
     engine.setObjectProperty(osObj, "name", engine.toJsString("macOS"));
@@ -40,7 +40,7 @@ protected:
   }
 
   static JSObjectRef createMockSegmentObject() {
-    auto& engine = JsEngine<JSValueRef>::getInstance();
+    auto& engine = getJsEngine<JSValueRef>();
     JSObjectRef segmentObj = engine.newObject();
     engine.setObjectProperty(segmentObj, "start", engine.toJsInt(0));
     engine.setObjectProperty(segmentObj, "end", engine.toJsInt(std::string("/help").size()));
@@ -51,7 +51,7 @@ protected:
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
 TEST_F(JscLoadBundledPluginTest, RunTranslatorWithJavaScriptCore) {
-  auto& engine = JsEngine<JSValueRef>::getInstance();
+  auto& engine = getJsEngine<JSValueRef>();
   JsWrapper<rime::Candidate, JSValueRef> wrapper;
   engine.registerType(wrapper);
 
@@ -62,7 +62,7 @@ TEST_F(JscLoadBundledPluginTest, RunTranslatorWithJavaScriptCore) {
   EXPECT_TRUE(clazz != nullptr);
 
   JSValueRef arg = createMockEnvObject();
-  JSObjectRef instance = engine.callConstructor(engine.toObject(clazz), 1, &arg);
+  JSObjectRef instance = engine.newClassInstance(engine.toObject(clazz), 1, &arg);
   EXPECT_TRUE(instance != nullptr) << "Failed to create instance of class with translate method";
 
   // Verify the instance has the translate method

@@ -10,6 +10,7 @@
 
 #include "engines/javascriptcore/jsc_code_loader.h"
 #include "engines/js_engine.h"
+#include "engines/js_macros.h"
 #include "types/js_wrapper.h"
 
 template <>
@@ -38,10 +39,7 @@ public:
     }
     JSValueRef exception = nullptr;
     JSObjectRef obj = JSValueToObject(ctx_, value, &exception);
-    if (exception != nullptr) {
-      logErrorStackTrace(exception);
-      return nullptr;
-    }
+    logErrorStackTrace(exception, __FILE_NAME__, __LINE__);
     return obj;
   }
 
@@ -87,7 +85,7 @@ public:
     return value;
   }
 
-  int setObjectProperty(JSObjectRef obj, const char* propertyName, const JSValueRef& value) {
+  int setObjectProperty(const JSObjectRef& obj, const char* propertyName, const JSValueRef& value) {
     JSStringRef propertyStr = JSStringCreateWithUTF8CString(propertyName);
     JSObjectSetProperty(ctx_, obj, propertyStr, value, kJSPropertyAttributeNone, nullptr);
     JSStringRelease(propertyStr);
@@ -141,19 +139,17 @@ public:
 
   JSValueRef callFunction(JSObjectRef func, JSObjectRef thisArg, int argc, JSValueRef* argv) {
     JSValueRef exception = nullptr;
-    JSValueRef result = JSObjectCallAsFunction(ctx_, func, thisArg, argc, argv, &exception);
-    if (exception != nullptr) {
-      logErrorStackTrace(exception);
-      return nullptr;
-    }
+    auto* thisVal = isUndefined(thisArg) ? nullptr : thisArg;
+    JSValueRef result = JSObjectCallAsFunction(ctx_, func, thisVal, argc, argv, &exception);
+    logErrorStackTrace(exception, __FILE_NAME__, __LINE__);
     return result;
   }
 
-  JSObjectRef callConstructor(JSObjectRef func, int argc, JSValueRef* argv) {
+  JSObjectRef newClassInstance(const JSObjectRef& clazz, int argc, JSValueRef* argv) {
     JSValueRef exception = nullptr;
-    JSObjectRef result = JSObjectCallAsConstructor(ctx_, func, argc, argv, &exception);
+    JSObjectRef result = JSObjectCallAsConstructor(ctx_, clazz, argc, argv, &exception);
     if (exception != nullptr) {
-      logErrorStackTrace(exception);
+      logErrorStackTrace(exception, __FILE_NAME__, __LINE__);
       return nullptr;
     }
     return result;
@@ -164,7 +160,10 @@ public:
     JSPropertyNameArrayRef propertyNames = JSObjectCopyPropertyNames(ctx_, globalObj);
     size_t count = JSPropertyNameArrayGetCount(propertyNames);
 
-    for (size_t i = 0; i < count; i++) {
+    // TODO: Implement proper isolation by loading JavaScript files into separate contexts
+    // Currently using a workaround that finds the most recently loaded class with the method
+    // Note: This is unstable - if the latest file doesn't contain the expected method, it may return an incorrect class from previously loaded files
+    for (size_t i = count - 1; i >= 0; i--) {
       JSStringRef propertyName = JSPropertyNameArrayGetNameAtIndex(propertyNames, i);
       JSValueRef value = JSObjectGetProperty(ctx_, globalObj, propertyName, nullptr);
 
@@ -187,14 +186,18 @@ public:
     }
 
     JSPropertyNameArrayRelease(propertyNames);
-    return nullptr;
+    return undefined();
   }
 
-  JSValueRef getMethodOfClass(JSObjectRef jsClass, const char* methodName) {
+  JSObjectRef getMethodOfClassOrInstance(JSObjectRef jsClass,
+                                         JSObjectRef instance,
+                                         const char* methodName) {
     JSStringRef methodStr = JSStringCreateWithUTF8CString(methodName);
-    JSValueRef method = JSObjectGetProperty(ctx_, jsClass, methodStr, nullptr);
+    JSValueRef exception = nullptr;
+    JSValueRef method = JSObjectGetProperty(ctx_, instance, methodStr, &exception);
     JSStringRelease(methodStr);
-    return method;
+    logErrorStackTrace(exception, __FILE_NAME__, __LINE__);
+    return toObject(method);
   }
 
   JSValueRef throwError(JsErrorType errorType, const char* format, ...) {
@@ -217,16 +220,22 @@ public:
   bool isUndefined(const JSValueRef& value) { return JSValueIsUndefined(ctx_, value); }
 
   bool isException(const JSValueRef& value) {
-    // nullptr is returned if an exception is thrown in `callFunction` and `callConstructor`
+    // nullptr is returned if an exception is thrown in `callFunction` and `newClassInstance`
     return value == nullptr;
   }
 
-  void logErrorStackTrace(const JSValueRef& exception) {
+  void logErrorStackTrace(const JSValueRef& exception,
+                          const char* file = __FILE_NAME__,
+                          int line = __LINE__) {
+    if (exception == nullptr) {
+      return;
+    }
     JSStringRef exceptionStr = JSValueToStringCopy(ctx_, exception, nullptr);
     size_t bufferSize = JSStringGetMaximumUTF8CStringSize(exceptionStr);
     std::vector<char> buffer(bufferSize);
     JSStringGetUTF8CString(exceptionStr, buffer.data(), bufferSize);
-    LOG(ERROR) << "[jsc] JavaScript exception: " << buffer.data() << '\n';
+    LOG(ERROR) << "[qjs] JS exception at " << file << ':' << line << " => " << buffer.data()
+               << '\n';
     JSStringRelease(exceptionStr);
   }
 
@@ -244,12 +253,24 @@ public:
     }
     LOG(INFO) << "[jsc] registering type: " << typeName;
 
-    // todo: add getters to properties
+    // the counts would be available after getting the properties and getters
+    auto properties = wrapper.getPropertiesJsc();
+    auto getters = wrapper.getGettersJsc();
+    std::vector<JSStaticValue> staticValues(wrapper.getPropertiesCount() +
+                                            wrapper.getGettersCount() + 1);
+    for (int i = 0; i < wrapper.getPropertiesCount(); i++) {
+      staticValues[i] = properties[i];
+    }
+    for (int i = 0; i < wrapper.getGettersCount(); i++) {
+      staticValues[wrapper.getPropertiesCount() + i] = getters[i];
+    }
+    staticValues.back() = {nullptr, nullptr, nullptr, 0};
+
     JSClassDefinition classDef = {.version = 0,
                                   .attributes = kJSClassAttributeNone,
                                   .className = typeName,
                                   .parentClass = nullptr,
-                                  .staticValues = wrapper.getPropertiesJsc(),
+                                  .staticValues = staticValues.data(),
                                   .staticFunctions = wrapper.getFunctionsJsc(),
                                   .initialize = nullptr,
                                   .finalize = wrapper.getFinalizerJsc(),
@@ -263,17 +284,20 @@ public:
                                   .hasInstance = nullptr,
                                   .convertToType = nullptr};
 
-    LOG(INFO) << "[jsc] registering type: " << typeName << " with " << wrapper.getPropertiesCount()
-              << " properties and " << wrapper.getFunctionsCount() << " functions";
+    DLOG(INFO) << "[jsc] registering type: " << typeName << " with " << (staticValues.size() - 1)
+               << " properties and " << wrapper.getFunctionsCount() << " functions";
 
     JSClassRef jsClass = JSClassCreate(&classDef);
-    clazzes[key] = std::make_tuple(typeName, jsClass, classDef);
+    clazzes[key] = std::make_tuple(typeName, jsClass, classDef, staticValues);
 
+    // Add the constructor to the global object
     JSObjectRef globalObj = JSContextGetGlobalObject(ctx_);
+    JSObjectRef constructorObj = JSObjectMake(ctx_, jsClass, nullptr);
     JSStringRef classNameStr = JSStringCreateWithUTF8CString(typeName);
-    JSObjectRef constructor = JSObjectMakeConstructor(ctx_, jsClass, nullptr);
-    JSObjectSetProperty(ctx_, globalObj, classNameStr, constructor, kJSPropertyAttributeNone,
+    JSObjectSetProperty(ctx_, globalObj, classNameStr, constructorObj, kJSPropertyAttributeNone,
                         nullptr);
+    JSStringRelease(classNameStr);
+
     JSStringRelease(classNameStr);
   }
 
@@ -350,7 +374,13 @@ public:
 
   JSValueRef loadJsFile(const char* fileName) {
     JSValueRef exception = nullptr;
-    return JscCodeLoader::loadJsModuleToGlobalThis(ctx_, baseFolderPath_, fileName, &exception);
+    const auto* globalThis =
+        JscCodeLoader::loadJsModuleToGlobalThis(ctx_, baseFolderPath_, fileName, &exception);
+    if (exception != nullptr) {
+      logErrorStackTrace(exception, __FILE_NAME__, __LINE__);
+      return undefined();
+    }
+    return globalThis;
   }
 
   JSValueRef eval(const char* code, const char* filename = "<eval>") {
@@ -359,10 +389,7 @@ public:
     JSValueRef result = JSEvaluateScript(ctx_, jsCode, nullptr,
                                          JSStringCreateWithUTF8CString(filename), 0, &exception);
     JSStringRelease(jsCode);
-    if (exception != nullptr) {
-      logErrorStackTrace(exception);
-      return nullptr;
-    }
+    logErrorStackTrace(exception, __FILE_NAME__, __LINE__);
     return result;
   }
 
@@ -373,13 +400,14 @@ private:
     JscCodeLoader::exposeLogToJsConsole(ctx_);
   }
 
-  ~JsEngine<JSValueRef>() { JSGlobalContextRelease((JSGlobalContextRef)ctx_); }
+  ~JsEngine<JSValueRef>() { JSGlobalContextRelease(ctx_); }
 
-  JSContextRef ctx_{nullptr};
+  JSGlobalContextRef ctx_{nullptr};
 
   std::string baseFolderPath_;
 
-  inline static std::unordered_map<std::string,
-                                   std::tuple<std::string, JSClassRef, JSClassDefinition>>
+  inline static std::unordered_map<
+      std::string,
+      std::tuple<std::string, JSClassRef, JSClassDefinition, std::vector<JSStaticValue>>>
       clazzes{};
 };

@@ -28,22 +28,19 @@ protected:
     }
 
     auto objClass = engine.toObject(jsClass);
-    T_JS_VALUE constructor = engine.getMethodOfClass(objClass, "constructor");
-    if (engine.isObject(constructor)) {
-      instance_ = engine.callConstructor(engine.toObject(constructor), 1, &environment);
-      engine.freeValue(constructor);
-
-      if (engine.isException(instance_)) {
-        LOG(ERROR) << "[qjs] Error creating an instance of the exported class in " << fileName;
-        engine.logErrorStackTrace(instance_);
-        engine.freeValue(jsClass);
-        return;
-      }
-      DLOG(INFO) << "[qjs] constructor function executed successfully in " << fileName;
+    instance_ = engine.newClassInstance(objClass, 1, &environment);
+    if (engine.isException(instance_)) {
+      LOG(ERROR) << "[qjs] Error creating an instance of the exported class in " << fileName;
+      engine.logErrorStackTrace(instance_, __FILE_NAME__, __LINE__);
+      engine.freeValue(jsClass);
+      return;
     }
+    DLOG(INFO) << "[qjs] constructor function executed successfully in " << fileName;
 
-    mainFunc_ = engine.toObject(engine.getMethodOfClass(objClass, mainFuncName));
-    finalizer_ = engine.toObject(engine.getMethodOfClass(objClass, "finalizer"));
+    mainFunc_ =
+        engine.toObject(engine.getMethodOfClassOrInstance(objClass, instance_, mainFuncName));
+    finalizer_ =
+        engine.toObject(engine.getMethodOfClassOrInstance(objClass, instance_, "finalizer"));
 
     engine.freeValue(jsClass);
 

@@ -6,17 +6,29 @@
 #include <rime/schema.h>
 #include <rime/translation.h>
 
-#include <quickjs.h>
 #include "fake_translation.hpp"
 #include "qjs_filter.hpp"
+#include "test_switch.h"
 
 using namespace rime;
 
-class QuickJSFilterTest : public ::testing::Test {};
+template <typename T>
+class QuickJSFilterTest : public ::testing::Test {
+protected:
+  static an<Translation> createMockTranslation() {
+    auto translation = New<FakeTranslation>();
+    translation->append(New<SimpleCandidate>("mock", 0, 1, "text1", "comment1"));
+    translation->append(New<SimpleCandidate>("mock", 0, 1, "text2", "comment2"));
+    translation->append(New<SimpleCandidate>("mock", 0, 1, "text3", "comment3"));
+    return translation;
+  }
+};
+
+SETUP_JS_ENGINES(QuickJSFilterTest);
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
-TEST_F(QuickJSFilterTest, ApplyFilter) {
-  auto& jsEngine = JsEngine<JSValue>::getInstance();
+TYPED_TEST(QuickJSFilterTest, ApplyFilter) {
+  auto& jsEngine = JsEngine<TypeParam>::getInstance();
 
   the<Engine> engine(Engine::Create());
   ASSERT_TRUE(engine->schema() != nullptr);
@@ -28,14 +40,9 @@ TEST_F(QuickJSFilterTest, ApplyFilter) {
 
   Ticket ticket(engine.get(), "filter", "qjs_filter@filter_test");
   auto env = std::make_shared<Environment>(engine.get(), "filter_test");
-  JSValue environment = jsEngine.wrapShared(env);
-  auto filter = New<QuickJSFilter<JSValue>>(ticket, environment);
-
-  auto translation = New<FakeTranslation>();
-  translation->append(New<SimpleCandidate>("mock", 0, 1, "text1", "comment1"));
-  translation->append(New<SimpleCandidate>("mock", 0, 1, "text2", "comment2"));
-  translation->append(New<SimpleCandidate>("mock", 0, 1, "text3", "comment3"));
-
+  TypeParam environment = jsEngine.wrapShared(env);
+  auto filter = New<QuickJSFilter<TypeParam>>(ticket, environment);
+  auto translation = this->createMockTranslation();
   auto filtered = filter->apply(translation, environment);
   ASSERT_TRUE(filtered != nullptr);
 
