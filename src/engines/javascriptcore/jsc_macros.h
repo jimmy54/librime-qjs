@@ -2,6 +2,7 @@
 
 #include <JavaScriptCore/JavaScript.h>
 #include <JavaScriptCore/JavaScriptCore.h>
+#include "engines/javascriptcore/javascriptcore_engine.h"
 
 #define DEFINE_GETTER_IMPL(T_RIME_TYPE, propertieyName, statement, unwrap)                       \
                                                                                                  \
@@ -9,7 +10,7 @@
                                                                                                  \
   static JSValueRef get_##propertieyName##Jsc(JSContextRef ctx, JSObjectRef thisVal,             \
                                               JSStringRef functionName, JSValueRef* exception) { \
-    auto& engine = getJsEngine<JSValueRef>();                                                    \
+    auto& engine = JsEngine<JSValueRef>::getEngineByContext(ctx);                                \
     if (auto obj = unwrap) {                                                                     \
       return statement;                                                                          \
     }                                                                                            \
@@ -22,7 +23,7 @@
                                                                                                    \
   static bool set_##name##Jsc(JSContextRef ctx, JSObjectRef thisVal, JSStringRef propertyName,     \
                               JSValueRef val, JSValueRef* exception) {                             \
-    auto& engine = getJsEngine<JSValueRef>();                                                      \
+    auto& engine = JsEngine<JSValueRef>::getEngineByContext(ctx);                                  \
     if (auto obj = unwrap) {                                                                       \
       auto str = engine.toStdString(val);                                                          \
       if (!str.empty()) {                                                                          \
@@ -44,7 +45,7 @@
                                                                                                  \
   static bool set_##jsName##Jsc(JSContextRef ctx, JSObjectRef thisVal, JSStringRef propertyName, \
                                 JSValueRef val, JSValueRef* exception) {                         \
-    auto& engine = getJsEngine<JSValueRef>();                                                    \
+    auto& engine = JsEngine<JSValueRef>::getEngineByContext(ctx);                                \
     if (auto obj = unwrap) {                                                                     \
       auto value = converter(val);                                                               \
       assignment;                                                                                \
@@ -61,7 +62,7 @@
                                                                                                  \
   static JSValueRef funcName##Jsc(JSContextRef ctx, JSObjectRef function, JSObjectRef thisVal,   \
                                   size_t argc, const JSValueRef argv[], JSValueRef* exception) { \
-    auto& engine = getJsEngine<JSValueRef>();                                                    \
+    auto& engine = JsEngine<JSValueRef>::getEngineByContext(ctx);                                \
     try {                                                                                        \
       funcBody;                                                                                  \
     } catch (const JsException& e) {                                                             \
@@ -76,7 +77,7 @@
                                                                                                  \
   static JSValueRef funcName##Jsc(JSContextRef ctx, JSObjectRef function, JSObjectRef thisVal,   \
                                   size_t argc, const JSValueRef argv[], JSValueRef* exception) { \
-    auto& engine = getJsEngine<JSValueRef>();                                                    \
+    auto& engine = JsEngine<JSValueRef>::getEngineByContext(ctx);                                \
     if (argc < expectingArgc) {                                                                  \
       return engine.throwError(JsErrorType::SYNTAX, "%s(...) expects %d arguments", #funcName,   \
                                expectingArgc);                                                   \
@@ -95,7 +96,7 @@
                                                                                               \
   static JSObjectRef funcName##Jsc(JSContextRef ctx, JSObjectRef function, size_t argc,       \
                                    const JSValueRef argv[], JSValueRef* exception) {          \
-    auto& engine = getJsEngine<JSValueRef>();                                                 \
+    auto& engine = JsEngine<JSValueRef>::getEngineByContext(ctx);                             \
     try {                                                                                     \
       funcBody;                                                                               \
     } catch (const JsException& e) {                                                          \
@@ -108,60 +109,62 @@
     return funcName##Jsc;                                                                     \
   }
 
-#define EXPORT_FINALIZER(funcName, funcBody)                                              \
+#define EXPORT_FINALIZER(T_RIME_TYPE, funcName)                                           \
                                                                                           \
-  EXPORT_FINALIZER_QJS(funcName, funcBody)                                                \
+  EXPORT_FINALIZER_QJS(T_RIME_TYPE, funcName)                                             \
                                                                                           \
   typename TypeMap<JSValueRef>::FinalizerFunctionPionterType getFinalizerJsc() override { \
     return funcName##Jsc;                                                                 \
   }                                                                                       \
                                                                                           \
   static void funcName##Jsc(JSObjectRef val) {                                            \
-    auto& engine = getJsEngine<JSValueRef>();                                             \
-    funcBody;                                                                             \
+    if (void* ptr = JsEngine<JSValueRef>::getOpaque<T_RIME_TYPE>(val)) {                  \
+      auto* ppObj = static_cast<std::shared_ptr<T_RIME_TYPE>*>(ptr);                      \
+      ppObj->reset();                                                                     \
+      delete ppObj;                                                                       \
+      JsEngine<JSValueRef>::setOpaque(val, nullptr);                                      \
+    }                                                                                     \
   }
 
 #define DEFINE_PROPERTY_JSC(name) engine.defineProperty(#name, get_##name##Jsc, set_##name##Jsc),
 
-#define EXPORT_PROPERTIES(...)                                                    \
-                                                                                  \
-  EXPORT_PROPERTIES_QJS(__VA_ARGS__)                                              \
-                                                                                  \
-  typename TypeMap<JSValueRef>::ExposePropertyType* getPropertiesJsc() override { \
-    auto& engine = getJsEngine<JSValueRef>();                                     \
-    static typename TypeMap<JSValueRef>::ExposePropertyType properties[] = {      \
-        FOR_EACH(DEFINE_PROPERTY_JSC, __VA_ARGS__){nullptr, nullptr, nullptr, 0}, \
-    };                                                                            \
-    this->setPropertyCount(countof(properties) - 1);                              \
-    return static_cast<TypeMap<JSValueRef>::ExposePropertyType*>(properties);     \
+#define EXPORT_PROPERTIES(...)                                                                    \
+                                                                                                  \
+  EXPORT_PROPERTIES_QJS(__VA_ARGS__)                                                              \
+                                                                                                  \
+  typename TypeMap<JSValueRef>::ExposePropertyType* getPropertiesJsc(JSContextRef ctx) override { \
+    auto& engine = JsEngine<JSValueRef>::getEngineByContext(ctx);                                 \
+    static typename TypeMap<JSValueRef>::ExposePropertyType properties[] = {                      \
+        FOR_EACH(DEFINE_PROPERTY_JSC, __VA_ARGS__)};                                              \
+    this->setPropertyCount(countof(properties));                                                  \
+    return static_cast<TypeMap<JSValueRef>::ExposePropertyType*>(properties);                     \
   }
 
 #define DEFINE_GETTER_JSC(name) engine.defineProperty(#name, get_##name##Jsc, nullptr),
 
-#define EXPORT_GETTERS(...)                                                     \
-                                                                                \
-  EXPORT_GETTER_QJS(__VA_ARGS__)                                                \
-                                                                                \
-  typename TypeMap<JSValueRef>::ExposePropertyType* getGettersJsc() override {  \
-    auto& engine = getJsEngine<JSValueRef>();                                   \
-    static typename TypeMap<JSValueRef>::ExposePropertyType getters[] = {       \
-        FOR_EACH(DEFINE_GETTER_JSC, __VA_ARGS__){nullptr, nullptr, nullptr, 0}, \
-    };                                                                          \
-    this->setGetterCount(countof(getters) - 1);                                 \
-    return static_cast<TypeMap<JSValueRef>::ExposePropertyType*>(getters);      \
+#define EXPORT_GETTERS(...)                                                                    \
+                                                                                               \
+  EXPORT_GETTER_QJS(__VA_ARGS__)                                                               \
+                                                                                               \
+  typename TypeMap<JSValueRef>::ExposePropertyType* getGettersJsc(JSContextRef ctx) override { \
+    auto& engine = JsEngine<JSValueRef>::getEngineByContext(ctx);                              \
+    static typename TypeMap<JSValueRef>::ExposePropertyType getters[] = {                      \
+        FOR_EACH(DEFINE_GETTER_JSC, __VA_ARGS__)};                                             \
+    this->setGetterCount(countof(getters));                                                    \
+    return static_cast<TypeMap<JSValueRef>::ExposePropertyType*>(getters);                     \
   }
 
 #define DEFINE_FUNCTION_JSC(name, argc) engine.defineFunction(#name, argc, name##Jsc),
 
-#define EXPORT_FUNCTIONS(...)                                                    \
-                                                                                 \
-  EXPORT_FUNCTIONS_QJS(__VA_ARGS__)                                              \
-                                                                                 \
-  typename TypeMap<JSValueRef>::ExposeFunctionType* getFunctionsJsc() override { \
-    auto& engine = getJsEngine<JSValueRef>();                                    \
-    static typename TypeMap<JSValueRef>::ExposeFunctionType functions[] = {      \
-        FOR_EACH_PAIR(DEFINE_FUNCTION_JSC, __VA_ARGS__){nullptr, nullptr, 0},    \
-    };                                                                           \
-    this->setFunctionCount(countof(functions) - 1);                              \
-    return static_cast<TypeMap<JSValueRef>::ExposeFunctionType*>(functions);     \
+#define EXPORT_FUNCTIONS(...)                                                                    \
+                                                                                                 \
+  EXPORT_FUNCTIONS_QJS(__VA_ARGS__)                                                              \
+                                                                                                 \
+  typename TypeMap<JSValueRef>::ExposeFunctionType* getFunctionsJsc(JSContextRef ctx) override { \
+    auto& engine = JsEngine<JSValueRef>::getEngineByContext(ctx);                                \
+    static typename TypeMap<JSValueRef>::ExposeFunctionType functions[] = {                      \
+        FOR_EACH_PAIR(DEFINE_FUNCTION_JSC, __VA_ARGS__){nullptr, nullptr, 0},                    \
+    };                                                                                           \
+    this->setFunctionCount(countof(functions) - 1);                                              \
+    return static_cast<TypeMap<JSValueRef>::ExposeFunctionType*>(functions);                     \
   }

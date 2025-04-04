@@ -7,8 +7,6 @@
 
 #include "qjs_iterator.hpp"
 
-#include "engines/quickjs/quickjs_engine.h"
-
 using std::move;
 
 class VectorIterator : public AbstractIterator {
@@ -36,20 +34,26 @@ JSClassID JSIteratorWrapper<VectorIterator>::classId = 0;  // Initialize with 0
 class QuickJSGeneratorTest : public ::testing::Test {
 protected:
   void SetUp() override {
-    auto& jsEngine = JsEngine<JSValue>::getInstance();
-    auto& context = jsEngine.getContext();
-    wrapper_ = std::make_unique<JSIteratorWrapper<VectorIterator>>(context);
+    rt_ = JS_NewRuntime();
+    ctx_ = JS_NewContext(rt_);
+    wrapper_ = std::make_unique<JSIteratorWrapper<VectorIterator>>(ctx_);
   }
 
   void TearDown() override {
     // free the wrapper before freeing the context and runtime
     wrapper_.reset();
+    JS_FreeContext(ctx_);
+    JS_FreeRuntime(rt_);
   }
+
+  JSContext* getContext() { return ctx_; }
 
   std::unique_ptr<JSIteratorWrapper<VectorIterator>>& getWrapper() { return wrapper_; }
 
 private:
   std::unique_ptr<JSIteratorWrapper<VectorIterator>> wrapper_;
+  JSRuntime* rt_{nullptr};
+  JSContext* ctx_{nullptr};
 };
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
@@ -57,8 +61,7 @@ TEST_F(QuickJSGeneratorTest, TestVectorIterator) {
   // NOLINTNEXTLINE(readability-magic-numbers, cppcoreguidelines-avoid-magic-numbers)
   std::vector<int> numbers{1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
 
-  auto& jsEngine = JsEngine<JSValue>::getInstance();
-  auto& context = jsEngine.getContext();
+  auto* context = getContext();
 
   auto* vecIterator = new VectorIterator(context, numbers);
   JSValue iterator = getWrapper()->createIterator(vecIterator);
@@ -115,7 +118,7 @@ TEST_F(QuickJSGeneratorTest, TestVectorIterator) {
 
   ASSERT_EQ(filteredNumbers, (std::vector<int>{2, 4, 6, 8, 10}));
 
-  for (auto obj : {global, filterFunc, generator, nextMethod, result}) {
+  for (auto obj : {global, filterFunc, generator, nextMethod, result, iterator}) {
     JS_FreeValue(context, obj);
   }
 }

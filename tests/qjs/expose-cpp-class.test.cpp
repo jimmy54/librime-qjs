@@ -3,10 +3,10 @@
 #include <sstream>
 #include <string>
 #include <utility>
-#include "engines/js_macros.h"
-#include "engines/quickjs/quickjs_engine.h"
 
-#include <quickjs.h>
+#include "quickjs.h"
+
+#define countof(x) (sizeof(x) / sizeof(x[0]))
 
 class MyClass {
 public:
@@ -131,15 +131,12 @@ void registerMyclass(JSContext* ctx) {
   JS_NewClass(rt, jsMyclassClassId, &jsMyclassClass);
 
   JSValue proto = JS_NewObject(ctx);
-  JS_DupValue(ctx, proto);  // Duplicate the reference for safety
-
   JS_SetPropertyFunctionList(ctx, proto,
                              static_cast<const JSCFunctionListEntry*>(JS_MYCLASS_PROTO_FUNCS),
                              countof(JS_MYCLASS_PROTO_FUNCS));
 
   JSValue constructor =
       JS_NewCFunction2(ctx, jsMyclassConstructor, "MyClass", 1, JS_CFUNC_constructor, 0);
-  JS_DupValue(ctx, constructor);  // Duplicate the reference for safety
   JS_SetConstructor(ctx, constructor, proto);
   JS_SetClassProto(ctx, jsMyclassClassId, proto);
 
@@ -148,17 +145,25 @@ void registerMyclass(JSContext* ctx) {
   JS_SetPropertyStr(ctx, globalObj, "MyClass", constructor);
 
   JS_FreeValue(ctx, globalObj);
-  JS_FreeValue(ctx, proto);
-  JS_FreeValue(ctx, constructor);
 }
 
 class QuickJSExposeClassTest : public ::testing::Test {
 protected:
   void SetUp() override {
-    auto& jsEngine = JsEngine<JSValue>::getInstance();
-    auto& ctx = jsEngine.getContext();
-    registerMyclass(ctx);
+    rt_ = JS_NewRuntime();
+    ctx_ = JS_NewContext(rt_);
+
+    registerMyclass(ctx_);
   }
+  void TearDown() override {
+    JS_FreeContext(ctx_);
+    JS_FreeRuntime(rt_);
+  }
+  JSContext* getContext() { return ctx_; }
+
+private:
+  JSRuntime* rt_{nullptr};
+  JSContext* ctx_{nullptr};
 };
 
 TEST_F(QuickJSExposeClassTest, TestExposeClassToQuickJS) {
@@ -174,8 +179,7 @@ TEST_F(QuickJSExposeClassTest, TestExposeClassToQuickJS) {
         testExposedCppClass();  // Execute immediately to avoid reference issues
     )";
 
-  auto& jsEngine = JsEngine<JSValue>::getInstance();
-  auto& ctx = jsEngine.getContext();
+  auto* ctx = getContext();
   JSValue result = JS_Eval(ctx, script, strlen(script), "<input>", JS_EVAL_TYPE_GLOBAL);
   // Handle the result
   const char* resultStr = JS_ToCString(ctx, result);

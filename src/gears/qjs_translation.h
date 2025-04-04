@@ -2,7 +2,8 @@
 
 #include <rime/translation.h>
 
-#include "engines/engine_manager.h"
+#include "engines/js_engine.h"
+#include "environment.h"
 
 using namespace rime;
 
@@ -15,11 +16,12 @@ public:
   QuickJSTranslation& operator=(QuickJSTranslation&&) = delete;
 
   QuickJSTranslation(rime::an<rime::Translation> translation,
+                     const JsEngine<T_JS_VALUE>* jsEngine,
                      const T_JS_VALUE& filterObj,
                      const T_JS_VALUE& filterFunc,
-                     const T_JS_VALUE& environment)
+                     Environment* environment)
       : PrefetchTranslation(std::move(translation)), replenished_(true) {
-    doFilter(filterObj, filterFunc, environment);
+    doFilter(jsEngine, filterObj, filterFunc, environment);
     set_exhausted(cache_.empty());
   }
   ~QuickJSTranslation() override = default;
@@ -28,42 +30,50 @@ protected:
   bool Replenish() override { return replenished_; }
 
 private:
-  bool doFilter(const T_JS_VALUE& filterObj,
+  bool doFilter(const JsEngine<T_JS_VALUE>* jsEngine,
+                const T_JS_VALUE& filterObj,
                 const T_JS_VALUE& filterFunc,
-                const T_JS_VALUE& environment) {
-    auto& engine = getJsEngine<T_JS_VALUE>();
-    auto jsArray = engine.newArray();
+                Environment* environment) {
+    auto jsArray = jsEngine->newArray();
     size_t idx = 0;
     while (auto candidate = translation_->exhausted() ? nullptr : translation_->Peek()) {
       translation_->Next();
-      engine.insertItemToArray(jsArray, idx++, engine.wrapShared(candidate));
+      LOG(INFO) << "[qjs] inserting item at index: " << idx;
+      LOG(INFO) << "[qjs] candidate.text = " << candidate->text();
+      jsEngine->insertItemToArray(jsArray, idx++,
+                                  jsEngine->template wrapShared<Candidate>(candidate));
     }
     if (idx == 0) {
-      engine.freeValue(jsArray);
+      jsEngine->freeValue(jsArray);
       return true;
     }
 
-    T_JS_VALUE args[] = {jsArray, environment};
-    T_JS_VALUE resultArray =
-        engine.callFunction(engine.toObject(filterFunc), engine.toObject(filterObj), 2, args);
-    engine.freeValue(jsArray);
-    if (engine.isException(resultArray)) {
+    auto jsEnvironment = jsEngine->wrap(environment);
+    T_JS_VALUE args[] = {jsArray, jsEnvironment};
+    T_JS_VALUE resultArray = jsEngine->callFunction(jsEngine->toObject(filterFunc),
+                                                    jsEngine->toObject(filterObj), 2, args);
+    jsEngine->freeValue(jsArray);
+    jsEngine->freeValue(jsEnvironment);
+    if (jsEngine->isException(resultArray) || !jsEngine->isObject(resultArray) ||
+        jsEngine->isUndefined(resultArray) || jsEngine->isNull(resultArray)) {
+      jsEngine->freeValue(resultArray);
       return false;
     }
 
-    size_t length = engine.getArrayLength(resultArray);
+    size_t length = jsEngine->getArrayLength(resultArray);
     for (size_t i = 0; i < length; i++) {
-      T_JS_VALUE item = engine.getArrayItem(resultArray, i);
-      if (auto candidate = engine.template unwrapShared<Candidate>(item)) {
+      T_JS_VALUE item = jsEngine->getArrayItem(resultArray, i);
+      if (auto candidate = jsEngine->template unwrapShared<Candidate>(item)) {
         cache_.push_back(candidate);
       } else {
         LOG(ERROR) << "[qjs] Failed to unwrap candidate at index " << i;
       }
-      engine.freeValue(item);
+      jsEngine->freeValue(item);
     }
 
-    engine.freeValue(resultArray);
+    jsEngine->freeValue(resultArray);
     return true;
   }
+
   bool replenished_ = false;
 };

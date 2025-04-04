@@ -4,9 +4,11 @@
 #include <rime/context.h>
 #include <rime/engine.h>
 #include <rime/schema.h>
+#include <memory>
 
 #include "engines/engine_manager.h"
 #include "environment.h"
+#include "qjs_types.h"
 #include "test_helper.hpp"
 #include "test_switch.h"
 #include "trie_data_helper.hpp"
@@ -54,11 +56,11 @@ TYPED_TEST(QuickJSTypesTest, WrapUnwrapRimeTypes) {
   ASSERT_TRUE(context != nullptr);
   context->set_input("hello");
 
-  auto& jsEngine = getJsEngine<TypeParam>();
-  auto& ctx = jsEngine.getContext();
+  auto jsEngine = newOrShareEngine<TypeParam>();
+  registerTypesToJsEngine(jsEngine);
 
-  auto env = std::make_shared<Environment>(engine.get(), "namespace");
-  TypeParam environment = jsEngine.wrapShared(env);
+  auto env = std::make_unique<Environment>(engine.get(), "namespace");
+  TypeParam environment = jsEngine.wrap(env.get());
 
   auto folderPath = getFolderPath(__FILE__);
   auto jsEnvironment = jsEngine.toObject(environment);
@@ -72,8 +74,8 @@ TYPED_TEST(QuickJSTypesTest, WrapUnwrapRimeTypes) {
   auto result = jsEngine.loadJsFile("types_test.js");
   auto global = jsEngine.getGlobalObject();
   auto jsFunc = jsEngine.getObjectProperty(jsEngine.toObject(global), "checkArgument");
-  auto retValue = jsEngine.callFunction(jsEngine.toObject(jsFunc),
-                                        jsEngine.toObject(jsEngine.undefined()), 1, &environment);
+  auto retValue =
+      jsEngine.callFunction(jsEngine.toObject(jsFunc), jsEngine.toObject(global), 1, &environment);
 
   auto retJsEngine = jsEngine.getObjectProperty(jsEngine.toObject(retValue), "engine");
   auto* retEngine = jsEngine.template unwrap<Engine>(retJsEngine);

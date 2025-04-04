@@ -7,6 +7,7 @@
 #include <rime/schema.h>
 #include <rime/segmentation.h>
 #include <rime/translation.h>
+#include <memory>
 
 #include "qjs_translator.h"
 #include "test_switch.h"
@@ -30,7 +31,7 @@ SETUP_JS_ENGINES(QuickJSTranslatorTest);
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
 TYPED_TEST(QuickJSTranslatorTest, QueryTranslation) {
-  auto& jsEngine = JsEngine<TypeParam>::getInstance();
+  auto jsEngine = newOrShareEngine<TypeParam>();
 
   the<Engine> engine(Engine::Create());
   ASSERT_TRUE(engine->schema() != nullptr);
@@ -41,15 +42,14 @@ TYPED_TEST(QuickJSTranslatorTest, QueryTranslation) {
   config->SetString("expectedInput", "test_input");
 
   Ticket ticket(engine.get(), "translator", "qjs_translator@translator_test");
-  auto env = std::make_shared<Environment>(engine.get(), "translator_test");
-  TypeParam environment = jsEngine.wrapShared(env);
-  auto translator = New<QuickJSTranslator<TypeParam>>(ticket, environment);
+  auto env = std::make_unique<Environment>(engine.get(), "translator_test");
+  auto translator = New<QuickJSTranslator<TypeParam>>(ticket, env.get());
 
   // Create a segment for testing
   Segment segment = this->createSegment();
 
   // Test the translator with the expected input
-  auto translation = translator->query("test_input", segment, environment);
+  auto translation = translator->query("test_input", segment, env.get());
   ASSERT_TRUE(translation != nullptr);
 
   // Verify the first candidate
@@ -77,13 +77,11 @@ TYPED_TEST(QuickJSTranslatorTest, QueryTranslation) {
   EXPECT_TRUE(translation->exhausted());
   candidate = translation->Peek();
   EXPECT_TRUE(candidate == nullptr);
-
-  jsEngine.freeValue(environment);
 }
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
 TYPED_TEST(QuickJSTranslatorTest, EmptyResult) {
-  auto& jsEngine = JsEngine<TypeParam>::getInstance();
+  auto jsEngine = newOrShareEngine<TypeParam>();
 
   the<Engine> engine(Engine::Create());
   ASSERT_TRUE(engine->schema() != nullptr);
@@ -94,67 +92,55 @@ TYPED_TEST(QuickJSTranslatorTest, EmptyResult) {
   config->SetString("expectedInput", "empty_input");
 
   Ticket ticket(engine.get(), "translator", "qjs_translator@translator_test");
-  auto env = std::make_shared<Environment>(engine.get(), "translator_test");
-  TypeParam environment = jsEngine.wrapShared(env);
-  auto translator = New<QuickJSTranslator<TypeParam>>(ticket, environment);
+  auto env = std::make_unique<Environment>(engine.get(), "translator_test");
+  auto translator = New<QuickJSTranslator<TypeParam>>(ticket, env.get());
 
   // Create a segment for testing
   Segment segment = this->createSegment();
 
   // Test the translator with input that should return empty results
-  auto translation = translator->query("empty_input", segment, environment);
+  auto translation = translator->query("empty_input", segment, env.get());
   ASSERT_TRUE(translation != nullptr);
   EXPECT_TRUE(translation->exhausted());
 
   auto candidate = translation->Peek();
   EXPECT_TRUE(candidate == nullptr);
-
-  jsEngine.freeValue(environment);
 }
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
 TYPED_TEST(QuickJSTranslatorTest, NonExistentModule) {
-  auto& jsEngine = JsEngine<TypeParam>::getInstance();
   the<Engine> engine(Engine::Create());
   ASSERT_TRUE(engine->schema() != nullptr);
 
   // Create a ticket with a non-existent module
   Ticket ticket(engine.get(), "translator", "qjs_translator@non_existent");
-  auto env = std::make_shared<Environment>(engine.get(), "non_existent");
-  TypeParam environment = jsEngine.wrapShared(env);
-  auto translator = New<QuickJSTranslator<TypeParam>>(ticket, environment);
+  auto env = std::make_unique<Environment>(engine.get(), "non_existent");
+  auto translator = New<QuickJSTranslator<TypeParam>>(ticket, env.get());
 
   // Create a segment for testing
   Segment segment = this->createSegment();
 
   // Test the translator - should return an empty translation
-  auto translation = translator->query("test_input", segment, environment);
+  auto translation = translator->query("test_input", segment, env.get());
   ASSERT_TRUE(translation != nullptr);
   EXPECT_TRUE(translation->exhausted());
 
   auto candidate = translation->Peek();
   EXPECT_TRUE(candidate == nullptr);
-
-  jsEngine.freeValue(environment);
   // FIXME: it crashes randomly, maybe memory used after free?
 }
 
 TYPED_TEST(QuickJSTranslatorTest, NoReturnShouldNotCrash) {
-  auto& jsEngine = JsEngine<TypeParam>::getInstance();
-
   the<Engine> engine(Engine::Create());
 
   // Create a ticket with a poor implemented plugin
   Ticket ticket(engine.get(), "translator", "qjs_translator@translator_no_return");
-  auto env = std::make_shared<Environment>(engine.get(), "translator_no_return");
-  TypeParam environment = jsEngine.wrapShared(env);
-  auto translator = New<QuickJSTranslator<TypeParam>>(ticket, environment);
+  auto env = std::make_unique<Environment>(engine.get(), "translator_no_return");
+  auto translator = New<QuickJSTranslator<TypeParam>>(ticket, env.get());
   Segment segment = this->createSegment();
-  auto translation = translator->query("test_input", segment, environment);
+  auto translation = translator->query("test_input", segment, env.get());
   ASSERT_TRUE(translation != nullptr);
   EXPECT_TRUE(translation->exhausted());
   EXPECT_FALSE(translation->Next());
   EXPECT_EQ(translation->Peek(), nullptr);
-
-  jsEngine.freeValue(environment);
 }

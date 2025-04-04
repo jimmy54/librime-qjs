@@ -17,7 +17,7 @@ JSValue QuickJSCodeLoader::loadJsModuleToNamespace(JSContext* ctx, const char* m
 
   auto* md = reinterpret_cast<JSModuleDef*>(JS_VALUE_GET_PTR(funcObj));
   JSValue evalResult = JS_EvalFunction(ctx, funcObj);
-  if (JS_IsException(funcObj)) {
+  if (JS_IsException(evalResult)) {
     return evalResult;
   }
 

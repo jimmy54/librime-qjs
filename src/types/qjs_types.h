@@ -22,8 +22,11 @@ void registerTypesToJsEngine(JsEngine<T_JS_VALUE>& engine) {
   TypeMap<T_JS_VALUE> typeMap;
   LOG(INFO) << "[qjs] registering rime types to the " << typeMap.engineName << " engine...";
 
-  // expose all types
+  std::filesystem::path path(rime_get_api()->get_user_data_dir());
+  path.append("js");
+  engine.setBaseFolderPath(path.generic_string().c_str());
 
+  // expose all types
   auto candidate = std::make_unique<JsWrapper<rime::Candidate, T_JS_VALUE>>();
   engine.template registerType<rime::Candidate>(*candidate.get());
 

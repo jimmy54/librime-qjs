@@ -3,6 +3,7 @@
 #include <rime/gear/filter_commons.h>
 #include <rime/ticket.h>
 
+#include "environment.h"
 #include "qjs_component.hpp"
 #include "qjs_filter.hpp"
 #include "test_switch.h"
@@ -17,13 +18,15 @@ public:
   MockFilter& operator=(const MockFilter&) = delete;
   MockFilter& operator=(MockFilter&&) = delete;
 
-  explicit MockFilter(const Ticket& ticket, T& environment) {
+  explicit MockFilter(const Ticket& ticket, Environment* environment) {
     LOG(INFO) << "MockFilter created with ticket: " << ticket.name_space;
   };
   ~MockFilter() { LOG(INFO) << "MockFilter destroyed"; }
 
   // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
-  an<Translation> apply(an<Translation> translation, const T& environment) { return translation; }
+  an<Translation> apply(an<Translation> translation, Environment* environment) {
+    return translation;
+  }
 };
 
 template <typename T>

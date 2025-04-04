@@ -1,13 +1,39 @@
 #include <gtest/gtest.h>
 #include <quickjs.h>
+#include <filesystem>
 
-#include "engines/quickjs/quickjs_engine.h"
+#include "engines/quickjs/quickjs_code_loader.h"
+#include "patch/quickjs/node_module_loader.h"
 
-class QuickJSModuleTest : public testing::Test {};
+class QuickJSModuleTest : public testing::Test {
+protected:
+  void SetUp() override {
+    rt_ = JS_NewRuntime();
+    ctx_ = JS_NewContext(rt_);
+
+    JS_SetModuleLoaderFunc(rt_, nullptr, js_module_loader, nullptr);
+
+    std::filesystem::path path(__FILE__);
+    path = path.parent_path().parent_path() / "js";
+    setQjsBaseFolder(path.generic_string().c_str());
+
+    QuickJSCodeLoader::exposeLogToJsConsole(ctx_);
+  }
+
+  void TearDown() override {
+    JS_FreeContext(ctx_);
+    JS_FreeRuntime(rt_);
+  }
+
+  JSContext* getContext() { return ctx_; }
+
+private:
+  JSRuntime* rt_{nullptr};
+  JSContext* ctx_{nullptr};
+};
 
 TEST_F(QuickJSModuleTest, ImportJsModuleFromAnotherJsFile) {
-  auto& jsEngine = JsEngine<JSValue>::getInstance();
-  auto& ctx = jsEngine.getContext();
+  auto* ctx = getContext();
   JSValue module = QuickJSCodeLoader::loadJsModuleToGlobalThis(ctx, "main.js");
 
   JSValue globalObj = JS_GetGlobalObject(ctx);
@@ -36,8 +62,7 @@ TEST_F(QuickJSModuleTest, ImportJsModuleFromAnotherJsFile) {
 }
 
 TEST_F(QuickJSModuleTest, ImportJsModuleToNamespace) {
-  auto& jsEngine = JsEngine<JSValue>::getInstance();
-  auto& ctx = jsEngine.getContext();
+  auto* ctx = getContext();
   JSValue moduleNamespace = QuickJSCodeLoader::loadJsModuleToNamespace(ctx, "lib.js");
   ASSERT_FALSE(JS_IsException(moduleNamespace));
 
@@ -62,8 +87,7 @@ TEST_F(QuickJSModuleTest, ImportJsModuleToNamespace) {
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
 TEST_F(QuickJSModuleTest, FindImportedClass) {
-  auto& jsEngine = JsEngine<JSValue>::getInstance();
-  auto& ctx = jsEngine.getContext();
+  auto* ctx = getContext();
   JSValue moduleNamespace = QuickJSCodeLoader::loadJsModuleToNamespace(ctx, "lib.js");
   ASSERT_FALSE(JS_IsException(moduleNamespace));
 
@@ -113,8 +137,7 @@ TEST_F(QuickJSModuleTest, FindImportedClass) {
 }
 
 TEST_F(QuickJSModuleTest, ImportNodeModule) {
-  auto& jsEngine = JsEngine<JSValue>::getInstance();
-  auto& ctx = jsEngine.getContext();
+  auto* ctx = getContext();
   JSValue module = QuickJSCodeLoader::loadJsModuleToGlobalThis(ctx, "node-modules.test.js");
   ASSERT_FALSE(JS_IsException(module));
   JS_FreeValue(ctx, module);

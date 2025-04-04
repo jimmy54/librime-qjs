@@ -2,8 +2,11 @@
 #include <rime/candidate.h>
 #include <rime/translation.h>
 
+#include "engines/engine_manager.h"
+#include "environment.h"
 #include "fake_translation.hpp"
 #include "qjs_translation.h"
+#include "qjs_types.h"
 #include "test_switch.h"
 
 using namespace rime;
@@ -23,9 +26,11 @@ protected:
 SETUP_JS_ENGINES(QuickJSTranslationTest);
 
 TYPED_TEST(QuickJSTranslationTest, Initialize) {
+  auto jsEngine = newOrShareEngine<TypeParam>();
   auto translation = this->createMockTranslation();
+  Environment env(nullptr, "test");
   auto qjsTranslation =
-      New<QuickJSTranslation<TypeParam>>(translation, TypeParam(), TypeParam(), TypeParam());
+      New<QuickJSTranslation<TypeParam>>(translation, &jsEngine, TypeParam(), TypeParam(), &env);
   EXPECT_TRUE(qjsTranslation->exhausted());
   EXPECT_FALSE(qjsTranslation->Next());
   EXPECT_EQ(qjsTranslation->Peek(), nullptr);
@@ -37,26 +42,25 @@ TYPED_TEST(QuickJSTranslationTest, FilterCandidates) {
   const char* jsCode = R"(
         function filterCandidates(candidates, env) {
             console.log(`filterCandidates: ${candidates.length}`)
-            console.log(`env.expectingText: ${env.expectingText}`)
+            console.log(`env.namespace: ${env.namespace}`)
             const ret = candidates.filter((it, idx) => {
               console.log(`it.text = ${it.text}`)
-              return it.text === env.expectingText
+              return it.text === 'text2'
             })
             console.log(`ret.length: ${ret.length}`)
             return ret
         }
     )";
 
-  auto& jsEngine = JsEngine<TypeParam>::getInstance();
+  auto jsEngine = newOrShareEngine<TypeParam>();
+  registerTypesToJsEngine(jsEngine);
   auto result = jsEngine.eval(jsCode, "<input>");
   auto global = jsEngine.getGlobalObject();
   auto filterFunc = jsEngine.getObjectProperty(jsEngine.toObject(global), "filterCandidates");
 
-  auto env = jsEngine.newObject();
-  jsEngine.setObjectProperty(env, "expectingText", jsEngine.toJsString("text2"));
-
+  Environment env(nullptr, "test");
   auto qjsTranslation =
-      New<QuickJSTranslation<TypeParam>>(translation, TypeParam(), filterFunc, env);
+      New<QuickJSTranslation<TypeParam>>(translation, &jsEngine, TypeParam(), filterFunc, &env);
   auto candidate = qjsTranslation->Peek();
 
   ASSERT_TRUE(candidate != nullptr);
@@ -73,31 +77,35 @@ TYPED_TEST(QuickJSTranslationTest, FilterCandidates) {
 }
 
 TYPED_TEST(QuickJSTranslationTest, EmptyTranslation) {
+  auto jsEngine = newOrShareEngine<TypeParam>();
   auto translation = New<FakeTranslation>();
+  Environment env(nullptr, "test");
   auto qjsTranslation =
-      New<QuickJSTranslation<TypeParam>>(translation, TypeParam(), TypeParam(), TypeParam());
+      New<QuickJSTranslation<TypeParam>>(translation, &jsEngine, TypeParam(), TypeParam(), &env);
   EXPECT_TRUE(qjsTranslation->exhausted());
   EXPECT_FALSE(qjsTranslation->Next());
   EXPECT_EQ(qjsTranslation->Peek(), nullptr);
 }
 
 TYPED_TEST(QuickJSTranslationTest, NoReturnValueShouldNotCrash) {
-  auto translation = this->createMockTranslation();
-  const char* jsCode = "function noReturn() { }";
+  auto jsEngine = newOrShareEngine<TypeParam>();
+  registerTypesToJsEngine(jsEngine);
 
-  auto& jsEngine = JsEngine<TypeParam>::getInstance();
-  auto& ctx = jsEngine.getContext();
+  auto translation = this->createMockTranslation();
+
+  const char* jsCode = "function noReturn() { }";
   auto result = jsEngine.eval(jsCode, "<input>");
-  jsEngine.freeValue(result);
   auto global = jsEngine.getGlobalObject();
   auto filterFunc = jsEngine.getObjectProperty(jsEngine.toObject(global), "noReturn");
-  jsEngine.freeValue(global);
 
+  Environment env(nullptr, "test");
   auto qjsTranslation =
-      New<QuickJSTranslation<TypeParam>>(translation, TypeParam(), filterFunc, TypeParam());
+      New<QuickJSTranslation<TypeParam>>(translation, &jsEngine, TypeParam(), filterFunc, &env);
   EXPECT_TRUE(qjsTranslation->exhausted());
   EXPECT_FALSE(qjsTranslation->Next());
   EXPECT_EQ(qjsTranslation->Peek(), nullptr);
 
+  jsEngine.freeValue(result);
+  jsEngine.freeValue(global);
   jsEngine.freeValue(filterFunc);
 }

@@ -6,15 +6,15 @@
 
 #include "engines/js_exception.h"
 #include "engines/type_map.h"
-#include "types/js_wrapper.h"
+
+template <typename T_RIME_TYPE, typename T_JS_VALUE>
+class JsWrapper;
 
 template <typename T_JS_VALUE>
 class JsEngine {
   using T_JS_OBJECT = typename TypeMap<T_JS_VALUE>::ObjectType;
 
 public:
-  typename TypeMap<T_JS_VALUE>::ContextType& getContext();
-
   void setBaseFolderPath(const char* absolutePath);
 
   int64_t getMemoryUsage();

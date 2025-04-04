@@ -4,66 +4,78 @@
 #include <string>
 
 #include "engines/engine_manager.h"
+#include "qjs_types.h"
 
 template <typename T_JS_VALUE>
 class QjsModule {
   using T_JS_OBJECT = typename TypeMap<T_JS_VALUE>::ObjectType;
 
 protected:
-  QjsModule(const std::string& nameSpace, T_JS_VALUE environment, const char* mainFuncName)
-      : namespace_(nameSpace) {
-    auto& engine = getJsEngine<T_JS_VALUE>();
+  [[nodiscard]] JsEngine<T_JS_VALUE>* getJsEngine() { return &jsEngine_; }
+
+  QjsModule(const std::string& nameSpace, Environment* environment, const char* mainFuncName)
+      : namespace_(nameSpace), jsEngine_(newOrShareEngine<T_JS_VALUE>()) {
+    // Each module requires its own JavaScriptCore context to prevent
+    // naming conflicts when loading multiple JavaScript files.
+    // As a result, we must register types for each new engine instance.
+    registerTypesToJsEngine(jsEngine_);
+
     std::string fileName = nameSpace + ".js";
-    T_JS_VALUE container = engine.loadJsFile(fileName.c_str());  // module or globalThis
-    if (!engine.isObject(container)) {
+    T_JS_VALUE container = jsEngine_.loadJsFile(fileName.c_str());  // module or globalThis
+    if (!jsEngine_.isObject(container)) {
+      jsEngine_.freeValue(container);
       LOG(ERROR) << "[qjs] Failed to load " << fileName;
       return;
     }
 
-    T_JS_VALUE jsClass = engine.getJsClassHavingMethod(container, mainFuncName);
-    if (!engine.isObject(jsClass)) {
+    T_JS_VALUE jsClass = jsEngine_.getJsClassHavingMethod(container, mainFuncName);
+    if (!jsEngine_.isObject(jsClass)) {
+      jsEngine_.freeValue(jsClass);
       LOG(ERROR) << "[qjs] No exported class having `" << mainFuncName << "` function in "
                  << fileName;
       return;
     }
 
-    auto objClass = engine.toObject(jsClass);
-    instance_ = engine.newClassInstance(objClass, 1, &environment);
-    if (engine.isException(instance_)) {
+    auto objClass = jsEngine_.toObject(jsClass);
+    auto jsEnvironment = jsEngine_.wrap(environment);
+    T_JS_VALUE args[] = {jsEnvironment};
+    instance_ = jsEngine_.newClassInstance(objClass, 1, static_cast<T_JS_VALUE*>(args));
+    if (jsEngine_.isException(instance_)) {
       LOG(ERROR) << "[qjs] Error creating an instance of the exported class in " << fileName;
-      engine.logErrorStackTrace(instance_, __FILE_NAME__, __LINE__);
-      engine.freeValue(jsClass);
+      jsEngine_.logErrorStackTrace(instance_, __FILE_NAME__, __LINE__);
+      jsEngine_.freeValue(jsClass);
+      jsEngine_.freeValue(jsEnvironment);
       return;
     }
     DLOG(INFO) << "[qjs] constructor function executed successfully in " << fileName;
 
     mainFunc_ =
-        engine.toObject(engine.getMethodOfClassOrInstance(objClass, instance_, mainFuncName));
+        jsEngine_.toObject(jsEngine_.getMethodOfClassOrInstance(objClass, instance_, mainFuncName));
     finalizer_ =
-        engine.toObject(engine.getMethodOfClassOrInstance(objClass, instance_, "finalizer"));
+        jsEngine_.toObject(jsEngine_.getMethodOfClassOrInstance(objClass, instance_, "finalizer"));
 
-    engine.freeValue(jsClass);
+    jsEngine_.freeValue(container);
+    jsEngine_.freeValue(jsClass);
+    jsEngine_.freeValue(jsEnvironment);
 
     isLoaded_ = true;
   }
 
   ~QjsModule() {
-    auto& engine = getJsEngine<T_JS_VALUE>();
-
-    if (engine.isUndefined(finalizer_)) {
+    if (jsEngine_.isUndefined(finalizer_)) {
       DLOG(INFO) << "[qjs] ~" << namespace_ << " no `finalizer` function exported.";
-    } else {
+    } else if (isLoaded_) {
       DLOG(INFO) << "[qjs] running the finalizer function of " << namespace_;
-      T_JS_VALUE finalizerResult = engine.callFunction(finalizer_, instance_, 0, nullptr);
-      if (engine.isException(finalizerResult)) {
+      T_JS_VALUE finalizerResult = jsEngine_.callFunction(finalizer_, instance_, 0, nullptr);
+      if (jsEngine_.isException(finalizerResult)) {
         LOG(ERROR) << "[qjs] ~" << namespace_ << " Error running the finalizer function.";
       }
-      engine.freeValue(finalizerResult);
+      jsEngine_.freeValue(finalizerResult);
     }
 
-    engine.freeValue(instance_);
-    engine.freeValue(mainFunc_);
-    engine.freeValue(finalizer_);
+    jsEngine_.freeValue(instance_);
+    jsEngine_.freeValue(mainFunc_);
+    jsEngine_.freeValue(finalizer_);
   }
 
   [[nodiscard]] bool isLoaded() const { return isLoaded_; }
@@ -75,6 +87,8 @@ private:
   const std::string namespace_;
 
   bool isLoaded_ = false;
+
+  JsEngine<T_JS_VALUE> jsEngine_;
 
   T_JS_OBJECT instance_;
   T_JS_OBJECT mainFunc_;

@@ -12,13 +12,22 @@ public:
 
   virtual typename TypeMap<JSValue>::FinalizerFunctionPionterType getFinalizer() { return nullptr; }
 
-  virtual typename TypeMap<JSValue>::ExposeFunctionType* getFunctions() { return nullptr; }
+  virtual typename TypeMap<JSValue>::ExposeFunctionType* getFunctions(
+      TypeMap<JSValue>::ContextType ctx) {
+    return nullptr;
+  }
   int getFunctionsCount() { return functionCount_; }
 
-  virtual typename TypeMap<JSValue>::ExposePropertyType* getProperties() { return nullptr; }
+  virtual typename TypeMap<JSValue>::ExposePropertyType* getProperties(
+      TypeMap<JSValue>::ContextType ctx) {
+    return nullptr;
+  }
   int getPropertiesCount() { return propertyCount_; }
 
-  virtual typename TypeMap<JSValue>::ExposePropertyType* getGetters() { return nullptr; }
+  virtual typename TypeMap<JSValue>::ExposePropertyType* getGetters(
+      TypeMap<JSValue>::ContextType ctx) {
+    return nullptr;
+  }
   int getGettersCount() { return getterCount_; }
 
 #ifdef __APPLE__
@@ -30,11 +39,20 @@ public:
     return nullptr;
   }
 
-  virtual typename TypeMap<JSValueRef>::ExposeFunctionType* getFunctionsJsc() { return nullptr; }
+  virtual typename TypeMap<JSValueRef>::ExposeFunctionType* getFunctionsJsc(
+      TypeMap<JSValueRef>::ContextType ctx) {
+    return nullptr;
+  }
 
-  virtual typename TypeMap<JSValueRef>::ExposePropertyType* getPropertiesJsc() { return nullptr; }
+  virtual typename TypeMap<JSValueRef>::ExposePropertyType* getPropertiesJsc(
+      TypeMap<JSValueRef>::ContextType ctx) {
+    return nullptr;
+  }
 
-  virtual typename TypeMap<JSValueRef>::ExposePropertyType* getGettersJsc() { return nullptr; }
+  virtual typename TypeMap<JSValueRef>::ExposePropertyType* getGettersJsc(
+      TypeMap<JSValueRef>::ContextType ctx) {
+    return nullptr;
+  }
 #endif
 
 protected:

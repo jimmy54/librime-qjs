@@ -14,8 +14,7 @@ protected:
     std::filesystem::path path = __FILE__;
     path = path.parent_path().parent_path() / "js";
 
-    auto& jsEngine = getJsEngine<JSValueRef>();
-    jsEngine.setBaseFolderPath(path.generic_string().c_str());
+    engine.setBaseFolderPath(path.generic_string().c_str());
   }
 
   static JSValueRef getRimeInfoCallback(JSContextRef ctx,
@@ -24,13 +23,11 @@ protected:
                                         size_t argumentCount,
                                         const JSValueRef arguments[],
                                         JSValueRef* exception) {
-    auto& engine = getJsEngine<JSValueRef>();
     std::cout << "getRimeInfoCallback" << '\n';
     return engine.toJsString("rimeInfo");
   }
 
   static JSObjectRef createMockEnvObject() {
-    auto& engine = getJsEngine<JSValueRef>();
     JSObjectRef envObj = engine.newObject();
     JSObjectRef osObj = engine.newObject();
     engine.setObjectProperty(osObj, "name", engine.toJsString("macOS"));
@@ -40,18 +37,20 @@ protected:
   }
 
   static JSObjectRef createMockSegmentObject() {
-    auto& engine = getJsEngine<JSValueRef>();
     JSObjectRef segmentObj = engine.newObject();
     engine.setObjectProperty(segmentObj, "start", engine.toJsInt(0));
     engine.setObjectProperty(segmentObj, "end", engine.toJsInt(std::string("/help").size()));
     engine.setObjectProperty(segmentObj, "prompt", engine.toJsString(""));
     return segmentObj;
   }
+
+  static JsEngine<JSValueRef> engine;
 };
+
+JsEngine<JSValueRef> JscLoadBundledPluginTest::engine = newOrShareEngine<JSValueRef>();
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
 TEST_F(JscLoadBundledPluginTest, RunTranslatorWithJavaScriptCore) {
-  auto& engine = getJsEngine<JSValueRef>();
   JsWrapper<rime::Candidate, JSValueRef> wrapper;
   engine.registerType(wrapper);
 

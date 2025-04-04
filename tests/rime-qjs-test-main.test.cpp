@@ -24,6 +24,7 @@ public:
     std::filesystem::path path(__FILE__);
     path.remove_filename();
     userDataDir_ = path.generic_string();
+    LOG(INFO) << "setting up user data dir: " << userDataDir_;
 
     RimeTraits traits = {
         .data_size = sizeof(RimeTraits) - sizeof((traits).data_size),
@@ -60,17 +61,6 @@ int main(int argc, char** argv) noexcept {
   // Only works when printing logs directly to console using `.\librime-qjs-tests.exe`
   // Does not work when redirecting output to a file using `.\librime-qjs-tests.exe > tests.log 2>&1`
   SetConsoleOutputCP(CP_UTF8);
-#endif
-
-  std::filesystem::path path(__FILE__);
-  path.remove_filename().append("js");
-
-  auto& qjsEngine = getJsEngine<JSValue>();
-  qjsEngine.setBaseFolderPath(path.generic_string().c_str());
-
-#ifdef __APPLE__
-  auto& jscEngine = getJsEngine<JSValueRef>();
-  jscEngine.setBaseFolderPath(path.generic_string().c_str());
 #endif
 
   return RUN_ALL_TESTS();

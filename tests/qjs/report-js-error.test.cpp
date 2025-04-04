@@ -3,7 +3,7 @@
 
 #include <string>
 
-#include "engines/quickjs/quickjs_engine.h"
+#include "engines/engine_manager.h"
 
 std::string trim(const std::string& str) {
   const auto start = str.find_first_not_of(" \t\n\r");
@@ -18,30 +18,26 @@ std::string trim(const std::string& str) {
 class QuickJSErrorTest : public ::testing::Test {};
 
 TEST_F(QuickJSErrorTest, TestJsRuntimeError) {
-  auto& jsEngine = JsEngine<JSValue>::getInstance();
-  auto& ctx = jsEngine.getContext();
-  JSValue module = QuickJSCodeLoader::loadJsModuleToGlobalThis(ctx, "runtime-error.js");
-  JSValue globalObj = JS_GetGlobalObject(ctx);
-  JSValue func = JS_GetPropertyStr(ctx, globalObj, "funcWithRuntimeError");
+  auto jsEngine = newOrShareEngine<JSValue>();
+  JSValue module = jsEngine.loadJsFile("runtime-error.js");
+  JSValue globalObj = jsEngine.getGlobalObject();
+  JSValue func = jsEngine.getObjectProperty(globalObj, "funcWithRuntimeError");
   ASSERT_FALSE(JS_IsException(func));
 
-  JSValue result = JS_Call(ctx, func, JS_UNDEFINED, 0, nullptr);
+  JSValue result = jsEngine.callFunction(func, JS_UNDEFINED, 0, nullptr);
   ASSERT_TRUE(JS_IsException(result));
 
   // ReferenceError: abcdefg is not defined
   //      at <anonymous> (runtime-error.js:7:21)
-  JSValue exception = JS_GetException(ctx);
-  const char* message = JS_ToCString(ctx, exception);
-  ASSERT_STREQ(message, "ReferenceError: abcdefg is not defined");
-  JS_FreeCString(ctx, message);
+  JSValue exception = jsEngine.getLatestException();
+  auto message = jsEngine.toStdString(exception);
+  ASSERT_STREQ(message.c_str(), "ReferenceError: abcdefg is not defined");
 
-  JSValue stack = JS_GetPropertyStr(ctx, exception, "stack");
-  const char* stackTrace = JS_ToCString(ctx, stack);
-  std::string trimmedStackTrace = trim(stackTrace);
-  ASSERT_STREQ(trimmedStackTrace.c_str(), "at <anonymous> (runtime-error.js:7:19)");
-  JS_FreeCString(ctx, stackTrace);
+  JSValue stack = jsEngine.getObjectProperty(exception, "stack");
+  auto stackTrace = trim(jsEngine.toStdString(stack));
+  ASSERT_STREQ(stackTrace.c_str(), "at <anonymous> (runtime-error.js:7:19)");
 
   for (auto obj : {module, globalObj, func, result, exception, stack}) {
-    JS_FreeValue(ctx, obj);
+    jsEngine.freeValue(obj);
   }
 }

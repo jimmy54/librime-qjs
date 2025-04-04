@@ -80,14 +80,7 @@ public:
 
   EXPORT_CONSTRUCTOR(makeTrie, { return engine.wrapShared<Trie>(std::make_shared<Trie>()); });
 
-  EXPORT_FINALIZER(finalizer, {
-    if (void* ptr = engine.template getOpaque<rime::Trie>(val)) {
-      auto* ppObj = static_cast<std::shared_ptr<rime::Trie>*>(ptr);
-      ppObj->reset();
-      delete ppObj;
-      engine.setOpaque(val, nullptr);
-    }
-  });
+  EXPORT_FINALIZER(Trie, finalizer);
 
   EXPORT_FUNCTIONS(loadTextFile,
                    1,

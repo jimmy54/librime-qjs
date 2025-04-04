@@ -71,6 +71,6 @@ public:
     return engine.wrapShared<rime::Candidate>(obj);
   });
 
-  EXPORT_SHARED_FINALIZER(rime::Candidate, finalizer);
+  EXPORT_FINALIZER(rime::Candidate, finalizer);
   EXPORT_PROPERTIES(text, comment, type, start, end, quality, preedit);
 };

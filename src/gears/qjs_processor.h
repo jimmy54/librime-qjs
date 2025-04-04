@@ -7,32 +7,32 @@
 #include "qjs_component.hpp"
 #include "qjs_module.h"
 
-#include "engines/engine_manager.h"
-
 template <typename T_JS_VALUE>
 class QuickJSProcessor : public QjsModule<T_JS_VALUE> {
 public:
-  explicit QuickJSProcessor(const rime::Ticket& ticket, T_JS_VALUE& environment)
+  explicit QuickJSProcessor(const rime::Ticket& ticket, Environment* environment)
       : QjsModule<T_JS_VALUE>(ticket.name_space, environment, "process") {}
 
-  rime::ProcessResult processKeyEvent(const rime::KeyEvent& keyEvent,
-                                      const T_JS_VALUE& environment) {
+  rime::ProcessResult processKeyEvent(const rime::KeyEvent& keyEvent, Environment* environment) {
     if (!this->isLoaded()) {
       return rime::kNoop;
     }
 
-    auto& engine = getJsEngine<T_JS_VALUE>();
+    auto* engine = this->getJsEngine();
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
-    T_JS_VALUE jsKeyEvt = engine.wrap(const_cast<rime::KeyEvent*>(&keyEvent));
-    T_JS_VALUE args[] = {jsKeyEvt, environment};
-    T_JS_VALUE jsResult = engine.callFunction(this->getMainFunc(), this->getInstance(), 2, args);
-    if (engine.isException(jsResult)) {
+    T_JS_VALUE jsKeyEvt = engine->wrap(const_cast<rime::KeyEvent*>(&keyEvent));
+    auto jsEnvironment = engine->wrap(environment);
+    T_JS_VALUE args[] = {jsKeyEvt, jsEnvironment};
+    T_JS_VALUE jsResult = engine->callFunction(this->getMainFunc(), this->getInstance(), 2, args);
+    engine->freeValue(jsKeyEvt);
+    engine->freeValue(jsEnvironment);
+
+    if (engine->isException(jsResult)) {
       return rime::kNoop;
     }
-    engine.freeValue(jsKeyEvt);
 
-    std::string result = engine.toStdString(jsResult);
-    engine.freeValue(jsResult);
+    std::string result = engine->toStdString(jsResult);
+    engine->freeValue(jsResult);
 
     if (result == "kNoop") {
       return rime::kNoop;
@@ -57,7 +57,7 @@ class rime::ComponentWrapper<T_ACTUAL, rime::Processor, T_JS_VALUE>
 public:
   explicit ComponentWrapper(const rime::Ticket& ticket,
                             const rime::an<T_ACTUAL>& actual,
-                            const T_JS_VALUE& environment)
+                            Environment* environment)
       : ComponentWrapperBase<T_ACTUAL, rime::Processor, T_JS_VALUE>(ticket, actual, environment) {}
 
   // NOLINTNEXTLINE(readability-identifier-naming)

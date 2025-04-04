@@ -4,7 +4,7 @@
 
 #include "engines/engine_manager.h"  // IWYU pragma: export
 #include "engines/for_each_macros.h"
-#include "engines/js_engine.h"  // IWYU pragma: export
+#include "engines/quickjs/quickjs_engine.h"  // IWYU pragma: export
 
 #ifdef __APPLE__
 #include "engines/javascriptcore/jsc_macros.h"
@@ -24,7 +24,7 @@
   DEFINE_CFUNCTION_ARGC_QJS(funcName, expectingArgc, statements)
 
 #define EXPORT_CONSTRUCTOR(funcName, funcBody) EXPORT_CONSTRUCTOR_QJS(funcName, funcBody)
-#define EXPORT_FINALIZER(funcName, funcBody) EXPORT_FINALIZER_QJS(funcName, funcBody)
+#define EXPORT_FINALIZER(T_RIME_TYPE, funcName) EXPORT_FINALIZER_QJS(T_RIME_TYPE, funcName)
 #define EXPORT_PROPERTIES(...) EXPORT_PROPERTIES_QJS(__VA_ARGS__)
 #define EXPORT_FUNCTIONS(...) EXPORT_FUNCTIONS_QJS({__VA_ARGS__})
 #define EXPORT_GETTERS(...) EXPORT_GETTER_QJS(__VA_ARGS__)
@@ -42,7 +42,7 @@
 
 #define DEFINE_GETTER_IMPL_QJS(T_RIME_TYPE, propertieyName, statement, unwrap) \
   static JSValue get_##propertieyName(JSContext* ctx, JSValueConst thisVal) {  \
-    auto& engine = getJsEngine<JSValue>();                                     \
+    auto& engine = JsEngine<JSValue>::getEngineByContext(ctx);                 \
     if (auto obj = unwrap) {                                                   \
       return statement;                                                        \
     }                                                                          \
@@ -60,7 +60,7 @@
 
 #define DEFINE_STRING_SETTER_IMPL_QJS(T_RIME_TYPE, name, assignment, unwrap)                     \
   static JSValue set_##name(JSContext* ctx, JSValueConst thisVal, JSValue val) {                 \
-    auto& engine = getJsEngine<JSValue>();                                                       \
+    auto& engine = JsEngine<JSValue>::getEngineByContext(ctx);                                   \
     if (auto obj = unwrap) {                                                                     \
       auto str = engine.toStdString(val);                                                        \
       if (!str.empty()) {                                                                        \
@@ -84,7 +84,7 @@
 
 #define DEFINE_SETTER_IMPL_QJS(T_RIME_TYPE, jsName, converter, assignment, unwrap)     \
   static JSValue set_##jsName(JSContext* ctx, JSValueConst thisVal, JSValue val) {     \
-    auto& engine = getJsEngine<JSValue>();                                             \
+    auto& engine = JsEngine<JSValue>::getEngineByContext(ctx);                         \
     if (auto obj = unwrap) {                                                           \
       auto value = converter(val);                                                     \
       assignment;                                                                      \
@@ -98,7 +98,7 @@
 
 #define DEFINE_CFUNCTION_QJS(funcName, funcBody)                                      \
   static JSValue funcName(JSContext* ctx, JSValue thisVal, int argc, JSValue* argv) { \
-    auto& engine = getJsEngine<JSValue>();                                            \
+    auto& engine = JsEngine<JSValue>::getEngineByContext(ctx);                        \
     try {                                                                             \
       funcBody;                                                                       \
     } catch (const JsException& e) {                                                  \
@@ -111,7 +111,7 @@
     if (argc < expectingArgc) {                                                                  \
       return JS_ThrowSyntaxError(ctx, "%s(...) expects %d arguments", #funcName, expectingArgc); \
     }                                                                                            \
-    auto& engine = getJsEngine<JSValue>();                                                       \
+    auto& engine = JsEngine<JSValue>::getEngineByContext(ctx);                                   \
     try {                                                                                        \
       statements;                                                                                \
     } catch (const JsException& e) {                                                             \
@@ -127,59 +127,53 @@
     return funcName;                                                         \
   }
 
-#define EXPORT_FINALIZER_QJS(funcName, funcBody)                                    \
+#define EXPORT_FINALIZER_QJS(T_RIME_TYPE, funcName)                                 \
   typename TypeMap<JSValue>::FinalizerFunctionPionterType getFinalizer() override { \
     return funcName;                                                                \
   }                                                                                 \
                                                                                     \
   static void funcName(typename TypeMap<JSValue>::RuntimeType* rt, JSValue val) {   \
-    auto& engine = getJsEngine<JSValue>();                                          \
-    funcBody;                                                                       \
+    if (void* ptr = JsEngine<JSValue>::getOpaque<T_RIME_TYPE>(val)) {               \
+      auto* ppObj = static_cast<std::shared_ptr<T_RIME_TYPE>*>(ptr);                \
+      ppObj->reset();                                                               \
+      delete ppObj;                                                                 \
+      JsEngine<JSValue>::setOpaque(val, nullptr);                                   \
+    }                                                                               \
   }
-
-#define EXPORT_SHARED_FINALIZER(T_RIME_TYPE, funcName)               \
-  EXPORT_FINALIZER(funcName, {                                       \
-    if (void* ptr = engine.template getOpaque<T_RIME_TYPE>(val)) {   \
-      auto* ppObj = static_cast<std::shared_ptr<T_RIME_TYPE>*>(ptr); \
-      ppObj->reset();                                                \
-      delete ppObj;                                                  \
-      engine.setOpaque(val, nullptr);                                \
-    }                                                                \
-  })
 
 #define DEFINE_PROPERTY(name) engine.defineProperty(#name, get_##name, set_##name),
 
-#define EXPORT_PROPERTIES_QJS(...)                                          \
-  typename TypeMap<JSValue>::ExposePropertyType* getProperties() override { \
-    auto& engine = getJsEngine<JSValue>();                                  \
-    static typename TypeMap<JSValue>::ExposePropertyType properties[] = {   \
-        FOR_EACH(DEFINE_PROPERTY, __VA_ARGS__)};                            \
-                                                                            \
-    this->setPropertyCount(countof(properties));                            \
-                                                                            \
-    return static_cast<TypeMap<JSValue>::ExposePropertyType*>(properties);  \
+#define EXPORT_PROPERTIES_QJS(...)                                                        \
+  typename TypeMap<JSValue>::ExposePropertyType* getProperties(JSContext* ctx) override { \
+    auto& engine = JsEngine<JSValue>::getEngineByContext(ctx);                            \
+    static typename TypeMap<JSValue>::ExposePropertyType properties[] = {                 \
+        FOR_EACH(DEFINE_PROPERTY, __VA_ARGS__)};                                          \
+                                                                                          \
+    this->setPropertyCount(countof(properties));                                          \
+                                                                                          \
+    return static_cast<TypeMap<JSValue>::ExposePropertyType*>(properties);                \
   }
 
 #define DEFINE_GETTER_QJS(name) engine.defineProperty(#name, get_##name, nullptr),
 
-#define EXPORT_GETTER_QJS(...)                                           \
-  typename TypeMap<JSValue>::ExposePropertyType* getGetters() override { \
-    auto& engine = getJsEngine<JSValue>();                               \
-    static typename TypeMap<JSValue>::ExposePropertyType getters[] = {   \
-        FOR_EACH(DEFINE_GETTER_QJS, __VA_ARGS__)};                       \
-                                                                         \
-    this->setGetterCount(countof(getters));                              \
-                                                                         \
-    return static_cast<TypeMap<JSValue>::ExposePropertyType*>(getters);  \
+#define EXPORT_GETTER_QJS(...)                                                         \
+  typename TypeMap<JSValue>::ExposePropertyType* getGetters(JSContext* ctx) override { \
+    auto& engine = JsEngine<JSValue>::getEngineByContext(ctx);                         \
+    static typename TypeMap<JSValue>::ExposePropertyType getters[] = {                 \
+        FOR_EACH(DEFINE_GETTER_QJS, __VA_ARGS__)};                                     \
+                                                                                       \
+    this->setGetterCount(countof(getters));                                            \
+                                                                                       \
+    return static_cast<TypeMap<JSValue>::ExposePropertyType*>(getters);                \
   }
 
 #define DEFINE_FUNCTION_QJS(name, argc) engine.defineFunction(#name, argc, name),
 
-#define EXPORT_FUNCTIONS_QJS(...)                                          \
-  typename TypeMap<JSValue>::ExposeFunctionType* getFunctions() override { \
-    auto& engine = getJsEngine<JSValue>();                                 \
-    static typename TypeMap<JSValue>::ExposeFunctionType functions[] = {   \
-        FOR_EACH_PAIR(DEFINE_FUNCTION_QJS, __VA_ARGS__)};                  \
-    this->setFunctionCount(countof(functions));                            \
-    return static_cast<TypeMap<JSValue>::ExposeFunctionType*>(functions);  \
+#define EXPORT_FUNCTIONS_QJS(...)                                                        \
+  typename TypeMap<JSValue>::ExposeFunctionType* getFunctions(JSContext* ctx) override { \
+    auto& engine = JsEngine<JSValue>::getEngineByContext(ctx);                           \
+    static typename TypeMap<JSValue>::ExposeFunctionType functions[] = {                 \
+        FOR_EACH_PAIR(DEFINE_FUNCTION_QJS, __VA_ARGS__)};                                \
+    this->setFunctionCount(countof(functions));                                          \
+    return static_cast<TypeMap<JSValue>::ExposeFunctionType*>(functions);                \
   }

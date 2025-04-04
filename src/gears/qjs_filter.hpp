@@ -5,6 +5,7 @@
 #include <rime/gear/filter_commons.h>
 #include <memory>
 
+#include "environment.h"
 #include "qjs_component.hpp"
 #include "qjs_module.h"
 #include "qjs_translation.h"
@@ -12,17 +13,17 @@
 template <typename T_JS_VALUE>
 class QuickJSFilter : public QjsModule<T_JS_VALUE> {
 public:
-  explicit QuickJSFilter(const rime::Ticket& ticket, T_JS_VALUE& environment)
+  explicit QuickJSFilter(const rime::Ticket& ticket, Environment* environment)
       : QjsModule<T_JS_VALUE>(ticket.name_space, environment, "filter") {}
 
   std::shared_ptr<rime::Translation> apply(std::shared_ptr<rime::Translation> translation,
-                                           const T_JS_VALUE& environment) {
+                                           Environment* environment) {
     if (!this->isLoaded()) {
       return translation;
     }
 
-    return std::make_shared<QuickJSTranslation<T_JS_VALUE>>(translation, this->getInstance(),
-                                                            this->getMainFunc(), environment);
+    return std::make_shared<QuickJSTranslation<T_JS_VALUE>>(
+        translation, this->getJsEngine(), this->getInstance(), this->getMainFunc(), environment);
   }
 };
 
@@ -33,7 +34,7 @@ class rime::ComponentWrapper<T_ACTUAL, rime::Filter, T_JS_VALUE>
 public:
   explicit ComponentWrapper(const rime::Ticket& ticket,
                             const rime::an<T_ACTUAL>& actual,
-                            const T_JS_VALUE& environment)
+                            Environment* environment)
       : ComponentWrapperBase<T_ACTUAL, rime::Filter, T_JS_VALUE>(ticket, actual, environment) {}
 
   // NOLINTNEXTLINE(readability-identifier-naming)
