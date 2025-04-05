@@ -4,7 +4,6 @@
 
 #include <quickjs.h>
 
-#include "engines/quickjs/quickjs_engine.h"
 #include "qjs_component.hpp"
 #include "qjs_filter.hpp"
 #include "qjs_processor.h"

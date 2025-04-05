@@ -6,6 +6,8 @@
 #include <sstream>
 #include <string>
 
+#include "engines/javascriptcore/jsc_string_raii.hpp"
+
 static void removeExportStatementsInPlace(std::string& source) {
   size_t pos = 0;
   while ((pos = source.find("export", pos)) != std::string::npos) {
@@ -34,10 +36,7 @@ JSValueRef JscCodeLoader::loadJsModuleToGlobalThis(JSContextRef ctx,
     std::string message = "Failed to open file: " + filePath.string();
     LOG(ERROR) << "[jsc] " << message;
 
-    JSStringRef messageStr = JSStringCreateWithUTF8CString(message.c_str());
-    JSValueRef exception = JSValueMakeString(ctx, messageStr);
-    JSStringRelease(messageStr);
-    return exception;
+    return JSValueMakeString(ctx, JscStringRAII(message.c_str()));
   }
 
   std::stringstream buffer;
@@ -45,9 +44,7 @@ JSValueRef JscCodeLoader::loadJsModuleToGlobalThis(JSContextRef ctx,
   auto source = buffer.str();
   removeExportStatementsInPlace(source);
 
-  JSStringRef scriptJS = JSStringCreateWithUTF8CString(source.c_str());
-  JSEvaluateScript(ctx, scriptJS, nullptr, nullptr, 0, exception);
-  JSStringRelease(scriptJS);
+  JSEvaluateScript(ctx, JscStringRAII(source.c_str()), nullptr, nullptr, 0, exception);
 
   return globalObject;
 }
@@ -94,11 +91,7 @@ JSValueRef JscCodeLoader::getExportedClassByNameInModule(JSContextRef ctx,
   }
 
   JSObjectRef moduleObjRef = JSValueToObject(ctx, moduleObj, nullptr);
-  JSStringRef classNameStr = JSStringCreateWithUTF8CString(className);
-
-  JSValueRef classObj = JSObjectGetProperty(ctx, moduleObjRef, classNameStr, nullptr);
-  JSStringRelease(classNameStr);
-
+  JSValueRef classObj = JSObjectGetProperty(ctx, moduleObjRef, JscStringRAII(className), nullptr);
   return JSValueIsObject(ctx, classObj) ? classObj : JSValueMakeNull(ctx);
 }
 
@@ -110,10 +103,7 @@ JSValueRef JscCodeLoader::getMethodByNameInClass(JSContextRef ctx,
   }
 
   JSObjectRef classObjRef = JSValueToObject(ctx, classObj, nullptr);
-  JSStringRef methodNameStr = JSStringCreateWithUTF8CString(methodName);
-
-  JSValueRef method = JSObjectGetProperty(ctx, classObjRef, methodNameStr, nullptr);
-  JSStringRelease(methodNameStr);
+  JSValueRef method = JSObjectGetProperty(ctx, classObjRef, JscStringRAII(methodName), nullptr);
 
   if (JSValueIsObject(ctx, method) &&
       JSObjectIsFunction(ctx, JSValueToObject(ctx, method, nullptr))) {
@@ -130,23 +120,39 @@ void JscCodeLoader::exposeLogToJsConsole(JSContextRef ctx) {
   JSObjectRef consoleObj = JSObjectMake(ctx, nullptr, nullptr);
 
   // Create log function
-  JSStringRef logStr = JSStringCreateWithUTF8CString("log");
+  JscStringRAII logStr = "log";
   JSObjectRef logFunc = JSObjectMakeFunctionWithCallback(ctx, logStr, JscCodeLoader::jsLog);
 
   // Create error function
-  JSStringRef errorStr = JSStringCreateWithUTF8CString("error");
+  JscStringRAII errorStr = "error";
   JSObjectRef errorFunc = JSObjectMakeFunctionWithCallback(ctx, errorStr, JscCodeLoader::jsError);
 
   // Add functions to console object
   JSObjectSetProperty(ctx, consoleObj, logStr, logFunc, kJSPropertyAttributeNone, nullptr);
   JSObjectSetProperty(ctx, consoleObj, errorStr, errorFunc, kJSPropertyAttributeNone, nullptr);
-  JSStringRelease(logStr);
-  JSStringRelease(errorStr);
 
   // Add console object to global scope
-  JSStringRef consoleStr = JSStringCreateWithUTF8CString("console");
-  JSObjectSetProperty(ctx, globalObject, consoleStr, consoleObj, kJSPropertyAttributeNone, nullptr);
-  JSStringRelease(consoleStr);
+  JSObjectSetProperty(ctx, globalObject, JscStringRAII("console"), consoleObj,
+                      kJSPropertyAttributeNone, nullptr);
+}
+
+static std::string processJsArguments(JSContextRef ctx,
+                                      size_t argumentCount,
+                                      const JSValueRef arguments[],
+                                      JSValueRef* exception) {
+  std::stringstream ss;
+  for (size_t i = 0; i < argumentCount; i++) {
+    JscStringRAII strRef = JSValueToStringCopy(ctx, arguments[i], exception);
+    size_t bufferSize = JSStringGetMaximumUTF8CStringSize(strRef);
+    char* buffer = new char[bufferSize];
+    JSStringGetUTF8CString(strRef, buffer, bufferSize);
+    ss << buffer;
+    if (i < argumentCount - 1) {
+      ss << " ";
+    }
+    delete[] buffer;
+  }
+  return ss.str();
 }
 
 JSValueRef JscCodeLoader::jsLog(JSContextRef ctx,
@@ -155,20 +161,8 @@ JSValueRef JscCodeLoader::jsLog(JSContextRef ctx,
                                 size_t argumentCount,
                                 const JSValueRef arguments[],
                                 JSValueRef* exception) {
-  std::cout << "$jsc$ ";
-  for (size_t i = 0; i < argumentCount; i++) {
-    JSStringRef strRef = JSValueToStringCopy(ctx, arguments[i], exception);
-    size_t bufferSize = JSStringGetMaximumUTF8CStringSize(strRef);
-    char* buffer = new char[bufferSize];
-    JSStringGetUTF8CString(strRef, buffer, bufferSize);
-    std::cout << buffer;
-    if (i < argumentCount - 1)
-      std::cout << " ";
-    delete[] buffer;
-    JSStringRelease(strRef);
-  }
-  std::cout << std::endl;
-
+  std::string message = processJsArguments(ctx, argumentCount, arguments, exception);
+  LOG(INFO) << "$jsc$ " << message;
   return JSValueMakeUndefined(ctx);
 }
 
@@ -178,19 +172,7 @@ JSValueRef JscCodeLoader::jsError(JSContextRef ctx,
                                   size_t argumentCount,
                                   const JSValueRef arguments[],
                                   JSValueRef* exception) {
-  std::cout << "$jsc$ ";
-  for (size_t i = 0; i < argumentCount; i++) {
-    JSStringRef strRef = JSValueToStringCopy(ctx, arguments[i], exception);
-    size_t bufferSize = JSStringGetMaximumUTF8CStringSize(strRef);
-    char* buffer = new char[bufferSize];
-    JSStringGetUTF8CString(strRef, buffer, bufferSize);
-    std::cerr << buffer;
-    if (i < argumentCount - 1)
-      std::cerr << " ";
-    delete[] buffer;
-    JSStringRelease(strRef);
-  }
-  std::cerr << std::endl;
-
+  std::string message = processJsArguments(ctx, argumentCount, arguments, exception);
+  LOG(ERROR) << "$jsc$ " << message;
   return JSValueMakeUndefined(ctx);
 }

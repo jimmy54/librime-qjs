@@ -20,7 +20,7 @@
 template <typename T_JS_VALUE>
 void registerTypesToJsEngine(JsEngine<T_JS_VALUE>& engine) {
   TypeMap<T_JS_VALUE> typeMap;
-  LOG(INFO) << "[qjs] registering rime types to the " << typeMap.engineName << " engine...";
+  DLOG(INFO) << "[qjs] registering rime types to the " << typeMap.engineName << " engine...";
 
   std::filesystem::path path(rime_get_api()->get_user_data_dir());
   path.append("js");

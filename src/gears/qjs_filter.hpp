@@ -32,10 +32,8 @@ template <typename T_ACTUAL, typename T_JS_VALUE>
 class rime::ComponentWrapper<T_ACTUAL, rime::Filter, T_JS_VALUE>
     : public ComponentWrapperBase<T_ACTUAL, rime::Filter, T_JS_VALUE> {
 public:
-  explicit ComponentWrapper(const rime::Ticket& ticket,
-                            const rime::an<T_ACTUAL>& actual,
-                            Environment* environment)
-      : ComponentWrapperBase<T_ACTUAL, rime::Filter, T_JS_VALUE>(ticket, actual, environment) {}
+  explicit ComponentWrapper(const rime::Ticket& ticket)
+      : ComponentWrapperBase<T_ACTUAL, rime::Filter, T_JS_VALUE>(ticket) {}
 
   // NOLINTNEXTLINE(readability-identifier-naming)
   virtual rime::an<rime::Translation> Apply(rime::an<rime::Translation> translation,

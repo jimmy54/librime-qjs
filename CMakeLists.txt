@@ -113,7 +113,6 @@ include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/src/engines/quickjs
   ${CMAKE_CURRENT_SOURCE_DIR}/src/gears
   ${CMAKE_CURRENT_SOURCE_DIR}/src/types
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/helpers
   ${CMAKE_CURRENT_SOURCE_DIR}/src/misc
   ${CMAKE_CURRENT_SOURCE_DIR}/src/patch/quickjs
 )
@@ -121,7 +120,6 @@ include_directories(
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src SRC)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/gears SRC_GEARS)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/types SRC_TYPES)
-aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/helpers SRC_HELPERS)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/patch/quickjs SRC_PATCHES)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/engines SRC_ENGINES)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/engines/quickjs SRC_ENGINE_QUICKJS)
@@ -136,7 +134,6 @@ add_library(librime-qjs-objs OBJECT
   ${SRC}
   ${SRC_GEARS}
   ${SRC_TYPES}
-  ${SRC_HELPERS}
   ${SRC_PATCHES}
   ${SRC_ENGINES}
   ${SRC_ENGINE_QUICKJS}

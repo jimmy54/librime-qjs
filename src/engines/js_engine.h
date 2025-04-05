@@ -81,6 +81,9 @@ public:
 
   void freeValue(const T_JS_VALUE& value);
 
+  template <typename... Args>
+  void freeValue(const T_JS_VALUE& first, const Args&... rest);
+
   template <typename T_RIME_TYPE>
   void registerType(JsWrapper<T_RIME_TYPE, T_JS_VALUE>& wrapper);
 

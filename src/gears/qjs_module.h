@@ -43,8 +43,7 @@ protected:
     if (jsEngine_.isException(instance_)) {
       LOG(ERROR) << "[qjs] Error creating an instance of the exported class in " << fileName;
       jsEngine_.logErrorStackTrace(instance_, __FILE_NAME__, __LINE__);
-      jsEngine_.freeValue(jsClass);
-      jsEngine_.freeValue(jsEnvironment);
+      jsEngine_.freeValue(jsClass, jsEnvironment);
       return;
     }
     DLOG(INFO) << "[qjs] constructor function executed successfully in " << fileName;
@@ -54,9 +53,7 @@ protected:
     finalizer_ =
         jsEngine_.toObject(jsEngine_.getMethodOfClassOrInstance(objClass, instance_, "finalizer"));
 
-    jsEngine_.freeValue(container);
-    jsEngine_.freeValue(jsClass);
-    jsEngine_.freeValue(jsEnvironment);
+    jsEngine_.freeValue(container, jsClass, jsEnvironment);
 
     isLoaded_ = true;
   }
@@ -73,9 +70,7 @@ protected:
       jsEngine_.freeValue(finalizerResult);
     }
 
-    jsEngine_.freeValue(instance_);
-    jsEngine_.freeValue(mainFunc_);
-    jsEngine_.freeValue(finalizer_);
+    jsEngine_.freeValue(instance_, mainFunc_, finalizer_);
   }
 
   [[nodiscard]] bool isLoaded() const { return isLoaded_; }

@@ -26,7 +26,7 @@ protected:
 
   void TearDown() override {
     trieDataHelper_.cleanupDummyFiles();
-    std::remove("tests/dumm.bin");  // the file generated in js
+    std::remove((getFolderPath(__FILE__) + "/dumm.bin").c_str());  // the file generated in js
   }
 };
 
@@ -104,10 +104,6 @@ TYPED_TEST(QuickJSTypesTest, WrapUnwrapRimeTypes) {
   ASSERT_EQ(newCandidate->comment(), "the comment");
   ASSERT_EQ(newCandidate->quality(), 888);
 
-  // free all js objects
-  TypeParam objects[] = {jsEnvironment, global,         jsFunc,           retValue,
-                         retJsEngine,   retJsCandidate, retJsNewCandidate};
-  for (auto obj : objects) {
-    jsEngine.freeValue(obj);
-  }
+  jsEngine.freeValue(jsEnvironment, global, jsFunc, retValue, retJsEngine, retJsCandidate,
+                     retJsNewCandidate);
 }

@@ -35,9 +35,7 @@ public:
     T_JS_VALUE args[] = {jsInput, jsSegment, jsEnvironment};
     T_JS_VALUE resultArray =
         engine->callFunction(this->getMainFunc(), this->getInstance(), countof(args), args);
-    engine->freeValue(jsInput);
-    engine->freeValue(jsSegment);
-    engine->freeValue(jsEnvironment);
+    engine->freeValue(jsInput, jsSegment, jsEnvironment);
     if (engine->isException(resultArray)) {
       return translation;
     }
@@ -64,10 +62,8 @@ template <typename T_ACTUAL, typename T_JS_VALUE>
 class rime::ComponentWrapper<T_ACTUAL, rime::Translator, T_JS_VALUE>
     : public ComponentWrapperBase<T_ACTUAL, rime::Translator, T_JS_VALUE> {
 public:
-  explicit ComponentWrapper(const rime::Ticket& ticket,
-                            const rime::an<T_ACTUAL>& actual,
-                            Environment* environment)
-      : ComponentWrapperBase<T_ACTUAL, rime::Translator, T_JS_VALUE>(ticket, actual, environment) {}
+  explicit ComponentWrapper(const rime::Ticket& ticket)
+      : ComponentWrapperBase<T_ACTUAL, rime::Translator, T_JS_VALUE>(ticket) {}
 
   // NOLINTNEXTLINE(readability-identifier-naming)
   virtual rime::an<rime::Translation> Query(const std::string& input,

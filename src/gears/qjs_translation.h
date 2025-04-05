@@ -38,8 +38,6 @@ private:
     size_t idx = 0;
     while (auto candidate = translation_->exhausted() ? nullptr : translation_->Peek()) {
       translation_->Next();
-      LOG(INFO) << "[qjs] inserting item at index: " << idx;
-      LOG(INFO) << "[qjs] candidate.text = " << candidate->text();
       jsEngine->insertItemToArray(jsArray, idx++,
                                   jsEngine->template wrapShared<Candidate>(candidate));
     }
@@ -52,8 +50,7 @@ private:
     T_JS_VALUE args[] = {jsArray, jsEnvironment};
     T_JS_VALUE resultArray = jsEngine->callFunction(jsEngine->toObject(filterFunc),
                                                     jsEngine->toObject(filterObj), 2, args);
-    jsEngine->freeValue(jsArray);
-    jsEngine->freeValue(jsEnvironment);
+    jsEngine->freeValue(jsArray, jsEnvironment);
     if (jsEngine->isException(resultArray) || !jsEngine->isObject(resultArray) ||
         jsEngine->isUndefined(resultArray) || jsEngine->isNull(resultArray)) {
       jsEngine->freeValue(resultArray);

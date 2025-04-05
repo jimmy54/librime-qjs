@@ -10,6 +10,7 @@
 #include <utility>
 
 #include "engines/javascriptcore/jsc_code_loader.h"
+#include "engines/javascriptcore/jsc_string_raii.hpp"
 #include "engines/js_engine.h"
 #include "types/js_wrapper.h"
 
@@ -96,9 +97,7 @@ public:
 
   [[nodiscard]] size_t getArrayLength(const JSValueRef& array) const {
     JSObjectRef arrayObj = JSValueToObject(ctx_, array, nullptr);
-    auto lengthStr = JSStringCreateWithUTF8CString("length");
-    JSValueRef lengthValue = JSObjectGetProperty(ctx_, arrayObj, lengthStr, nullptr);
-    JSStringRelease(lengthStr);
+    JSValueRef lengthValue = JSObjectGetProperty(ctx_, arrayObj, JscStringRAII("length"), nullptr);
     return static_cast<size_t>(JSValueToNumber(ctx_, lengthValue, nullptr));
   }
 
@@ -117,16 +116,12 @@ public:
 
   [[nodiscard]] JSValueRef getObjectProperty(const JSObjectRef& obj,
                                              const char* propertyName) const {
-    JSStringRef propertyStr = JSStringCreateWithUTF8CString(propertyName);
-    JSValueRef value = JSObjectGetProperty(ctx_, obj, propertyStr, nullptr);
-    JSStringRelease(propertyStr);
-    return value;
+    return JSObjectGetProperty(ctx_, obj, JscStringRAII(propertyName), nullptr);
   }
 
   int setObjectProperty(const JSObjectRef& obj, const char* propertyName, const JSValueRef& value) {
-    JSStringRef propertyStr = JSStringCreateWithUTF8CString(propertyName);
-    JSObjectSetProperty(ctx_, obj, propertyStr, value, kJSPropertyAttributeNone, nullptr);
-    JSStringRelease(propertyStr);
+    JSObjectSetProperty(ctx_, obj, JscStringRAII(propertyName), value, kJSPropertyAttributeNone,
+                        nullptr);
     return 0;
   }
 
@@ -134,10 +129,9 @@ public:
                         const char* functionName,
                         JSObjectCallAsFunctionCallback cppFunction,
                         int expectingArgc) {
-    JSStringRef funcNameStr = JSStringCreateWithUTF8CString(functionName);
+    JscStringRAII funcNameStr = functionName;
     JSObjectRef func = JSObjectMakeFunctionWithCallback(ctx_, funcNameStr, cppFunction);
     JSObjectSetProperty(ctx_, obj, funcNameStr, func, kJSPropertyAttributeNone, nullptr);
-    JSStringRelease(funcNameStr);
     return 0;
   }
 
@@ -146,10 +140,7 @@ public:
   }
 
   [[nodiscard]] JSValueRef toJsString(const char* str) const {
-    JSStringRef jsStr = JSStringCreateWithUTF8CString(str);
-    JSValueRef value = JSValueMakeString(ctx_, jsStr);
-    JSStringRelease(jsStr);
-    return value;
+    return JSValueMakeString(ctx_, JscStringRAII(str));
   }
 
   [[nodiscard]] JSValueRef toJsString(const std::string& str) const {
@@ -157,11 +148,10 @@ public:
   }
 
   [[nodiscard]] std::string toStdString(const JSValueRef& value) const {
-    JSStringRef jsStr = JSValueToStringCopy(ctx_, value, nullptr);
+    JscStringRAII jsStr = JSValueToStringCopy(ctx_, value, nullptr);
     size_t bufferSize = JSStringGetMaximumUTF8CStringSize(jsStr);
     std::vector<char> buffer(bufferSize);
     JSStringGetUTF8CString(jsStr, buffer.data(), bufferSize);
-    JSStringRelease(jsStr);
     return buffer.data();
   }
 
@@ -212,15 +202,12 @@ public:
 
       if (JSValueIsObject(ctx_, value)) {
         JSObjectRef obj = JSValueToObject(ctx_, value, nullptr);
-        JSStringRef prototypeStr = JSStringCreateWithUTF8CString("prototype");
-        JSValueRef prototype = JSObjectGetProperty(ctx_, obj, prototypeStr, nullptr);
-        JSStringRelease(prototypeStr);
+        JSValueRef prototype = JSObjectGetProperty(ctx_, obj, JscStringRAII("prototype"), nullptr);
 
         if (!JSValueIsUndefined(ctx_, prototype) && JSValueIsObject(ctx_, prototype)) {
           JSObjectRef prototypeObj = JSValueToObject(ctx_, prototype, nullptr);
-          JSStringRef methodNameStr = JSStringCreateWithUTF8CString(methodName);
-          JSValueRef method = JSObjectGetProperty(ctx_, prototypeObj, methodNameStr, nullptr);
-          JSStringRelease(methodNameStr);
+          JSValueRef method =
+              JSObjectGetProperty(ctx_, prototypeObj, JscStringRAII(methodName), nullptr);
 
           if (!JSValueIsUndefined(ctx_, method) && JSValueIsObject(ctx_, method)) {
             JSPropertyNameArrayRelease(propertyNames);
@@ -237,10 +224,8 @@ public:
   JSObjectRef getMethodOfClassOrInstance(JSObjectRef jsClass,
                                          JSObjectRef instance,
                                          const char* methodName) const {
-    JSStringRef methodStr = JSStringCreateWithUTF8CString(methodName);
     JSValueRef exception = nullptr;
-    JSValueRef method = JSObjectGetProperty(ctx_, instance, methodStr, &exception);
-    JSStringRelease(methodStr);
+    JSValueRef method = JSObjectGetProperty(ctx_, instance, JscStringRAII(methodName), &exception);
     logErrorStackTrace(exception, __FILE_NAME__, __LINE__);
     return toObject(method);
   }
@@ -252,19 +237,20 @@ public:
     vsnprintf(buffer, sizeof(buffer), format, args);
     va_end(args);
 
-    JSStringRef messageStr = JSStringCreateWithUTF8CString(buffer);
-    JSValueRef exception = JSValueMakeString(ctx_, messageStr);
-    JSStringRelease(messageStr);
-    return exception;
+    return JSValueMakeString(ctx_, JscStringRAII(static_cast<char*>(buffer)));
   }
 
-  bool isObject(const JSValueRef& value) const { return JSValueIsObject(ctx_, value); }
+  [[nodiscard]] bool isObject(const JSValueRef& value) const {
+    return JSValueIsObject(ctx_, value);
+  }
 
-  bool isNull(const JSValueRef& value) const { return JSValueIsNull(ctx_, value); }
+  [[nodiscard]] bool isNull(const JSValueRef& value) const { return JSValueIsNull(ctx_, value); }
 
-  bool isUndefined(const JSValueRef& value) const { return JSValueIsUndefined(ctx_, value); }
+  [[nodiscard]] bool isUndefined(const JSValueRef& value) const {
+    return JSValueIsUndefined(ctx_, value);
+  }
 
-  bool isException(const JSValueRef& value) const {
+  [[nodiscard]] bool isException(const JSValueRef& value) const {
     // nullptr is returned if an exception is thrown in `callFunction` and `newClassInstance`
     return value == nullptr;
   }
@@ -275,18 +261,24 @@ public:
     if (exception == nullptr) {
       return;
     }
-    JSStringRef exceptionStr = JSValueToStringCopy(ctx_, exception, nullptr);
+    JscStringRAII exceptionStr = JSValueToStringCopy(ctx_, exception, nullptr);
     size_t bufferSize = JSStringGetMaximumUTF8CStringSize(exceptionStr);
     std::vector<char> buffer(bufferSize);
     JSStringGetUTF8CString(exceptionStr, buffer.data(), bufferSize);
-    LOG(ERROR) << "[qjs] JS exception at " << file << ':' << line << " => " << buffer.data()
-               << '\n';
-    JSStringRelease(exceptionStr);
+    LOG(ERROR) << "[qjs] JS exception at " << file << ':' << line << " => " << buffer.data();
   }
 
   void freeValue(const JSValueRef& value) const {
     // JavaScriptCore handles memory management automatically
   }
+
+  template <typename... Args>
+  void freeValue(const JSValueRef& first, const Args&... rest) const {
+    freeValue(first);
+    freeValue(rest...);
+  }
+
+  void freeValue() const {}
 
   template <typename T_RIME_TYPE>
   void registerType(JsWrapper<T_RIME_TYPE, JSValueRef>& wrapper) {
@@ -296,7 +288,7 @@ public:
       LOG(INFO) << "[jsc] type: " << typeName << " has already been registered.";
       return;
     }
-    LOG(INFO) << "[jsc] registering type: " << typeName;
+    DLOG(INFO) << "[jsc] registering type: " << typeName;
 
     // the counts would be available after getting the properties and getters
     auto properties = wrapper.getPropertiesJsc(ctx_);
@@ -338,12 +330,8 @@ public:
     // Add the constructor to the global object
     JSObjectRef globalObj = JSContextGetGlobalObject(ctx_);
     JSObjectRef constructorObj = JSObjectMake(ctx_, jsClass, nullptr);
-    JSStringRef classNameStr = JSStringCreateWithUTF8CString(typeName);
-    JSObjectSetProperty(ctx_, globalObj, classNameStr, constructorObj, kJSPropertyAttributeNone,
-                        nullptr);
-    JSStringRelease(classNameStr);
-
-    JSStringRelease(classNameStr);
+    JSObjectSetProperty(ctx_, globalObj, JscStringRAII(typeName), constructorObj,
+                        kJSPropertyAttributeNone, nullptr);
   }
 
   typename TypeMap<JSValueRef>::ExposeFunctionType
@@ -432,12 +420,10 @@ public:
   }
 
   JSValueRef eval(const char* code, const char* filename = "<eval>") {
-    JSStringRef jsCode = JSStringCreateWithUTF8CString(code);
-    JSStringRef filenameStr = JSStringCreateWithUTF8CString(filename);
+    JscStringRAII jsCode = code;
+    JscStringRAII filenameStr = filename;
     JSValueRef exception = nullptr;
     JSValueRef result = JSEvaluateScript(ctx_, jsCode, nullptr, filenameStr, 0, &exception);
-    JSStringRelease(filenameStr);
-    JSStringRelease(jsCode);
     logErrorStackTrace(exception, __FILE_NAME__, __LINE__);
     return result;
   }

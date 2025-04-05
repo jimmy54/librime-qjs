@@ -224,11 +224,18 @@ public:
       LOG(ERROR) << "[qjs] JS stack trace: " << stackTrace;
     }
 
-    JS_FreeValue(context, stack);
-    JS_FreeValue(context, exception);
+    freeValue(stack, exception);
   }
 
   void freeValue(const JSValue& value) const { JS_FreeValue(context, value); }
+
+  template <typename T, typename... Args>
+  void freeValue(const T& first, const Args&... rest) const {
+    freeValue(first);
+    freeValue(rest...);
+  }
+
+  void freeValue() const {}
 
   template <typename T_RIME_TYPE>
   void registerType(JsWrapper<T_RIME_TYPE, JSValue>& wrapper) {
@@ -319,7 +326,6 @@ public:
       LOG(ERROR) << "type: " << key << " has not been registered.";
       return JS_NULL;
     }
-    LOG(INFO) << "WRAPPING object with type: " << key << ", classId = " << getJsClassId<T>();
     JSValue jsobj = JS_NewObjectClass(context, getJsClassId<T>());
     if (isUndefined(jsobj)) {
       LOG(ERROR) << "Failed to create a new object with classId = " << getJsClassId<T>();

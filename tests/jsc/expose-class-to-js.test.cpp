@@ -251,7 +251,7 @@ TEST_F(JavaScriptCoreExposeClassTest, TestExposeClassToJS) {
 
   auto& ctx = getContext();
   JSValueRef exception = nullptr;
-  auto scriptStr = JSStringCreateWithUTF8CString(script);
+  auto* scriptStr = JSStringCreateWithUTF8CString(script);
   JSValueRef result = JSEvaluateScript(ctx, scriptStr, nullptr, nullptr, 0, &exception);
   JSStringRelease(scriptStr);
 

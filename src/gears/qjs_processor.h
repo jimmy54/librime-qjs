@@ -24,8 +24,7 @@ public:
     auto jsEnvironment = engine->wrap(environment);
     T_JS_VALUE args[] = {jsKeyEvt, jsEnvironment};
     T_JS_VALUE jsResult = engine->callFunction(this->getMainFunc(), this->getInstance(), 2, args);
-    engine->freeValue(jsKeyEvt);
-    engine->freeValue(jsEnvironment);
+    engine->freeValue(jsKeyEvt, jsEnvironment);
 
     if (engine->isException(jsResult)) {
       return rime::kNoop;
@@ -55,10 +54,8 @@ template <typename T_ACTUAL, typename T_JS_VALUE>
 class rime::ComponentWrapper<T_ACTUAL, rime::Processor, T_JS_VALUE>
     : public ComponentWrapperBase<T_ACTUAL, rime::Processor, T_JS_VALUE> {
 public:
-  explicit ComponentWrapper(const rime::Ticket& ticket,
-                            const rime::an<T_ACTUAL>& actual,
-                            Environment* environment)
-      : ComponentWrapperBase<T_ACTUAL, rime::Processor, T_JS_VALUE>(ticket, actual, environment) {}
+  explicit ComponentWrapper(const rime::Ticket& ticket)
+      : ComponentWrapperBase<T_ACTUAL, rime::Processor, T_JS_VALUE>(ticket) {}
 
   // NOLINTNEXTLINE(readability-identifier-naming)
   rime::ProcessResult ProcessKeyEvent(const rime::KeyEvent& keyEvent) override {
