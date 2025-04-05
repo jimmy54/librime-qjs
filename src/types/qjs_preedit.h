@@ -21,5 +21,6 @@ class JsWrapper<rime::Preedit, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE> {
 public:
   static const char* getTypeName() { return "Preedit"; }
 
+  EXPORT_FINALIZER(rime::Preedit, finalizer);
   EXPORT_PROPERTIES(text, caretPos, selectStart, selectEnd);
 };

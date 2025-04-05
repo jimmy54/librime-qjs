@@ -130,16 +130,14 @@ void JscCodeLoader::exposeLogToJsConsole(JSContextRef ctx) {
   JSObjectRef consoleObj = JSObjectMake(ctx, nullptr, nullptr);
 
   // Create log function
-  JSObjectRef logFunc = JSObjectMakeFunctionWithCallback(ctx, JSStringCreateWithUTF8CString("log"),
-                                                         JscCodeLoader::jsLog);
+  JSStringRef logStr = JSStringCreateWithUTF8CString("log");
+  JSObjectRef logFunc = JSObjectMakeFunctionWithCallback(ctx, logStr, JscCodeLoader::jsLog);
 
   // Create error function
-  JSObjectRef errorFunc = JSObjectMakeFunctionWithCallback(
-      ctx, JSStringCreateWithUTF8CString("error"), JscCodeLoader::jsError);
+  JSStringRef errorStr = JSStringCreateWithUTF8CString("error");
+  JSObjectRef errorFunc = JSObjectMakeFunctionWithCallback(ctx, errorStr, JscCodeLoader::jsError);
 
   // Add functions to console object
-  JSStringRef logStr = JSStringCreateWithUTF8CString("log");
-  JSStringRef errorStr = JSStringCreateWithUTF8CString("error");
   JSObjectSetProperty(ctx, consoleObj, logStr, logFunc, kJSPropertyAttributeNone, nullptr);
   JSObjectSetProperty(ctx, consoleObj, errorStr, errorFunc, kJSPropertyAttributeNone, nullptr);
   JSStringRelease(logStr);

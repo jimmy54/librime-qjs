@@ -39,7 +39,21 @@ public:
     JscCodeLoader::exposeLogToJsConsole(ctx_);
   }
 
-  ~JsEngine<JSValueRef>() { JSGlobalContextRelease(ctx_); }
+  ~JsEngine<JSValueRef>() {
+    std::vector<std::string> keysToRemove;
+    for (auto& clazz : clazzes) {
+      if (clazz.first.find(engineId_) != std::string::npos) {
+        auto& clazzDef = std::get<1>(clazz.second);
+        JSClassRelease(clazzDef);
+        keysToRemove.push_back(clazz.first);
+      }
+    }
+    for (auto& key : keysToRemove) {
+      clazzes.erase(key);
+    }
+
+    JSGlobalContextRelease(ctx_);
+  }
 
   JsEngine(const JsEngine&) = delete;
   JsEngine(JsEngine&&) = delete;
@@ -82,8 +96,9 @@ public:
 
   [[nodiscard]] size_t getArrayLength(const JSValueRef& array) const {
     JSObjectRef arrayObj = JSValueToObject(ctx_, array, nullptr);
-    JSValueRef lengthValue =
-        JSObjectGetProperty(ctx_, arrayObj, JSStringCreateWithUTF8CString("length"), nullptr);
+    auto lengthStr = JSStringCreateWithUTF8CString("length");
+    JSValueRef lengthValue = JSObjectGetProperty(ctx_, arrayObj, lengthStr, nullptr);
+    JSStringRelease(lengthStr);
     return static_cast<size_t>(JSValueToNumber(ctx_, lengthValue, nullptr));
   }
 
@@ -191,22 +206,21 @@ public:
     JSPropertyNameArrayRef propertyNames = JSObjectCopyPropertyNames(ctx_, globalObj);
     size_t count = JSPropertyNameArrayGetCount(propertyNames);
 
-    // TODO: Implement proper isolation by loading JavaScript files into separate contexts
-    // Currently using a workaround that finds the most recently loaded class with the method
-    // Note: This is unstable - if the latest file doesn't contain the expected method, it may return an incorrect class from previously loaded files
     for (size_t i = count - 1; i >= 0; i--) {
       JSStringRef propertyName = JSPropertyNameArrayGetNameAtIndex(propertyNames, i);
       JSValueRef value = JSObjectGetProperty(ctx_, globalObj, propertyName, nullptr);
 
       if (JSValueIsObject(ctx_, value)) {
         JSObjectRef obj = JSValueToObject(ctx_, value, nullptr);
-        JSValueRef prototype =
-            JSObjectGetProperty(ctx_, obj, JSStringCreateWithUTF8CString("prototype"), nullptr);
+        JSStringRef prototypeStr = JSStringCreateWithUTF8CString("prototype");
+        JSValueRef prototype = JSObjectGetProperty(ctx_, obj, prototypeStr, nullptr);
+        JSStringRelease(prototypeStr);
 
         if (!JSValueIsUndefined(ctx_, prototype) && JSValueIsObject(ctx_, prototype)) {
           JSObjectRef prototypeObj = JSValueToObject(ctx_, prototype, nullptr);
-          JSValueRef method = JSObjectGetProperty(
-              ctx_, prototypeObj, JSStringCreateWithUTF8CString(methodName), nullptr);
+          JSStringRef methodNameStr = JSStringCreateWithUTF8CString(methodName);
+          JSValueRef method = JSObjectGetProperty(ctx_, prototypeObj, methodNameStr, nullptr);
+          JSStringRelease(methodNameStr);
 
           if (!JSValueIsUndefined(ctx_, method) && JSValueIsObject(ctx_, method)) {
             JSPropertyNameArrayRelease(propertyNames);
@@ -419,9 +433,10 @@ public:
 
   JSValueRef eval(const char* code, const char* filename = "<eval>") {
     JSStringRef jsCode = JSStringCreateWithUTF8CString(code);
+    JSStringRef filenameStr = JSStringCreateWithUTF8CString(filename);
     JSValueRef exception = nullptr;
-    JSValueRef result = JSEvaluateScript(ctx_, jsCode, nullptr,
-                                         JSStringCreateWithUTF8CString(filename), 0, &exception);
+    JSValueRef result = JSEvaluateScript(ctx_, jsCode, nullptr, filenameStr, 0, &exception);
+    JSStringRelease(filenameStr);
     JSStringRelease(jsCode);
     logErrorStackTrace(exception, __FILE_NAME__, __LINE__);
     return result;

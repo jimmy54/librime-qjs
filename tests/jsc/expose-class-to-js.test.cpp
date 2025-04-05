@@ -251,8 +251,9 @@ TEST_F(JavaScriptCoreExposeClassTest, TestExposeClassToJS) {
 
   auto& ctx = getContext();
   JSValueRef exception = nullptr;
-  JSValueRef result =
-      JSEvaluateScript(ctx, JSStringCreateWithUTF8CString(script), nullptr, nullptr, 0, &exception);
+  auto scriptStr = JSStringCreateWithUTF8CString(script);
+  JSValueRef result = JSEvaluateScript(ctx, scriptStr, nullptr, nullptr, 0, &exception);
+  JSStringRelease(scriptStr);
 
   ASSERT_FALSE(exception) << "JavaScript execution failed";
   ASSERT_TRUE(JSValueIsObject(ctx, result)) << "Result should be an array";
