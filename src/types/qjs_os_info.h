@@ -11,7 +11,7 @@ class JsWrapper<SystemInfo, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE> {
   DEFINE_GETTER(SystemInfo, architecture, engine.toJsString(obj->getArchitecture()));
 
 public:
-  static const char* getTypeName() { return "OperationSystemInfo"; }
+  EXPORT_CLASS(OperationSystemInfo);
 
   EXPORT_GETTERS(name, version, architecture);
 };

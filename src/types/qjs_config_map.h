@@ -45,7 +45,7 @@ class JsWrapper<rime::ConfigMap, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE> 
   })
 
 public:
-  static const char* getTypeName() { return "ConfigMap"; }
+  EXPORT_CLASS(ConfigMap);
 
   EXPORT_FINALIZER(rime::ConfigMap, finalizer);
   EXPORT_FUNCTIONS(getType, 0, hasKey, 1, getItem, 1, getValue, 1, setItem, 2);

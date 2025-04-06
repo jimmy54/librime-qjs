@@ -32,6 +32,25 @@
 
 #define countof(array) (sizeof(array) / sizeof(array[0]))
 
+#define EXPORT_CLASS(name)            \
+  static const char* getTypeName() {  \
+    return #name;                     \
+  }                                   \
+  static JSClassID getJSClassId() {   \
+    static JSClassID classId = 0;     \
+    return classId;                   \
+  }                                   \
+  static JSClassDef getJSClassDef() { \
+    static JSClassDef classDef = {    \
+        .class_name = #name,          \
+        .finalizer = nullptr,         \
+        .gc_mark = nullptr,           \
+        .call = nullptr,              \
+        .exotic = nullptr,            \
+    };                                \
+    return classDef;                  \
+  }
+
 // =============== GETTER ===============
 #define DEFINE_GETTER(T_RIME_TYPE, propertieyName, statement) \
   DEFINE_GETTER_IMPL(T_RIME_TYPE, propertieyName, statement, engine.unwrap<T_RIME_TYPE>(thisVal))

@@ -92,7 +92,7 @@ class JsWrapper<rime::Config, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE> {
   })
 
 public:
-  static const char* getTypeName() { return "Config"; }
+  EXPORT_CLASS(Config);
 
   EXPORT_FUNCTIONS(loadFromFile,
                    1,

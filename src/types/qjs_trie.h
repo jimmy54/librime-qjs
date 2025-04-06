@@ -76,7 +76,7 @@ class JsWrapper<rime::Trie, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE> {
   })
 
 public:
-  static const char* getTypeName() { return "Trie"; }
+  EXPORT_CLASS(Trie);
 
   EXPORT_CONSTRUCTOR(makeTrie, { return engine.wrapShared<Trie>(std::make_shared<Trie>()); });
 

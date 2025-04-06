@@ -15,7 +15,7 @@ class JsWrapper<rime::Schema, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE> {
   DEFINE_GETTER(Schema, selectKeys, engine.toJsString(obj->select_keys()))
 
 public:
-  static const char* getTypeName() { return "Schema"; }
+  EXPORT_CLASS(Schema);
 
   EXPORT_GETTERS(id, name, config, pageSize, selectKeys);
 };

@@ -38,7 +38,7 @@ class JsWrapper<rime::Engine, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE> {
   })
 
 public:
-  static const char* getTypeName() { return "Engine"; }
+  EXPORT_CLASS(Engine);
 
   EXPORT_GETTERS(schema, context, activeEngine);
   EXPORT_FUNCTIONS(processKey, 1, commitText, 1, applySchema, 1);

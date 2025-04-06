@@ -1,8 +1,10 @@
 #include <string>
 
 #ifdef _WIN32
+// clang-format off
 #include <Windows.h> // Windows.h must be included before VersionHelpers.h
 #include <VersionHelpers.h>
+// clang-format on
 #elif defined(__linux__)
 #include <sys/utsname.h>
 #include <fstream>

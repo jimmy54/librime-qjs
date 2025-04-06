@@ -47,7 +47,7 @@ class JsWrapper<rime::Context, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE> {
   })
 
 public:
-  static const char* getTypeName() { return "Context"; }
+  EXPORT_CLASS(Context);
 
   EXPORT_PROPERTIES(input, caretPos);
   EXPORT_GETTERS(preedit, lastSegment);

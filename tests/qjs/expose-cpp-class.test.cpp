@@ -206,7 +206,7 @@ class JsWrapper<MyClass, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE> {
   });
 
 public:
-  static const char* getTypeName() { return "MyClass"; }
+  EXPORT_CLASS(MyClass);
 
   JsWrapper<MyClass, T_JS_VALUE>() { this->setConstructorArgc(1); }
   EXPORT_CONSTRUCTOR(makeMyClass, {
@@ -225,4 +225,5 @@ TEST_F(QuickJSExposeClassTest, TestExposeClassToQuickJSWithEngine) {
   auto result = engine.eval(SCRIPT);
   auto str = engine.toStdString(result);
   EXPECT_STREQ(str.c_str(), "Hello, QuickJS! Hello, Trae!");
+  engine.freeValue(result);
 }

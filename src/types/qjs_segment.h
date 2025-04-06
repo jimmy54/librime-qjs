@@ -38,7 +38,7 @@ class JsWrapper<rime::Segment, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE> {
   })
 
 public:
-  static const char* getTypeName() { return "Segment"; }
+  EXPORT_CLASS(Segment);
 
   EXPORT_PROPERTIES(selectedIndex, prompt);
   EXPORT_GETTERS(start, end, selectedCandidate, candidateSize);

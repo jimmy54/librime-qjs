@@ -48,7 +48,7 @@ class JsWrapper<rime::Candidate, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE> 
   })
 
 public:
-  static const char* getTypeName() { return "Candidate"; }
+  EXPORT_CLASS(Candidate);
 
   static constexpr int MIN_ARGC_NEW_CANDIDATE = 5;
 

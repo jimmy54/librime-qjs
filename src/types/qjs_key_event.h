@@ -15,7 +15,7 @@ class JsWrapper<rime::KeyEvent, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE> {
   DEFINE_GETTER(KeyEvent, repr, engine.toJsString(obj->repr()))
 
 public:
-  static const char* getTypeName() { return "KeyEvent"; }
+  EXPORT_CLASS(KeyEvent);
 
   EXPORT_GETTERS(shift, ctrl, alt, release, repr);
 };

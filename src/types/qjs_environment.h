@@ -57,7 +57,7 @@ class JsWrapper<Environment, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE> {
   })
 
 public:
-  static const char* getTypeName() { return "Environment"; }
+  EXPORT_CLASS(Environment);
 
   EXPORT_GETTERS(engine, namespace, userDataDir, sharedDataDir, os);
   EXPORT_FUNCTIONS(loadFile, 1, fileExists, 1, getRimeInfo, 0, popen, 1);

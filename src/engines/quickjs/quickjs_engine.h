@@ -5,7 +5,6 @@
 #include <cstdint>
 #include <memory>
 #include <string>
-#include <tuple>
 #include <unordered_map>
 #include <utility>
 
@@ -24,8 +23,7 @@ class JsEngine<JSValue> {
 
   // the types will be registered only once to the shared runtime
   // the key is the typeid of the registering type: typeid(T_RIME_TYPE).name()
-  inline static std::unordered_map<std::string, std::tuple<std::string, JSClassID, JSClassDef>>
-      clazzes{};
+  inline static std::unordered_map<std::string, std::pair<std::string, JSClassID>> clazzes{};
 
   JsEngine<JSValue>() {
     JS_SetModuleLoaderFunc(runtime, nullptr, js_module_loader, nullptr);
@@ -247,18 +245,14 @@ public:
       return;
     }
 
-    JSClassID classId = 0;
-    JSClassDef classDef = {
-        .class_name = typeName,
-        .finalizer = wrapper.getFinalizer(),
-        .gc_mark = nullptr,
-        .call = nullptr,
-        .exotic = nullptr,
-    };
+    JSClassID classId = JsWrapper<T_RIME_TYPE, JSValue>::getJSClassId();
+    JSClassDef classDef = JsWrapper<T_RIME_TYPE, JSValue>::getJSClassDef();
+    classDef.finalizer = wrapper.getFinalizer();
+
     JS_NewClassID(runtime, &classId);
     JS_NewClass(runtime, classId, &classDef);
 
-    clazzes[key] = std::make_tuple(typeName, classId, classDef);
+    clazzes[key] = std::make_pair(typeName, classId);
 
     JSValue proto = JS_NewObject(context);
     if (auto* constructor = wrapper.getConstructor()) {
@@ -337,7 +331,7 @@ public:
     }
     if (JS_SetOpaque(jsobj, ptrValue) < 0) {
       JS_FreeValue(context, jsobj);
-      const char* typeName = std::get<0>(clazzes[key]).c_str();
+      const char* typeName = clazzes[key].first.c_str();
       return JS_ThrowInternalError(context, "Failed to set a raw pointer to a %s object", typeName);
     };
     return jsobj;
@@ -381,6 +375,6 @@ private:
       LOG(ERROR) << "type: " << key << " has not been registered.";
       return 0;
     }
-    return std::get<1>(clazzes.at(key));
+    return clazzes.at(key).second;
   }
 };
