@@ -10,31 +10,35 @@
 
 #include "engines/js_engine.h"
 #include "engines/quickjs/quickjs_code_loader.h"
+#include "engines/quickjs/quickjs_type_registry.h"
+#include "engines/quickjs/quickjs_utils.h"
 #include "patch/quickjs/node_module_loader.h"
 #include "types/js_wrapper.h"
 
 template <>
 class JsEngine<JSValue> {
-  // All qjs plugins should share the same runtime and context
-  // Never call JS_FreeContext or JS_FreeRuntime to free them, otherwise the following error will occur:
-  // Assertion failed: (p->ref_count > 0), function gc_decref_child, file quickjs.c, line 5868.
-  inline static JSRuntime* runtime = JS_NewRuntime();
-  inline static JSContext* context = JS_NewContext(runtime);
-
-  // the types will be registered only once to the shared runtime
-  // the key is the typeid of the registering type: typeid(T_RIME_TYPE).name()
-  inline static std::unordered_map<std::string, std::pair<std::string, JSClassID>> clazzes{};
-
-  JsEngine<JSValue>() {
-    JS_SetModuleLoaderFunc(runtime, nullptr, js_module_loader, nullptr);
+  // define them in a static way to avoid the initialization order fiasco
+  static JSContext* newContext() {
+    static auto* runtime = JS_NewRuntime();
+    static auto* context = JS_NewContext(runtime);
 
     // Do not trigger GC when heap size is less than 16MB
     // default: rt->malloc_gc_threshold = 256 * 1024
     constexpr size_t SIXTEEN_MEGABYTES = 16L * 1024 * 1024;
-    JS_SetGCThreshold(runtime, SIXTEEN_MEGABYTES);
+    JS_SetGCThreshold(JS_GetRuntime(context), SIXTEEN_MEGABYTES);
 
+    JS_SetModuleLoaderFunc(JS_GetRuntime(context), nullptr, js_module_loader, nullptr);
     QuickJSCodeLoader::exposeLogToJsConsole(context);
+
+    return context;
   }
+
+  // All qjs plugins should share the same runtime and context
+  // Never call JS_FreeContext or JS_FreeRuntime to free them, otherwise the following error will occur:
+  // Assertion failed: (p->ref_count > 0), function gc_decref_child, file quickjs.c, line 5868.
+  inline static JSContext* context = newContext();
+
+  JsEngine<JSValue>() {}
 
 public:
   static JsEngine<JSValue>& instance() {
@@ -42,25 +46,17 @@ public:
     return instance;
   }
 
-  ~JsEngine<JSValue>() { JS_FreeContext(context); }
-
-  JsEngine(const JsEngine& other) = default;
-  JsEngine(JsEngine&&) = delete;
-  JsEngine& operator=(const JsEngine& other) = delete;
-  JsEngine& operator=(JsEngine&&) = delete;
-
   static JsEngine<JSValue>& getEngineByContext(JSContext* ctx) { return instance(); }
 
   [[nodiscard]] int64_t getMemoryUsage() const {
     JSMemoryUsage qjsMemStats;
-    JS_ComputeMemoryUsage(runtime, &qjsMemStats);
+    JS_ComputeMemoryUsage(JS_GetRuntime(context), &qjsMemStats);
     return qjsMemStats.memory_used_size;
   }
 
   template <typename T>
   [[nodiscard]] static void* getOpaque(JSValue value) {
-    auto classId = getJsClassId<T>();
-    return JS_GetOpaque(value, classId);
+    return JS_GetOpaque(value, QuickJSTypeRegistry::getJsClassId<T>());
   }
 
   static void setOpaque(JSValue value, void* opaque) { JS_SetOpaque(value, opaque); }
@@ -78,12 +74,7 @@ public:
     if (JS_IsException(lengthVal)) {
       return 0;
     }
-
-    uint32_t length = 0;
-    JS_ToUint32(context, &length, lengthVal);
-    JS_FreeValue(context, lengthVal);
-
-    return length;
+    return toInt(lengthVal);
   }
 
   int insertItemToArray(JSValue array, size_t index, const JSValue& value) const {
@@ -115,16 +106,15 @@ public:
 
   [[nodiscard]] JSValue toObject(const JSValue& value) const { return value; }
 
-  [[nodiscard]] JSValue toJsString(const char* str) const { return JS_NewString(context, str); }
+  [[nodiscard]] JSValue toJsString(const char* str) const {
+    return TypeConverter::toJsString(context, str);
+  }
   [[nodiscard]] JSValue toJsString(const std::string& str) const {
-    return JS_NewString(context, str.c_str());
+    return TypeConverter::toJsString(context, str);
   }
 
   [[nodiscard]] std::string toStdString(const JSValue& value) const {
-    const char* str = JS_ToCString(context, value);
-    std::string ret(str);
-    JS_FreeCString(context, str);
-    return ret;
+    return TypeConverter::toStdString(context, value);
   }
 
   [[nodiscard]] JSValue toJsBool(bool value) const { return JS_NewBool(context, value); }
@@ -132,21 +122,19 @@ public:
   [[nodiscard]] bool toBool(const JSValue& value) const { return JS_ToBool(context, value); }
 
   [[nodiscard]] JSValue toJsInt(size_t value) const {
-    return JS_NewInt64(context, static_cast<int64_t>(value));
+    return TypeConverter::toJsNumber(context, static_cast<int64_t>(value));
   }
 
   [[nodiscard]] size_t toInt(const JSValue& value) const {
-    uint32_t ret = 0;
-    JS_ToUint32(context, &ret, value);
-    return ret;
+    return TypeConverter::toUint32(context, value);
   }
 
-  [[nodiscard]] JSValue toJsDouble(double value) const { return JS_NewFloat64(context, value); }
+  [[nodiscard]] JSValue toJsDouble(double value) const {
+    return TypeConverter::toJsNumber(context, value);
+  }
 
   [[nodiscard]] double toDouble(const JSValue& value) const {
-    double ret = 0;
-    JS_ToFloat64(context, &ret, value);
-    return ret;
+    return TypeConverter::toDouble(context, value);
   }
 
   [[nodiscard]] JSValue callFunction(const JSValue& func,
@@ -175,28 +163,9 @@ public:
   }
 
   [[nodiscard]] JSValue throwError(JsErrorType errorType, const char* format, ...) const {
-    JSValue ret;
     va_list args;
     va_start(args, format);
-    switch (errorType) {
-      case JsErrorType::SYNTAX:
-      case JsErrorType::EVAL:
-        ret = JS_ThrowSyntaxError(context, format, args);
-        break;
-      case JsErrorType::RANGE:
-        ret = JS_ThrowRangeError(context, format, args);
-        break;
-      case JsErrorType::REFERENCE:
-        ret = JS_ThrowReferenceError(context, format, args);
-        break;
-      case JsErrorType::TYPE:
-        ret = JS_ThrowTypeError(context, format, args);
-        break;
-      case JsErrorType::GENERIC:
-      case JsErrorType::UNKNOWN:
-        ret = JS_ThrowPlainError(context, format, args);
-        break;
-    }
+    JSValue ret = ErrorHandler::throwError(context, errorType, format, args);
     va_end(args);
     return ret;
   }
@@ -207,70 +176,65 @@ public:
   [[nodiscard]] bool isException(const JSValue& value) const { return JS_IsException(value); }
   [[nodiscard]] JSValue getLatestException() const { return JS_GetException(context); }
 
-  void logErrorStackTrace(const JSValue& exception,
-                          const char* file = __FILE_NAME__,
-                          int line = __LINE__) const {
-    JSValue actualException = JS_GetException(context);
-    auto message = toStdString(actualException);
-    LOG(ERROR) << "[qjs] JS exception at " << file << ':' << line << " => " << message;
-
-    JSValue stack = JS_GetPropertyStr(context, actualException, "stack");
-    auto stackTrace = toStdString(stack);
-    if (stackTrace.empty()) {
-      LOG(ERROR) << "[qjs] JS stack trace is null.";
-    } else {
-      LOG(ERROR) << "[qjs] JS stack trace: " << stackTrace;
-    }
-
-    freeValue(stack, exception);
+  void logErrorStackTrace(const JSValue& exception, const char* file, int line) const {
+    ErrorHandler::logErrorStackTrace(context, exception, file, line);
   }
 
-  void freeValue(const JSValue& value) const { JS_FreeValue(context, value); }
-
-  template <typename T, typename... Args>
-  void freeValue(const T& first, const Args&... rest) const {
-    freeValue(first);
-    freeValue(rest...);
+  template <typename... Args>
+  void freeValue(const Args&... args) const {
+    (JS_FreeValue(context, args), ...);
   }
-
-  void freeValue() const {}
 
   template <typename T_RIME_TYPE>
   void registerType(JsWrapper<T_RIME_TYPE, JSValue>& wrapper) {
-    const char* key = typeid(T_RIME_TYPE).name();                           // N4rime6EngineE
-    const char* typeName = JsWrapper<T_RIME_TYPE, JSValue>::getTypeName();  // Engine
-    if (clazzes.find(key) != clazzes.end()) {
-      DLOG(INFO) << "type: " << typeName
-                 << " has already been registered with classId = " << getJsClassId<T_RIME_TYPE>();
-      return;
+    QuickJSTypeRegistry::registerType(context, wrapper);
+  }
+
+  template <typename T>
+  [[nodiscard]] T* unwrap(const JSValue& value) const {
+    if (auto* ptr = QuickJSTypeRegistry::getOpaqueIfTypeRegistered<T>(value)) {
+      return static_cast<T*>(ptr);
     }
+    return nullptr;
+  }
 
-    JSClassID classId = JsWrapper<T_RIME_TYPE, JSValue>::getJSClassId();
-    JSClassDef classDef = JsWrapper<T_RIME_TYPE, JSValue>::getJSClassDef();
-    classDef.finalizer = wrapper.getFinalizer();
-
-    JS_NewClassID(runtime, &classId);
-    JS_NewClass(runtime, classId, &classDef);
-
-    clazzes[key] = std::make_pair(typeName, classId);
-
-    JSValue proto = JS_NewObject(context);
-    if (auto* constructor = wrapper.getConstructor()) {
-      JSValue jsConstructor = JS_NewCFunction2(
-          context, constructor, typeName, wrapper.getConstructorArgc(), JS_CFUNC_constructor, 0);
-      JS_SetConstructor(context, jsConstructor, proto);
-      auto jsGlobal = JS_GetGlobalObject(context);
-      JS_SetPropertyStr(context, jsGlobal, typeName, jsConstructor);
-      JS_FreeValue(context, jsGlobal);
+  template <typename T>
+  [[nodiscard]] std::shared_ptr<T> unwrapShared(const JSValue& value) const {
+    if (auto* ptr = QuickJSTypeRegistry::getOpaqueIfTypeRegistered<T>(value)) {
+      if (auto sharedPtr = static_cast<std::shared_ptr<T>*>(ptr)) {
+        return *sharedPtr;
+      }
     }
+    return nullptr;
+  }
 
-    JS_SetPropertyFunctionList(context, proto, wrapper.getProperties(context),
-                               wrapper.getPropertiesCount());
-    JS_SetPropertyFunctionList(context, proto, wrapper.getGetters(context),
-                               wrapper.getGettersCount());
-    JS_SetPropertyFunctionList(context, proto, wrapper.getFunctions(context),
-                               wrapper.getFunctionsCount());
-    JS_SetClassProto(context, classId, proto);
+  template <typename T>
+  [[nodiscard]] JSValue wrap(T* ptrValue) const {
+    JSValue jsobj = QuickJSTypeRegistry::createJsObjectForType<T>(context, ptrValue != nullptr);
+    if (JS_IsNull(jsobj) || JS_IsException(jsobj)) {
+      return jsobj;
+    }
+    if (JS_SetOpaque(jsobj, ptrValue) < 0) {
+      JS_FreeValue(context, jsobj);
+      return JS_ThrowInternalError(context, "Failed to set a raw pointer to a %s object",
+                                   QuickJSTypeRegistry::getRegisteredTypeName<T>().c_str());
+    }
+    return jsobj;
+  }
+
+  template <typename T>
+  [[nodiscard]] JSValue wrapShared(const std::shared_ptr<T>& value) const {
+    JSValue jsobj = QuickJSTypeRegistry::createJsObjectForType<T>(context, value != nullptr);
+    if (JS_IsNull(jsobj) || JS_IsException(jsobj)) {
+      return jsobj;
+    }
+    auto ptr = std::make_unique<std::shared_ptr<T>>(value);
+    if (JS_SetOpaque(jsobj, ptr.release()) < 0) {
+      JS_FreeValue(context, jsobj);
+      return JS_ThrowInternalError(context, "Failed to set a shared pointer to a %s object",
+                                   QuickJSTypeRegistry::getRegisteredTypeName<T>().c_str());
+    }
+    return jsobj;
   }
 
   [[nodiscard]] typename TypeMap<JSValue>::ExposeFunctionType
@@ -285,76 +249,6 @@ public:
     return JS_CGETSET_DEF(name, getter, setter);
   }
 
-  template <typename T>
-  [[nodiscard]] T* unwrap(const JSValue& value) const {
-    const char* key = typeid(T).name();
-    if (clazzes.find(key) == clazzes.end()) {
-      LOG(ERROR) << "type: " << key << " has not been registered.";
-      return nullptr;
-    }
-
-    if (auto* ptr = JS_GetOpaque(value, getJsClassId<T>())) {
-      return static_cast<T*>(ptr);
-    }
-    return nullptr;
-  }
-
-  template <typename T>
-  [[nodiscard]] std::shared_ptr<T> unwrapShared(const JSValue& value) const {
-    if (auto* ptr = JS_GetOpaque(value, getJsClassId<T>())) {
-      if (auto sharedPtr = static_cast<std::shared_ptr<T>*>(ptr)) {
-        return *sharedPtr;
-      }
-    }
-    return nullptr;
-  }
-
-  template <typename T>
-  [[nodiscard]] JSValue wrap(T* ptrValue) const {
-    if (!ptrValue) {
-      return JS_NULL;
-    }
-
-    const char* key = typeid(T).name();
-    if (clazzes.find(key) == clazzes.end()) {
-      LOG(ERROR) << "type: " << key << " has not been registered.";
-      return JS_NULL;
-    }
-    JSValue jsobj = JS_NewObjectClass(context, getJsClassId<T>());
-    if (isUndefined(jsobj)) {
-      LOG(ERROR) << "Failed to create a new object with classId = " << getJsClassId<T>();
-      return jsobj;
-    }
-    if (JS_IsException(jsobj)) {
-      logErrorStackTrace(jsobj);
-      return jsobj;
-    }
-    if (JS_SetOpaque(jsobj, ptrValue) < 0) {
-      JS_FreeValue(context, jsobj);
-      const char* typeName = clazzes[key].first.c_str();
-      return JS_ThrowInternalError(context, "Failed to set a raw pointer to a %s object", typeName);
-    };
-    return jsobj;
-  }
-
-  template <typename T>
-  [[nodiscard]] JSValue wrapShared(const std::shared_ptr<T>& value) const {
-    if (!value) {
-      return JS_NULL;
-    }
-    JSValue jsobj = JS_NewObjectClass(context, getJsClassId<T>());
-    if (JS_IsException(jsobj)) {
-      return jsobj;
-    }
-    auto ptr = std::make_unique<std::shared_ptr<T>>(value);
-    if (JS_SetOpaque(jsobj, ptr.release()) < 0) {
-      JS_FreeValue(context, jsobj);
-      return JS_ThrowInternalError(context, "Failed to set a raw pointer to a %s object",
-                                   typeid(T).name());
-    };
-    return jsobj;
-  }
-
   void setBaseFolderPath(const char* absolutePath) { setQjsBaseFolder(absolutePath); }
 
   [[nodiscard]] JSValue loadJsFile(const char* fileName) const {
@@ -366,15 +260,4 @@ public:
   }
 
   [[nodiscard]] JSValue getGlobalObject() const { return JS_GetGlobalObject(context); }
-
-private:
-  template <typename T>
-  static JSClassID getJsClassId() {
-    const char* key = typeid(T).name();
-    if (clazzes.find(key) == clazzes.end()) {
-      LOG(ERROR) << "type: " << key << " has not been registered.";
-      return 0;
-    }
-    return clazzes.at(key).second;
-  }
 };
