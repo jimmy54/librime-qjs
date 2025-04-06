@@ -1,8 +1,8 @@
 #include <string>
 
 #ifdef _WIN32
+#include <Windows.h> // Windows.h must be included before VersionHelpers.h
 #include <VersionHelpers.h>
-#include <Windows.h>
 #elif defined(__linux__)
 #include <sys/utsname.h>
 #include <fstream>
