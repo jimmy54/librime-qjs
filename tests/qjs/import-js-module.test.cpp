@@ -3,6 +3,7 @@
 #include <filesystem>
 
 #include "engines/quickjs/quickjs_code_loader.h"
+#include "engines/quickjs/quickjs_engine.h"
 #include "patch/quickjs/node_module_loader.h"
 
 class QuickJSModuleTest : public testing::Test {
@@ -59,6 +60,35 @@ TEST_F(QuickJSModuleTest, ImportJsModuleFromAnotherJsFile) {
   for (auto obj : {module, globalObj, myClass, arg, obj, greetArg, greetResult}) {
     JS_FreeValue(ctx, obj);
   }
+}
+
+TEST_F(QuickJSModuleTest, ImportJsModuleFromAnotherJsFileWithEngine) {
+  auto& engine = JsEngine<JSValue>::instance();
+  std::filesystem::path path = __FILE__;
+  path = path.parent_path().parent_path() / "js";
+  engine.setBaseFolderPath(path.generic_string().c_str());
+
+  JSValue module = engine.loadJsFile("main.js");
+
+  JSValue globalObj = engine.getGlobalObject();
+  JSValue myClass = engine.getObjectProperty(globalObj, "MyClass");
+  ASSERT_FALSE(engine.isException(myClass));
+
+  constexpr int A_NAMED_INT = 10;
+  JSValue arg = engine.toJsInt(A_NAMED_INT);
+  JSValue obj = engine.newClassInstance(myClass, 1, &arg);
+  ASSERT_FALSE(engine.isException(obj));
+
+  JSValue greetArg = engine.toJsString("QuickJS");
+  JSValue greeFunction = engine.getMethodOfClassOrInstance(myClass, obj, "greet");
+  JSValue greetResult = engine.callFunction(greeFunction, obj, 1, &greetArg);
+  ASSERT_FALSE(JS_IsException(greetResult));
+
+  auto str = engine.toStdString(greetResult);
+  ASSERT_FALSE(str.empty());
+  EXPECT_STREQ(str.c_str(), "Hello QuickJS!");
+
+  engine.freeValue(module, globalObj, myClass, arg, obj, greetArg, greetResult);
 }
 
 TEST_F(QuickJSModuleTest, ImportJsModuleToNamespace) {

@@ -4,9 +4,10 @@
 #include <string>
 #include <utility>
 
-#include "quickjs.h"
+#include <quickjs.h>
 
-#define countof(x) (sizeof(x) / sizeof(x[0]))
+#include "engines/js_macros.h"
+#include "engines/quickjs/quickjs_engine.h"
 
 class MyClass {
 public:
@@ -166,24 +167,62 @@ private:
   JSContext* ctx_{nullptr};
 };
 
-TEST_F(QuickJSExposeClassTest, TestExposeClassToQuickJS) {
-  const char* script = R"(
-        function testExposedCppClass() {
-            let ret;
-            const obj = new MyClass("QuickJS");
-            ret = obj.sayHello();
-            obj.setName("Trae");
-            ret += ' ' + obj.sayHello();
-            return ret;
-        }
-        testExposedCppClass();  // Execute immediately to avoid reference issues
-    )";
+constexpr const char* SCRIPT = R"(
+  function testExposedCppClass() {
+      let ret;
+      const obj = new MyClass("QuickJS");
+      ret = obj.sayHello();
+      obj.setName("Trae");
+      ret += ' ' + obj.sayHello();
+      return ret;
+  }
+  testExposedCppClass();  // Execute immediately to avoid reference issues
+)";
 
+TEST_F(QuickJSExposeClassTest, TestExposeClassToQuickJS) {
   auto* ctx = getContext();
-  JSValue result = JS_Eval(ctx, script, strlen(script), "<input>", JS_EVAL_TYPE_GLOBAL);
+  JSValue result = JS_Eval(ctx, SCRIPT, strlen(SCRIPT), "<input>", JS_EVAL_TYPE_GLOBAL);
   // Handle the result
   const char* resultStr = JS_ToCString(ctx, result);
   EXPECT_STREQ(resultStr, "Hello, QuickJS! Hello, Trae!");
   JS_FreeCString(ctx, resultStr);
   JS_FreeValue(ctx, result);
+}
+
+template <typename T_JS_VALUE>
+class JsWrapper<MyClass, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE> {
+  DEFINE_CFUNCTION_ARGC(sayHello, 0, {
+    auto obj = engine.unwrapShared<MyClass>(thisVal);
+    return engine.toJsString(obj->sayHello());
+  });
+  DEFINE_CFUNCTION_ARGC(getName, 0, {
+    auto obj = engine.unwrapShared<MyClass>(thisVal);
+    return engine.toJsString(obj->getName());
+  });
+  DEFINE_CFUNCTION_ARGC(setName, 1, {
+    auto obj = engine.unwrapShared<MyClass>(thisVal);
+    obj->setName(engine.toStdString(argv[0]));
+    return engine.undefined();
+  });
+
+public:
+  static const char* getTypeName() { return "MyClass"; }
+
+  JsWrapper<MyClass, T_JS_VALUE>() { this->setConstructorArgc(1); }
+  EXPORT_CONSTRUCTOR(makeMyClass, {
+    auto name = engine.toStdString(argv[0]);
+    return engine.wrapShared<MyClass>(std::make_shared<MyClass>(name));
+  });
+  EXPORT_FINALIZER(MyClass, finalizer);
+  EXPORT_FUNCTIONS(sayHello, 0, getName, 0, setName, 1);
+};
+
+TEST_F(QuickJSExposeClassTest, TestExposeClassToQuickJSWithEngine) {
+  auto& engine = JsEngine<JSValue>::instance();
+  JsWrapper<MyClass, JSValue> wrapper;
+  engine.registerType(wrapper);
+
+  auto result = engine.eval(SCRIPT);
+  auto str = engine.toStdString(result);
+  EXPECT_STREQ(str.c_str(), "Hello, QuickJS! Hello, Trae!");
 }
