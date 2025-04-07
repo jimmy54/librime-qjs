@@ -139,6 +139,14 @@ interface Context {
   readonly preedit: Preedit
   /** Last segment in current composition (null if hasMenu() is false) */
   readonly lastSegment: Segment | null
+  /** Notifier for commit events */
+  readonly commitNotifier: Notifier
+  /** Notifier for selection events */
+  readonly selectNotifier: Notifier
+  /** Notifier for update events */
+  readonly updateNotifier: Notifier
+  /** Notifier for delete events */
+  readonly deleteNotifier: Notifier
 
   /** Commit current composition */
   commit(): void
@@ -702,4 +710,34 @@ declare class Filter extends Module {
    * @returns {Array<Candidate>} Filtered array of candidates
    */
   filter(candidates: Array<Candidate>, env: Environment): Array<Candidate>
+}
+
+/**
+ * Represents a notification signal for context changes
+ * @namespace Notifier
+ */
+interface Notifier {
+  /**
+   * Connect a listener function to receive context change notifications
+   * @param listener - Callback function that receives the updated Context
+   * @returns {NotifierConnection} Connection object that can be used to disconnect the listener
+   */
+  connect(listener: (context: Context) => void): NotifierConnection
+}
+
+/**
+ * Represents a connection to a Notifier
+ * @namespace NotifierConnection
+ */
+interface NotifierConnection {
+  /**
+   * Disconnect this listener from receiving notifications
+   */
+  disconnect(): void
+
+  /**
+   * Check if the connection is still active
+   * @readonly
+   */
+  readonly isConnected: boolean
 }

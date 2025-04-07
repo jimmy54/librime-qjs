@@ -1,6 +1,7 @@
 #include "qjs_context.h"
 #include <memory>
 
+#include "qjs_notifier.h"
 #include "qjs_preedit.h"
 #include "qjs_segment.h"
 
@@ -13,6 +14,10 @@ DEFINE_STRING_SETTER(Context, input, obj->set_input(str);)
 DEFINE_SETTER(Context, caretPos, int32_t, JS_ToInt32, obj->set_caret_pos(value))
 
 DEFINE_GETTER(Context, preedit, QjsPreedit::wrap(ctx, std::make_shared<Preedit>(obj->GetPreedit())))
+DEFINE_GETTER(Context, commitNotifier, QjsNotifier::wrap(ctx, &obj->commit_notifier()))
+DEFINE_GETTER(Context, selectNotifier, QjsNotifier::wrap(ctx, &obj->select_notifier()))
+DEFINE_GETTER(Context, updateNotifier, QjsNotifier::wrap(ctx, &obj->update_notifier()))
+DEFINE_GETTER(Context, deleteNotifier, QjsNotifier::wrap(ctx, &obj->delete_notifier()))
 
 static JSValue get_lastSegment(JSContext* ctx, JSValueConst thisVal) {
   if (auto* obj = QjsContext::unwrap(ctx, thisVal)) {
@@ -46,7 +51,12 @@ DEFINE_FUNCTION(Context, hasMenu, return JS_NewBool(ctx, obj->HasMenu());)
 DEFINE_JS_CLASS_WITH_RAW_POINTER(Context,
                                  NO_CONSTRUCTOR_TO_REGISTER,
                                  DEFINE_PROPERTIES(input, caretPos),
-                                 DEFINE_GETTERS(preedit, lastSegment),
+                                 DEFINE_GETTERS(preedit,
+                                                lastSegment,
+                                                commitNotifier,
+                                                selectNotifier,
+                                                updateNotifier,
+                                                deleteNotifier),
                                  DEFINE_FUNCTIONS(
                                      // Input methods
                                      JS_CFUNC_DEF("commit", 0, commit),

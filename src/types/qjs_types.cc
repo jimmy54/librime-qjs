@@ -9,6 +9,8 @@
 #include "qjs_context.h"
 #include "qjs_engine.h"
 #include "qjs_key_event.h"
+#include "qjs_notifier.h"
+#include "qjs_notifier_connection.h"
 #include "qjs_preedit.h"
 #include "qjs_schema.h"
 #include "qjs_segment.h"
@@ -42,6 +44,8 @@ void initQjsTypes(JSContext* ctx) {
   QjsConfigValue().expose(ctx);
   QjsConfigList().expose(ctx);
   QjsConfigMap().expose(ctx);
+  QjsNotifier().expose(ctx);
+  QjsNotifierConnection().expose(ctx);
 }
 
 }  // namespace rime

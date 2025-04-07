@@ -30,14 +30,14 @@ function parseCppExports() {
         const classExports = exports.get(className)
 
         // Parse properties
-        const propsMatch = classBody.match(/DEFINE_PROPERTIES\s*\((.+?)\),?\n/)
+        const propsMatch = classBody.match(/DEFINE_PROPERTIES\s*\((.+?)\),/s)
         if (propsMatch) {
           const props = propsMatch[1].split(',').map((p) => p.trim())
           props.forEach((p) => classExports.props.add(p))
         }
 
         // Parse getters
-        const gettersMatch = classBody.match(/DEFINE_GETTERS\s*\((.+?)\),?\n/)
+        const gettersMatch = classBody.match(/DEFINE_GETTERS\s*\((.+?)\),/s)
         if (gettersMatch) {
           const getters = gettersMatch[1].split(',').map((g) => g.trim())
           getters.forEach((g) => classExports.getters.add(g))
