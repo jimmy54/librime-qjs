@@ -1,7 +1,8 @@
 // Type definitions for Rime QJS API
 // Project: Rime QJS Plugin
 // -----------------------------------
-// Extracted by DeepSeek-Reasoner (R1), and manually edited by @[HuangJian](https://github.com/HuangJian)
+// @author https://github.com/HuangJian
+// @version LIB_RIME_QJS_VERSION
 
 /**
  * Represents a keyboard input event
@@ -147,6 +148,8 @@ interface Context {
   readonly updateNotifier: Notifier
   /** Notifier for delete events */
   readonly deleteNotifier: Notifier
+  /** The commit history */
+  readonly commitHistory: CommitHistory
 
   /** Commit current composition */
   commit(): void
@@ -740,4 +743,40 @@ interface NotifierConnection {
    * @readonly
    */
   readonly isConnected: boolean
+}
+
+/**
+ * Represents a commit record entry
+ * @namespace CommitRecord
+ */
+interface CommitRecord {
+  /** The type of the commit record */
+  type: string
+  /** The text content of the commit record */
+  text: string
+}
+
+/**
+ * Represents a history of commit records
+ * @namespace CommitHistory
+ */
+interface CommitHistory {
+  /**
+   * Push a new commit record to history
+   * @param type - Type identifier for the commit
+   * @param text - Text content to commit
+   */
+  push(type: string, text: string): void
+
+  /**
+   * Get the last commit record
+   * @returns {CommitRecord | undefined} The most recent commit record or undefined if history is empty
+   */
+  readonly last: CommitRecord | undefined
+
+  /**
+   * Get string representation of commit history
+   * @returns {string} Formatted history string
+   */
+  readonly repr: string
 }

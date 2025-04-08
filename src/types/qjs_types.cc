@@ -1,6 +1,8 @@
 #include <cstddef>
 
 #include "qjs_candidate.h"
+#include "qjs_commit_history.h"
+#include "qjs_commit_record.h"
 #include "qjs_config.h"
 #include "qjs_config_item.h"
 #include "qjs_config_list.h"
@@ -46,6 +48,8 @@ void initQjsTypes(JSContext* ctx) {
   QjsConfigMap().expose(ctx);
   QjsNotifier().expose(ctx);
   QjsNotifierConnection().expose(ctx);
+  QjsCommitRecord().expose(ctx);
+  QjsCommitHistory().expose(ctx);
 }
 
 }  // namespace rime

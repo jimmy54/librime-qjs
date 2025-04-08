@@ -1,6 +1,7 @@
 #include "qjs_context.h"
 #include <memory>
 
+#include "qjs_commit_history.h"
 #include "qjs_notifier.h"
 #include "qjs_preedit.h"
 #include "qjs_segment.h"
@@ -18,6 +19,8 @@ DEFINE_GETTER(Context, commitNotifier, QjsNotifier::wrap(ctx, &obj->commit_notif
 DEFINE_GETTER(Context, selectNotifier, QjsNotifier::wrap(ctx, &obj->select_notifier()))
 DEFINE_GETTER(Context, updateNotifier, QjsNotifier::wrap(ctx, &obj->update_notifier()))
 DEFINE_GETTER(Context, deleteNotifier, QjsNotifier::wrap(ctx, &obj->delete_notifier()))
+
+DEFINE_GETTER(Context, commitHistory, QjsCommitHistory::wrap(ctx, &obj->commit_history()))
 
 static JSValue get_lastSegment(JSContext* ctx, JSValueConst thisVal) {
   if (auto* obj = QjsContext::unwrap(ctx, thisVal)) {
@@ -53,6 +56,7 @@ DEFINE_JS_CLASS_WITH_RAW_POINTER(Context,
                                  DEFINE_PROPERTIES(input, caretPos),
                                  DEFINE_GETTERS(preedit,
                                                 lastSegment,
+                                                commitHistory,
                                                 commitNotifier,
                                                 selectNotifier,
                                                 updateNotifier,

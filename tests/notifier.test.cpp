@@ -30,6 +30,7 @@ TEST_F(QuickJSNotifierTest, ConnectToRimeNotifier) {
     function connectToNotifier(env) {
       connection = env.engine.context.commitNotifier.connect((ctx) => {
         ++notifiedTimes;
+        ctx.commitHistory.push('js', 'text' + notifiedTimes);
       })
     }
     function disconnectFromNotifier() {
@@ -76,6 +77,8 @@ TEST_F(QuickJSNotifierTest, ConnectToRimeNotifier) {
     ASSERT_TRUE(JS_ToBool(ctx, isConnected));
     JSValueRAII notifiedTimes = JS_Call(ctx, getNotifiedTimesFunc, JS_UNDEFINED, 0, nullptr);
     ASSERT_EQ(jsToInt(ctx, notifiedTimes), 1);
+    LOG(INFO) << "commit_history: " << engine->context()->commit_history().repr();
+    ASSERT_TRUE(engine->context()->commit_history().repr().find("[js]text1") != std::string::npos);
   }
   {
     engine->context()->set_input("notify again");
@@ -84,6 +87,7 @@ TEST_F(QuickJSNotifierTest, ConnectToRimeNotifier) {
     ASSERT_TRUE(JS_ToBool(ctx, isConnected));
     JSValueRAII notifiedTimes = JS_Call(ctx, getNotifiedTimesFunc, JS_UNDEFINED, 0, nullptr);
     ASSERT_EQ(jsToInt(ctx, notifiedTimes), 2);
+    ASSERT_TRUE(engine->context()->commit_history().repr().find("[js]text2") != std::string::npos);
   }
   {
     JSValueRAII disconnectFromNotifierFunc =
@@ -100,5 +104,6 @@ TEST_F(QuickJSNotifierTest, ConnectToRimeNotifier) {
     ASSERT_FALSE(JS_ToBool(ctx, isConnected));
     JSValueRAII notifiedTimes = JS_Call(ctx, getNotifiedTimesFunc, JS_UNDEFINED, 0, nullptr);
     ASSERT_EQ(jsToInt(ctx, notifiedTimes), 2);  // unchanged after disconnection
+    ASSERT_TRUE(engine->context()->commit_history().repr().find("[js]text3") == std::string::npos);
   }
 }
