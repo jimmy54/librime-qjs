@@ -578,6 +578,12 @@ interface SystemInfo {
  */
 interface Environment {
   /**
+   * A unique ID that identifies this environment instance, combining the plugin identifier and active Rime session
+   * @readonly
+   */
+  
+  readonly id: string
+  /**
    * Reference to the Rime engine instance
    * @readonly
    */

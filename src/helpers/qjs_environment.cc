@@ -8,6 +8,7 @@
 #include <iostream>
 #include <sstream>
 
+#include <rime/schema.h>
 #include "jsstring_raii.hpp"
 #include "node_module_loader.h"
 #include "process_memory.hpp"
@@ -21,6 +22,9 @@ namespace rime {
 
 JSValue QjsEnvironment::create(JSContext* ctx, Engine* engine, const std::string& nameSpace) {
   JSValue environment = JS_NewObject(ctx);  // do not free its properties/methods manually
+  std::string uniqueId =
+      nameSpace + "_" + engine->schema()->schema_id() + "_" + std::to_string(std::time(nullptr));
+  JS_SetPropertyStr(ctx, environment, "id", JS_NewString(ctx, uniqueId.c_str()));
   JS_SetPropertyStr(ctx, environment, "engine", QjsEngine::wrap(ctx, engine));
   JS_SetPropertyStr(ctx, environment, "namespace", JS_NewString(ctx, nameSpace.c_str()));
 

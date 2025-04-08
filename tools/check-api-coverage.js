@@ -65,7 +65,7 @@ function parseDtsDeclarations() {
   const dtsContent = readFileSync(DTS_FILE, 'utf-8')
   const declarations = new Map()
 
-  const blocks = dtsContent.split(/(?=interface|declare)/g);
+  const blocks = dtsContent.split(/(?=interface|declare)/g)
   blocks.forEach((block) => {
     const interfaceMatch = block?.replace(/extends \w+/g, '').match(/\s*(\w+)\s*{(.+)}/s)
     if (interfaceMatch) {
@@ -136,7 +136,7 @@ const cppExports = parseCppExports()
 const interfacesOutsideTypes = [
   {
     name: 'Environment',
-    getters: ['engine', 'namespace', 'userDataDir', 'sharedDataDir', 'os'],
+    getters: ['id', 'engine', 'namespace', 'userDataDir', 'sharedDataDir', 'os'],
     methods: ['loadFile', 'fileExists', 'getRimeInfo', 'popen'],
   },
   {
@@ -161,11 +161,13 @@ const interfacesOutsideTypes = [
   },
 ]
 
-interfacesOutsideTypes.forEach((i) => cppExports.set(i.name, {
-  props: new Set(i.props),
-  getters: new Set(i.getters),
-  methods: new Set(i.methods),
-}))
+interfacesOutsideTypes.forEach((i) =>
+  cppExports.set(i.name, {
+    props: new Set(i.props),
+    getters: new Set(i.getters),
+    methods: new Set(i.methods),
+  }),
+)
 
 const dtsDeclarations = parseDtsDeclarations()
 const errors =
