@@ -90,7 +90,9 @@ jobs:
           cp -r ./version-info.txt ./assets
           cp -r ./dist/lib/** ./assets
           cp -r ./plugins/qjs/build/qjs ./assets
-          bash ./plugins/qjs/tools/update-version.sh ${{ inputs.build_type }}
+          cd ./plugins/qjs
+          bash ./tools/update-version.sh ${{ inputs.build_type }}
+          cd ../..
           cp -r ./plugins/qjs/contrib/rime.d.ts ./assets
           tar -cjvf librime-qjs-${{ env.qjs_git_ref_name }}-${{ runner.os }}-${{ matrix.build_variant || runner.arch }}.tar.bz2  -C ./assets .
 

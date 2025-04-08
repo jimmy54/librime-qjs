@@ -25,3 +25,8 @@ compile_commands.json
 .editorconfig
 
 requirement.md
+
+# visual studio files
+*.vcxproj
+*.vcxproj.filters
+*.sln

@@ -119,7 +119,9 @@ jobs:
           xcopy /Y /I .\version-info.txt .\assets\
           xcopy /Y /I /E .\dist\lib\rime.dll .\assets\
           xcopy /Y /I /E .\plugins\qjs\build\qjs.exe .\assets\
-          .\plugins\qjs\tools\update-version.bat ${{ inputs.build_type}}
+          cd .\plugins\qjs
+          .\tools\update-version.bat ${{ inputs.build_type}}
+          cd ..\..
           xcopy /Y /I .\plugins\qjs\contrib\rime.d.ts .\assets\
           7z a librime-qjs-${{ env.qjs_git_ref_name }}-${{ runner.os }}-${{ matrix.compiler }}-${{ matrix.arch }}.7z .\assets\*
 

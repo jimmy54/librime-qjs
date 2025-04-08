@@ -18,7 +18,7 @@ if not defined version (
 :: Get git reference if Nightly parameter is passed
 if "%1"=="Nightly" (
     for /f "tokens=*" %%i in ('git describe --always') do set "gitref=%%i"
-    set "version=%version%+%gitref%"
+    set "version=%version%+!gitref!"
 )
 
 :: Update version in rime.d.ts using PowerShell (more reliable than batch file string replacement)
