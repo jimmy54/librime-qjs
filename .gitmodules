@@ -2,6 +2,3 @@
 	path = thirdparty/quickjs
 	url = https://github.com/quickjs-ng/quickjs.git
 	fetchRecurseSubmodules = false
-[submodule "thirdparty/yas"]
-	path = thirdparty/yas
-	url = https://github.com/niXman/yas.git

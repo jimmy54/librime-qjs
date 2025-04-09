@@ -2,13 +2,8 @@
 
 #include <cstdio>
 #include <fstream>
-#include <ios>
 #include <string>
 #include <string_view>
-#include <yas/binary_iarchive.hpp>
-#include <yas/binary_oarchive.hpp>
-#include <yas/serialize.hpp>
-#include <yas/std_types.hpp>
 
 #include "benchmark_helper.h"
 #include "map.hpp"
@@ -125,33 +120,6 @@ std::unordered_map<std::string, std::string> loadTextToMap(const std::string& fi
   return map;
 }
 
-void saveMapWithYas(const std::string& filename,
-                    const std::unordered_map<std::string, std::string>& map) {
-  yas::mem_ostream os;
-  yas::binary_oarchive<yas::mem_ostream> oa(os);
-  oa(map);
-
-  std::ofstream fout(filename, std::ios::binary);
-  const auto buf = os.get_shared_buffer();
-  fout.write(reinterpret_cast<const char*>(buf.data.get()), static_cast<std::streamsize>(buf.size));
-}
-
-std::unordered_map<std::string, std::string> loadMapWithYas(const std::string& filename) {
-  std::ifstream fin(filename, std::ios::binary | std::ios::ate);
-  std::streamsize size = fin.tellg();
-  fin.seekg(0, std::ios::beg);
-
-  std::vector<char> buffer(size);
-  fin.read(buffer.data(), size);
-
-  yas::mem_istream is(buffer.data(), buffer.size());
-  yas::binary_iarchive<yas::mem_istream> ia(is);
-
-  std::unordered_map<std::string, std::string> map;
-  ia(map);
-  return map;
-}
-
 constexpr size_t DICT_SIZE = 119000;
 
 TEST(LoadMapDictBenchmark, LoadToTrie) {
@@ -188,10 +156,6 @@ TEST(LoadMapDictBenchmark, LoadTextFileAndLookup) {
 
   auto mmapFile = std::string(FOLDER) + "dict_map.mmap";
   RESAVE_FILE(mmapFile, PRINT_DURATION(YELLOW, "Mmap serialization: \t", mmap.save(mmapFile)));
-
-  auto yasFile = std::string(FOLDER) + "dict_map.yas";
-  RESAVE_FILE(yasFile,
-              PRINT_DURATION(YELLOW, "YAS serialization: \t", saveMapWithYas(yasFile, map)));
 }
 
 TEST(LoadMapDictBenchmark, LoadMmap) {
@@ -203,14 +167,6 @@ TEST(LoadMapDictBenchmark, LoadMmap) {
   std::unordered_map<std::string, std::string> map = mmap.exportToMap();
   checkMapData(map);
   std::remove(mmapFile.c_str());
-}
-
-TEST(LoadMapDictBenchmark, LoadYas) {
-  auto yasFile = std::string(FOLDER) + "dict_map" + ".yas";
-  std::unordered_map<std::string, std::string> map;
-  PRINT_DURATION(MAGENTA, "Yas deserialization: \t", map = loadMapWithYas(yasFile));
-  checkMapData(map);
-  std::remove(yasFile.c_str());
 }
 
 int main(int argc, char** argv) {

@@ -63,10 +63,6 @@ TEST(LoadTrieDictBenchmark, LoadTextFileAndLookup) {
   RESAVE_FILE(TRIE_DATA_HELPER.mergedBinaryPath_,
               PRINT_DURATION(YELLOW, "mmap (trie + data): \t\t\t",
                              trie.saveToBinaryFile(TRIE_DATA_HELPER.mergedBinaryPath_)))
-
-  auto yasPath = TRIE_DATA_HELPER.mergedBinaryPath_ + ".yas";
-  RESAVE_FILE(yasPath, PRINT_DURATION(YELLOW, "YAS  (trie + data): \t\t\t",
-                                      trie.saveToBinaryFileYas(yasPath)))
 }
 
 TEST(LoadTrieDictBenchmark, LoadSingleBinaryFileWithMmapAndLookup) {
@@ -87,13 +83,6 @@ TEST(LoadTrieDictBenchmark, LoadBinaryFilesAndLookup) {
   TrieWithStringExt trie;
   PRINT_DURATION(MAGENTA, "mmap trie + r/w data as string: \t",
                  trie.loadFromFiles(TRIE_DATA_HELPER.binaryPath_));
-  TrieDataHelper::testSearchItems(trie);
-}
-
-TEST(LoadTrieDictBenchmark, LoadSingleBinaryFileAndLookupYas) {
-  TrieWithStringExt trie;
-  auto yasPath = TRIE_DATA_HELPER.mergedBinaryPath_ + ".yas";
-  PRINT_DURATION(MAGENTA, "YAS  (trie + data): \t\t\t", trie.loadBinaryFileYas(yasPath));
   TrieDataHelper::testSearchItems(trie);
 }
 
