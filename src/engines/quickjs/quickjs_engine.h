@@ -5,8 +5,6 @@
 #include <cstdint>
 #include <memory>
 #include <string>
-#include <unordered_map>
-#include <utility>
 
 #include "engines/js_engine.h"
 #include "engines/quickjs/quickjs_code_loader.h"
@@ -48,6 +46,7 @@ public:
 
   static JsEngine<JSValue>& getEngineByContext(JSContext* ctx) { return instance(); }
 
+  // NOLINTBEGIN(readability-convert-member-functions-to-static)
   [[nodiscard]] int64_t getMemoryUsage() const {
     JSMemoryUsage qjsMemStats;
     JS_ComputeMemoryUsage(JS_GetRuntime(context), &qjsMemStats);
@@ -77,8 +76,8 @@ public:
     return toInt(lengthVal);
   }
 
-  int insertItemToArray(JSValue array, size_t index, const JSValue& value) const {
-    return JS_SetPropertyUint32(context, array, index, value);
+  void insertItemToArray(JSValue array, size_t index, const JSValue& value) const {
+    JS_SetPropertyUint32(context, array, index, value);
   }
 
   [[nodiscard]] JSValue getArrayItem(const JSValue& array, size_t index) const {
@@ -119,7 +118,7 @@ public:
 
   [[nodiscard]] JSValue toJsBool(bool value) const { return JS_NewBool(context, value); }
 
-  [[nodiscard]] bool toBool(const JSValue& value) const { return JS_ToBool(context, value); }
+  [[nodiscard]] bool toBool(const JSValue& value) const { return JS_ToBool(context, value) != 0; }
 
   [[nodiscard]] JSValue toJsInt(size_t value) const {
     return TypeConverter::toJsNumber(context, static_cast<int64_t>(value));
@@ -160,14 +159,6 @@ public:
                                                    JSValue instance,
                                                    const char* methodName) const {
     return QuickJSCodeLoader::getMethodByNameInClass(context, jsClass, methodName);
-  }
-
-  [[nodiscard]] JSValue throwError(JsErrorType errorType, const char* format, ...) const {
-    va_list args;
-    va_start(args, format);
-    JSValue ret = ErrorHandler::throwError(context, errorType, format, args);
-    va_end(args);
-    return ret;
   }
 
   [[nodiscard]] bool isObject(const JSValue& value) const { return JS_IsObject(value); }
@@ -260,4 +251,10 @@ public:
   }
 
   [[nodiscard]] JSValue getGlobalObject() const { return JS_GetGlobalObject(context); }
+
+  [[nodiscard]] JSValue throwError(JsErrorType errorType, const std::string& message) const {
+    return ErrorHandler::throwError(context, errorType, message);
+  }
 };
+
+// NOLINTEND(readability-convert-member-functions-to-static)

@@ -105,5 +105,5 @@ TYPED_TEST(QuickJSTranslationTest, NoReturnValueShouldNotCrash) {
   EXPECT_FALSE(qjsTranslation->Next());
   EXPECT_EQ(qjsTranslation->Peek(), nullptr);
 
-  jsEngine.freeValue(result, global, filterFunc);
+  jsEngine.freeValue(filterFunc, result, global);
 }

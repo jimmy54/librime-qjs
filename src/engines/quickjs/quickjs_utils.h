@@ -3,6 +3,7 @@
 #include <glog/logging.h>
 #include <quickjs.h>
 #include <string>
+#include "js_exception.h"
 
 class TypeConverter {
 public:
@@ -14,8 +15,9 @@ public:
 
   static std::string toStdString(JSContext* ctx, const JSValue& value) {
     const char* str = JS_ToCString(ctx, value);
-    if (!str)
-      return std::string();
+    if (str == nullptr) {
+      return {};
+    }
     std::string ret(str);
     JS_FreeCString(ctx, str);
     return ret;
@@ -60,32 +62,20 @@ public:
     JS_FreeValue(ctx, exception);
   }
 
-  static JSValue throwError(JSContext* ctx, JsErrorType errorType, const char* format, ...) {
-    JSValue ret;
-    va_list args;
-    va_start(args, format);
-
+  static JSValue throwError(JSContext* ctx, JsErrorType errorType, const std::string& message) {
     switch (errorType) {
       case JsErrorType::SYNTAX:
       case JsErrorType::EVAL:
-        ret = JS_ThrowSyntaxError(ctx, format, args);
-        break;
+        return JS_ThrowSyntaxError(ctx, "%s", message.c_str());
       case JsErrorType::RANGE:
-        ret = JS_ThrowRangeError(ctx, format, args);
-        break;
+        return JS_ThrowRangeError(ctx, "%s", message.c_str());
       case JsErrorType::REFERENCE:
-        ret = JS_ThrowReferenceError(ctx, format, args);
-        break;
+        return JS_ThrowReferenceError(ctx, "%s", message.c_str());
       case JsErrorType::TYPE:
-        ret = JS_ThrowTypeError(ctx, format, args);
-        break;
+        return JS_ThrowTypeError(ctx, "%s", message.c_str());
       case JsErrorType::GENERIC:
       case JsErrorType::UNKNOWN:
-        ret = JS_ThrowPlainError(ctx, format, args);
-        break;
+        return JS_ThrowPlainError(ctx, "%s", message.c_str());
     }
-
-    va_end(args);
-    return ret;
   }
 };

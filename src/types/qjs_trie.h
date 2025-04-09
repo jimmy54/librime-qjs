@@ -23,7 +23,7 @@ class JsWrapper<rime::Trie, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE> {
       obj->loadTextFile(absolutePath, size);
     } catch (const std::exception& e) {
       LOG(ERROR) << "loadTextFile of " << absolutePath << " failed: " << e.what();
-      return engine.throwError(JsErrorType::GENERIC, "%s", e.what());
+      return engine.throwError(JsErrorType::GENERIC, e.what());
     }
 
     return engine.undefined();
@@ -36,7 +36,7 @@ class JsWrapper<rime::Trie, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE> {
       obj->loadBinaryFileMmap(absolutePath);
     } catch (const std::exception& e) {
       LOG(ERROR) << "loadBinaryFileMmap of " << absolutePath << " failed: " << e.what();
-      return engine.throwError(JsErrorType::GENERIC, "%s", e.what());
+      return engine.throwError(JsErrorType::GENERIC, e.what());
     }
     return engine.undefined();
   })
@@ -48,7 +48,7 @@ class JsWrapper<rime::Trie, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE> {
       obj->saveToBinaryFile(absolutePath);
     } catch (const std::exception& e) {
       LOG(ERROR) << "saveToBinaryFile of " << absolutePath << " failed: " << e.what();
-      return engine.throwError(JsErrorType::GENERIC, "%s", e.what());
+      return engine.throwError(JsErrorType::GENERIC, e.what());
     }
     return engine.undefined();
   })

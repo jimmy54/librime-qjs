@@ -2,7 +2,7 @@
 
 #include <JavaScriptCore/JavaScript.h>
 #include <JavaScriptCore/JavaScriptCore.h>
-#include "engines/javascriptcore/javascriptcore_engine.h"
+#include "engines/javascriptcore/javascriptcore_engine.h"  // IWYU pragma: export
 
 #define DEFINE_GETTER_IMPL(T_RIME_TYPE, propertieyName, statement, unwrap)                       \
                                                                                                  \
@@ -11,32 +11,34 @@
   static JSValueRef get_##propertieyName##Jsc(JSContextRef ctx, JSObjectRef thisVal,             \
                                               JSStringRef functionName, JSValueRef* exception) { \
     auto& engine = JsEngine<JSValueRef>::getEngineByContext(ctx);                                \
-    if (auto obj = unwrap) {                                                                     \
+    if (auto obj = (unwrap)) {                                                                   \
       return statement;                                                                          \
     }                                                                                            \
     return engine.undefined();                                                                   \
   }
 
-#define DEFINE_STRING_SETTER_IMPL(T_RIME_TYPE, name, assignment, unwrap)                           \
-                                                                                                   \
-  DEFINE_STRING_SETTER_IMPL_QJS(T_RIME_TYPE, name, assignment, unwrap)                             \
-                                                                                                   \
-  static bool set_##name##Jsc(JSContextRef ctx, JSObjectRef thisVal, JSStringRef propertyName,     \
-                              JSValueRef val, JSValueRef* exception) {                             \
-    auto& engine = JsEngine<JSValueRef>::getEngineByContext(ctx);                                  \
-    if (auto obj = unwrap) {                                                                       \
-      auto str = engine.toStdString(val);                                                          \
-      if (!str.empty()) {                                                                          \
-        assignment;                                                                                \
-        return true;                                                                               \
-      }                                                                                            \
-      *exception = engine.throwError(JsErrorType::TYPE, " %s.%s = rvalue: rvalue is not a string", \
-                                     #T_RIME_TYPE, #name);                                         \
-      return false;                                                                                \
-    }                                                                                              \
-    *exception = engine.throwError(                                                                \
-        JsErrorType::TYPE, "Failed to unwrap the js object to a cpp %s object", #T_RIME_TYPE);     \
-    return false;                                                                                  \
+#define DEFINE_STRING_SETTER_IMPL(T_RIME_TYPE, name, assignment, unwrap)                       \
+                                                                                               \
+  DEFINE_STRING_SETTER_IMPL_QJS(T_RIME_TYPE, name, assignment, unwrap)                         \
+                                                                                               \
+  static bool set_##name##Jsc(JSContextRef ctx, JSObjectRef thisVal, JSStringRef propertyName, \
+                              JSValueRef val, JSValueRef* exception) {                         \
+    auto& engine = JsEngine<JSValueRef>::getEngineByContext(ctx);                              \
+    if (auto obj = (unwrap)) {                                                                 \
+      auto str = engine.toStdString(val);                                                      \
+      if (!str.empty()) {                                                                      \
+        assignment;                                                                            \
+        return true;                                                                           \
+      }                                                                                        \
+      *exception = engine.throwError(                                                          \
+          JsErrorType::TYPE,                                                                   \
+          formatString(" %s.%s = rvalue: rvalue is not a string", #T_RIME_TYPE, #name));       \
+      return false;                                                                            \
+    }                                                                                          \
+    *exception = engine.throwError(                                                            \
+        JsErrorType::TYPE,                                                                     \
+        formatString("Failed to unwrap the js object to a cpp %s object", #T_RIME_TYPE));      \
+    return false;                                                                              \
   }
 
 #define DEFINE_SETTER_IMPL(T_RIME_TYPE, jsName, converter, assignment, unwrap)                   \
@@ -46,13 +48,14 @@
   static bool set_##jsName##Jsc(JSContextRef ctx, JSObjectRef thisVal, JSStringRef propertyName, \
                                 JSValueRef val, JSValueRef* exception) {                         \
     auto& engine = JsEngine<JSValueRef>::getEngineByContext(ctx);                                \
-    if (auto obj = unwrap) {                                                                     \
+    if (auto obj = (unwrap)) {                                                                   \
       auto value = converter(val);                                                               \
       assignment;                                                                                \
       return true;                                                                               \
     }                                                                                            \
     *exception = engine.throwError(                                                              \
-        JsErrorType::TYPE, "Failed to unwrap the js object to a cpp %s object", #T_RIME_TYPE);   \
+        JsErrorType::TYPE,                                                                       \
+        formatString("Failed to unwrap the js object to a cpp %s object", #T_RIME_TYPE));        \
     return false;                                                                                \
   }
 
@@ -78,9 +81,9 @@
   static JSValueRef funcName##Jsc(JSContextRef ctx, JSObjectRef function, JSObjectRef thisVal,   \
                                   size_t argc, const JSValueRef argv[], JSValueRef* exception) { \
     auto& engine = JsEngine<JSValueRef>::getEngineByContext(ctx);                                \
-    if (argc < expectingArgc) {                                                                  \
-      return engine.throwError(JsErrorType::SYNTAX, "%s(...) expects %d arguments", #funcName,   \
-                               expectingArgc);                                                   \
+    if (argc < (expectingArgc)) {                                                                \
+      return engine.throwError(JsErrorType::SYNTAX, formatString("%s(...) expects %d arguments", \
+                                                                 #funcName, expectingArgc));     \
     }                                                                                            \
     try {                                                                                        \
       statements;                                                                                \
@@ -125,7 +128,7 @@
       JsEngine<JSValueRef>::setOpaque(val, nullptr);                                      \
     }                                                                                     \
   }
-
+// NOLINTBEGIN(cppcoreguidelines-macro-usage) variadic macro 'EXPORT_PROPERTIES' used; consider using a 'constexpr' variadic template function
 #define DEFINE_PROPERTY_JSC(name) engine.defineProperty(#name, get_##name##Jsc, set_##name##Jsc),
 
 #define EXPORT_PROPERTIES(...)                                                                    \
@@ -168,3 +171,4 @@
     this->setFunctionCount(countof(functions) - 1);                                              \
     return static_cast<TypeMap<JSValueRef>::ExposeFunctionType*>(functions);                     \
   }
+// NOLINTEND(cppcoreguidelines-macro-usage)

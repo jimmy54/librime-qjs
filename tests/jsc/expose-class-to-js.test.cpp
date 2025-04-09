@@ -176,8 +176,6 @@ static JSValueRef personGreet(JSContextRef ctx,
 class JavaScriptCoreExposeClassTest : public ::testing::Test {
 protected:
   void SetUp() override {
-    ctx_ = JSGlobalContextCreate(nullptr);
-
     static JSStaticValue personStaticValues[] = {
         {"name", getPersonName, setPersonName, kJSPropertyAttributeNone},
         {"age", getPersonAge, setPersonAge, kJSPropertyAttributeNone},
@@ -221,7 +219,7 @@ protected:
   JSContextRef& getContext() { return ctx_; }
 
 private:
-  JSContextRef ctx_;
+  JSContextRef ctx_ = JSGlobalContextCreate(nullptr);
 };
 
 // Helper function to get array item as string

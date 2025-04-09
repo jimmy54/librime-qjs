@@ -36,7 +36,7 @@ public:
 
   T_JS_VALUE newArray();
   size_t getArrayLength(const T_JS_VALUE& array);
-  int insertItemToArray(T_JS_VALUE array, size_t index, const T_JS_VALUE& value);
+  void insertItemToArray(T_JS_VALUE array, size_t index, const T_JS_VALUE& value);
   T_JS_VALUE getArrayItem(const T_JS_VALUE& array, size_t index);
 
   T_JS_OBJECT newObject();
@@ -73,7 +73,7 @@ public:
   bool isNull(const T_JS_VALUE& value);
   bool isUndefined(const T_JS_VALUE& value);
   bool isException(const T_JS_VALUE& value);
-  T_JS_OBJECT throwError(JsErrorType errorType, const char* format, ...);
+  T_JS_OBJECT throwError(JsErrorType errorType, const std::string& message);
 
   void logErrorStackTrace(const T_JS_OBJECT& exception,
                           const char* file = __FILE_NAME__,
@@ -110,3 +110,16 @@ public:
 
   virtual T_JS_VALUE getGlobalObject();
 };
+
+static std::string formatString(const char* format, ...) {
+  va_list args;
+  // NOLINTBEGIN(cppcoreguidelines-pro-bounds-array-to-pointer-decay)
+  va_start(args, format);
+  constexpr size_t K_MAX_BUFFER_SIZE = 1024;
+  char buffer[K_MAX_BUFFER_SIZE];
+  char* ptr = static_cast<char*>(buffer);
+  vsnprintf(ptr, sizeof(buffer), format, args);
+  va_end(args);
+  // NOLINTEND(cppcoreguidelines-pro-bounds-array-to-pointer-decay)
+  return {ptr};
+}

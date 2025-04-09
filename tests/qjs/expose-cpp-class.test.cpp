@@ -206,9 +206,10 @@ class JsWrapper<MyClass, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE> {
   });
 
 public:
-  EXPORT_CLASS(MyClass);
-
   JsWrapper<MyClass, T_JS_VALUE>() { this->setConstructorArgc(1); }
+  virtual ~JsWrapper<MyClass, T_JS_VALUE>() = default;
+
+  EXPORT_CLASS(MyClass);
   EXPORT_CONSTRUCTOR(makeMyClass, {
     auto name = engine.toStdString(argv[0]);
     return engine.wrapShared<MyClass>(std::make_shared<MyClass>(name));

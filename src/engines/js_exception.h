@@ -3,6 +3,7 @@
 #include <cstdarg>
 #include <exception>
 #include <string>
+#include <utility>
 
 enum class JsErrorType : std::uint8_t {
   SYNTAX,
@@ -21,14 +22,8 @@ private:
 
 public:
   // Constructor that takes an error message
-  explicit JsException(JsErrorType type, const char* format, ...) : type_(type) {
-    va_list args;
-    va_start(args, format);
-    char buffer[1024];
-    vsnprintf(buffer, sizeof(buffer), format, args);
-    va_end(args);
-    message_ = buffer;
-  }
+  explicit JsException(JsErrorType type, std::string message)
+      : message_(std::move(message)), type_(type) {}
 
   // Override what() method from std::exception
   [[nodiscard]] const char* what() const noexcept override { return message_.c_str(); }

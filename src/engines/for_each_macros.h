@@ -1,4 +1,6 @@
 #pragma once
+// NOLINTBEGIN(cppcoreguidelines-macro-usage)
+
 // =============== FOR_EACH ===============
 #define EXPAND(...) __VA_ARGS__
 #define FOR_EACH_1(macro, x) macro(x)
@@ -30,8 +32,8 @@
   COUNT_ARGS_(__VA_ARGS__, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1)
 
 // Select the appropriate FOR_EACH macro based on argument count
-#define _FOR_EACH_N(N, macro, ...) FOR_EACH_##N(macro, __VA_ARGS__)
-#define FOR_EACH_N(N, macro, ...) _FOR_EACH_N(N, macro, __VA_ARGS__)
+#define INTERNAL_FOR_EACH_N(N, macro, ...) FOR_EACH_##N(macro, __VA_ARGS__)
+#define FOR_EACH_N(N, macro, ...) INTERNAL_FOR_EACH_N(N, macro, __VA_ARGS__)
 #define FOR_EACH(macro, ...) FOR_EACH_N(COUNT_ARGS(__VA_ARGS__), macro, __VA_ARGS__)
 
 // =============== FOR_EACH_PAIR ===============
@@ -63,6 +65,8 @@
                7, 6, 6, 5, 5, 4, 4, 3, 3, 2, 2, 1, 1)
 
 // Select the appropriate FOR_EACH_PAIR macro based on pair count
-#define _FOR_EACH_PAIR_N(N, macro, ...) FOR_EACH_PAIR_##N(macro, __VA_ARGS__)
-#define FOR_EACH_PAIR_N(N, macro, ...) _FOR_EACH_PAIR_N(N, macro, __VA_ARGS__)
+#define INTERNAL_FOR_EACH_PAIR_N(N, macro, ...) FOR_EACH_PAIR_##N(macro, __VA_ARGS__)
+#define FOR_EACH_PAIR_N(N, macro, ...) INTERNAL_FOR_EACH_PAIR_N(N, macro, __VA_ARGS__)
 #define FOR_EACH_PAIR(macro, ...) FOR_EACH_PAIR_N(COUNT_PAIRS(__VA_ARGS__), macro, __VA_ARGS__)
+
+// NOLINTEND(cppcoreguidelines-macro-usage)

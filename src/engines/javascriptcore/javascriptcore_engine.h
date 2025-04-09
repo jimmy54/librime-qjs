@@ -75,10 +75,29 @@ public:
     return *it->second;
   }
 
+  // NOLINTBEGIN(readability-convert-member-functions-to-static)
   int64_t getMemoryUsage() {
     // TODO: find an API to get the memory usage of JavaScriptCore
     return -1;
   }
+
+  typename TypeMap<JSValueRef>::ExposeFunctionType
+  defineFunction(const char* name, int argc, JSObjectCallAsFunctionCallback func) {
+    return {name, func, static_cast<JSPropertyAttributes>(argc)};
+  }
+
+  typename TypeMap<JSValueRef>::ExposePropertyType defineProperty(
+      const char* name,
+      typename TypeMap<JSValueRef>::GetterFunctionType getter,
+      typename TypeMap<JSValueRef>::SetterFunctionType setter) {
+    return {name, getter, setter, kJSPropertyAttributeNone};
+  }
+
+  [[nodiscard]] bool isException(const JSValueRef& value) const {
+    // nullptr is returned if an exception is thrown in `callFunction` and `newClassInstance`
+    return value == nullptr;
+  }
+  // NOLINTEND(readability-convert-member-functions-to-static)
 
   template <typename T>
   static void* getOpaque(JSObjectRef value) {
@@ -101,10 +120,9 @@ public:
     return static_cast<size_t>(JSValueToNumber(ctx_, lengthValue, nullptr));
   }
 
-  int insertItemToArray(JSValueRef array, size_t index, const JSValueRef& value) const {
+  void insertItemToArray(JSValueRef array, size_t index, const JSValueRef& value) const {
     JSObjectRef arrayObj = JSValueToObject(ctx_, array, nullptr);
     JSObjectSetPropertyAtIndex(ctx_, arrayObj, index, value, nullptr);
-    return 0;
   }
 
   [[nodiscard]] JSValueRef getArrayItem(const JSValueRef& array, size_t index) const {
@@ -230,14 +248,8 @@ public:
     return toObject(method);
   }
 
-  JSValueRef throwError(JsErrorType errorType, const char* format, ...) const {
-    va_list args;
-    va_start(args, format);
-    char buffer[1024];
-    vsnprintf(buffer, sizeof(buffer), format, args);
-    va_end(args);
-
-    return JSValueMakeString(ctx_, JscStringRAII(static_cast<char*>(buffer)));
+  [[nodiscard]] JSValueRef throwError(JsErrorType errorType, const std::string& message) const {
+    return JSValueMakeString(ctx_, JscStringRAII(message.c_str()));
   }
 
   [[nodiscard]] bool isObject(const JSValueRef& value) const {
@@ -248,11 +260,6 @@ public:
 
   [[nodiscard]] bool isUndefined(const JSValueRef& value) const {
     return JSValueIsUndefined(ctx_, value);
-  }
-
-  [[nodiscard]] bool isException(const JSValueRef& value) const {
-    // nullptr is returned if an exception is thrown in `callFunction` and `newClassInstance`
-    return value == nullptr;
   }
 
   void logErrorStackTrace(const JSValueRef& exception,
@@ -332,18 +339,6 @@ public:
     JSObjectRef constructorObj = JSObjectMake(ctx_, jsClass, nullptr);
     JSObjectSetProperty(ctx_, globalObj, JscStringRAII(typeName), constructorObj,
                         kJSPropertyAttributeNone, nullptr);
-  }
-
-  typename TypeMap<JSValueRef>::ExposeFunctionType
-  defineFunction(const char* name, int argc, JSObjectCallAsFunctionCallback func) {
-    return {name, func, static_cast<JSPropertyAttributes>(argc)};
-  }
-
-  typename TypeMap<JSValueRef>::ExposePropertyType defineProperty(
-      const char* name,
-      typename TypeMap<JSValueRef>::GetterFunctionType getter,
-      typename TypeMap<JSValueRef>::SetterFunctionType setter) {
-    return {name, getter, setter, kJSPropertyAttributeNone};
   }
 
   template <typename T>
