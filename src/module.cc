@@ -28,6 +28,13 @@ static void rime_qjs_initialize() {
   r.Register("jsc_filter", new QuickJSComponent<QuickJSFilter<JSValueRef>, Filter, JSValueRef>());
   r.Register("jsc_translator",
              new QuickJSComponent<QuickJSTranslator<JSValueRef>, Translator, JSValueRef>());
+#else
+  // fallback to the quickjs implementation, to share the same Rime schemas across platforms
+  r.Register("jsc_processor",
+             new QuickJSComponent<QuickJSProcessor<JSValue>, Processor, JSValue>());
+  r.Register("jsc_filter", new QuickJSComponent<QuickJSFilter<JSValue>, Filter, JSValue>());
+  r.Register("jsc_translator",
+             new QuickJSComponent<QuickJSTranslator<JSValue>, Translator, JSValue>());
 #endif
 }
 
