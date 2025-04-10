@@ -53,13 +53,6 @@ public:
     return qjsMemStats.memory_used_size;
   }
 
-  template <typename T>
-  [[nodiscard]] static void* getOpaque(JSValue value) {
-    return JS_GetOpaque(value, QuickJSTypeRegistry::getJsClassId<T>());
-  }
-
-  static void setOpaque(JSValue value, void* opaque) { JS_SetOpaque(value, opaque); }
-
   [[nodiscard]] JSValue null() const { return JS_NULL; }
   [[nodiscard]] JSValue undefined() const { return JS_UNDEFINED; }
 
@@ -139,7 +132,7 @@ public:
   [[nodiscard]] JSValue callFunction(const JSValue& func,
                                      const JSValue& thisArg,
                                      int argc,
-                                     JSValue* argv) const {
+                                     JSValue* argv) {
     return JS_Call(context, func, thisArg, argc, argv);
   }
 
@@ -177,13 +170,13 @@ public:
   }
 
   template <typename T_RIME_TYPE>
-  void registerType(JsWrapper<T_RIME_TYPE, JSValue>& wrapper) {
-    QuickJSTypeRegistry::registerType(context, wrapper);
+  void registerType() {
+    QuickJSTypeRegistry::registerType<T_RIME_TYPE>(context);
   }
 
   template <typename T>
   [[nodiscard]] T* unwrap(const JSValue& value) const {
-    if (auto* ptr = QuickJSTypeRegistry::getOpaqueIfTypeRegistered<T>(value)) {
+    if (auto* ptr = JS_GetOpaque(value, JsWrapper<T, JSValue>::JS_CLASS_ID)) {
       return static_cast<T*>(ptr);
     }
     return nullptr;
@@ -191,7 +184,7 @@ public:
 
   template <typename T>
   [[nodiscard]] std::shared_ptr<T> unwrapShared(const JSValue& value) const {
-    if (auto* ptr = QuickJSTypeRegistry::getOpaqueIfTypeRegistered<T>(value)) {
+    if (auto* ptr = JS_GetOpaque(value, JsWrapper<T, JSValue>::JS_CLASS_ID)) {
       if (auto sharedPtr = static_cast<std::shared_ptr<T>*>(ptr)) {
         return *sharedPtr;
       }
@@ -207,8 +200,9 @@ public:
     }
     if (JS_SetOpaque(jsobj, ptrValue) < 0) {
       JS_FreeValue(context, jsobj);
-      return JS_ThrowInternalError(context, "Failed to set a raw pointer to a %s object",
-                                   QuickJSTypeRegistry::getRegisteredTypeName<T>().c_str());
+      const auto* format = "Failed to set a raw pointer to a %s object with classId = %d";
+      return JS_ThrowInternalError(context, format, JsWrapper<T, JSValue>::TYPENAME,
+                                   JsWrapper<T, JSValue>::JS_CLASS_ID);
     }
     return jsobj;
   }
@@ -222,22 +216,11 @@ public:
     auto ptr = std::make_unique<std::shared_ptr<T>>(value);
     if (JS_SetOpaque(jsobj, ptr.release()) < 0) {
       JS_FreeValue(context, jsobj);
-      return JS_ThrowInternalError(context, "Failed to set a shared pointer to a %s object",
-                                   QuickJSTypeRegistry::getRegisteredTypeName<T>().c_str());
+      const auto* format = "Failed to set a shared pointer to a %s object with classId = %d";
+      return JS_ThrowInternalError(context, format, JsWrapper<T, JSValue>::TYPENAME,
+                                   JsWrapper<T, JSValue>::JS_CLASS_ID);
     }
     return jsobj;
-  }
-
-  [[nodiscard]] typename TypeMap<JSValue>::ExposeFunctionType
-  defineFunction(const char* name, int avgc, ExposeFunction func) const {
-    return JS_CFUNC_DEF(name, static_cast<uint8_t>(avgc), func);
-  }
-
-  [[nodiscard]] typename TypeMap<JSValue>::ExposePropertyType defineProperty(
-      const char* name,
-      typename TypeMap<JSValue>::GetterFunctionType getter,
-      typename TypeMap<JSValue>::SetterFunctionType setter) const {
-    return JS_CGETSET_DEF(name, getter, setter);
   }
 
   void setBaseFolderPath(const char* absolutePath) { setQjsBaseFolder(absolutePath); }

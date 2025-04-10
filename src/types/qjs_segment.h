@@ -8,7 +8,7 @@
 using namespace rime;
 
 template <typename T_JS_VALUE>
-class JsWrapper<rime::Segment, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE> {
+class JsWrapper<rime::Segment, T_JS_VALUE> {
   DEFINE_GETTER(Segment, selectedIndex, engine.toJsInt(obj->selected_index))
   DEFINE_SETTER(Segment, selectedIndex, engine.toInt, obj->selected_index = value)
 
@@ -38,9 +38,9 @@ class JsWrapper<rime::Segment, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE> {
   })
 
 public:
-  EXPORT_CLASS(Segment);
-
-  EXPORT_PROPERTIES(selectedIndex, prompt);
-  EXPORT_GETTERS(start, end, selectedCandidate, candidateSize);
-  EXPORT_FUNCTIONS(getCandidateAt, 1, hasTag, 1);
+  EXPORT_CLASS_WITH_RAW_POINTER(Segment,
+                                WITHOUT_CONSTRUCTOR,
+                                WITH_PROPERTIES(selectedIndex, prompt),
+                                WITH_GETTERS(start, end, selectedCandidate, candidateSize),
+                                WITH_FUNCTIONS(getCandidateAt, 1, hasTag, 1));
 };

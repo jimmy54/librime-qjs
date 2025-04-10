@@ -2,15 +2,16 @@
 
 #include <rime/candidate.h>
 #include <rime/gear/translator_commons.h>
-#include <memory>
-#include "engines/js_exception.h"
+
 #include "engines/js_macros.h"
 #include "js_wrapper.h"
 
 using namespace rime;
 
+constexpr int MIN_ARGC_NEW_CANDIDATE = 5;
+
 template <typename T_JS_VALUE>
-class JsWrapper<rime::Candidate, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE> {
+class JsWrapper<rime::Candidate, T_JS_VALUE> {
   DEFINE_GETTER_2(Candidate, text, engine.toJsString(obj->text()))
   DEFINE_GETTER_2(Candidate, comment, engine.toJsString(obj->comment()))
   DEFINE_GETTER_2(Candidate, type, engine.toJsString(obj->type()))
@@ -47,18 +48,7 @@ class JsWrapper<rime::Candidate, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE> 
     }
   })
 
-public:
-  EXPORT_CLASS(Candidate);
-
-  static constexpr int MIN_ARGC_NEW_CANDIDATE = 5;
-
-  JsWrapper<rime::Candidate, T_JS_VALUE>() { this->setConstructorArgc(MIN_ARGC_NEW_CANDIDATE); }
-
-  EXPORT_CONSTRUCTOR(makeCandidate, {
-    if (argc < MIN_ARGC_NEW_CANDIDATE) {
-      throw new JsException(JsErrorType::SYNTAX, "new Candidate(...) expects 5 or 6 arguments");
-    }
-
+  DEFINE_CFUNCTION_ARGC(makeCandidate, MIN_ARGC_NEW_CANDIDATE, {
     auto obj = std::make_shared<rime::SimpleCandidate>();
     obj->set_type(engine.toStdString(argv[0]));
     obj->set_start(engine.toInt(argv[1]));
@@ -71,6 +61,11 @@ public:
     return engine.wrapShared<rime::Candidate>(obj);
   });
 
-  EXPORT_FINALIZER(rime::Candidate, finalizer);
-  EXPORT_PROPERTIES(text, comment, type, start, end, quality, preedit);
+public:
+  EXPORT_CLASS_WITH_SHARED_POINTER(
+      Candidate,
+      WITH_CONSTRUCTOR(makeCandidate, MIN_ARGC_NEW_CANDIDATE),
+      WITH_PROPERTIES(text, comment, type, start, end, quality, preedit),
+      WITHOUT_GETTERS,
+      WITHOUT_FUNCTIONS);
 };

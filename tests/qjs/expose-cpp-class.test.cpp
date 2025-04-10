@@ -190,7 +190,7 @@ TEST_F(QuickJSExposeClassTest, TestExposeClassToQuickJS) {
 }
 
 template <typename T_JS_VALUE>
-class JsWrapper<MyClass, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE> {
+class JsWrapper<MyClass, T_JS_VALUE> {
   DEFINE_CFUNCTION_ARGC(sayHello, 0, {
     auto obj = engine.unwrapShared<MyClass>(thisVal);
     return engine.toJsString(obj->sayHello());
@@ -204,24 +204,22 @@ class JsWrapper<MyClass, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE> {
     obj->setName(engine.toStdString(argv[0]));
     return engine.undefined();
   });
-
-public:
-  JsWrapper<MyClass, T_JS_VALUE>() { this->setConstructorArgc(1); }
-  virtual ~JsWrapper<MyClass, T_JS_VALUE>() = default;
-
-  EXPORT_CLASS(MyClass);
-  EXPORT_CONSTRUCTOR(makeMyClass, {
+  DEFINE_CFUNCTION_ARGC(makeMyClass, 1, {
     auto name = engine.toStdString(argv[0]);
     return engine.wrapShared<MyClass>(std::make_shared<MyClass>(name));
   });
-  EXPORT_FINALIZER(MyClass, finalizer);
-  EXPORT_FUNCTIONS(sayHello, 0, getName, 0, setName, 1);
+
+public:
+  EXPORT_CLASS_WITH_SHARED_POINTER(MyClass,
+                                   WITH_CONSTRUCTOR(makeMyClass, 1),
+                                   WITHOUT_PROPERTIES,
+                                   WITHOUT_GETTERS,
+                                   WITH_FUNCTIONS(sayHello, 0, getName, 0, setName, 1));
 };
 
 TEST_F(QuickJSExposeClassTest, TestExposeClassToQuickJSWithEngine) {
   auto& engine = JsEngine<JSValue>::instance();
-  JsWrapper<MyClass, JSValue> wrapper;
-  engine.registerType(wrapper);
+  engine.registerType<MyClass>();
 
   auto result = engine.eval(SCRIPT);
   auto str = engine.toStdString(result);

@@ -4,7 +4,6 @@
 #include <quickjs.h>
 #include <string>
 #include <unordered_map>
-#include <utility>
 
 #include "engines/quickjs/quickjs_utils.h"
 #include "types/js_wrapper.h"
@@ -12,61 +11,53 @@
 class QuickJSTypeRegistry {
 public:
   template <typename T_RIME_TYPE>
-  static void registerType(JSContext* context, JsWrapper<T_RIME_TYPE, JSValue>& wrapper) {
-    const char* key = typeid(T_RIME_TYPE).name();                           // N4rime6EngineE
-    const char* typeName = JsWrapper<T_RIME_TYPE, JSValue>::getTypeName();  // Engine
-    if (isTypeRegistered<T_RIME_TYPE>(key, false)) {
-      DLOG(INFO) << "type: " << typeName
-                 << " has already been registered with classId = " << getJsClassId<T_RIME_TYPE>();
+  static void registerType(JSContext* context) {
+    using WRAPPER = JsWrapper<T_RIME_TYPE, JSValue>;
+
+    auto* typeName = WRAPPER::TYPENAME;
+    JSClassID& classId = WRAPPER::JS_CLASS_ID;
+
+    if (registeredTypes.count(typeName) > 0) {
+      DLOG(ERROR) << "type [" << typeName
+                  << "] has already been registered with classId = " << classId;
       return;
     }
 
-    JSClassID classId = JsWrapper<T_RIME_TYPE, JSValue>::getJSClassId();
-    JSClassDef classDef = JsWrapper<T_RIME_TYPE, JSValue>::getJSClassDef();
-    classDef.finalizer = wrapper.getFinalizer();
-
+    JSClassDef& classDef = WRAPPER::JS_CLASS_DEF;
+    if (auto& finalizer = WRAPPER::finalizerQjs) {
+      classDef.finalizer = finalizer;
+    }
     JS_NewClassID(JS_GetRuntime(context), &classId);
     JS_NewClass(JS_GetRuntime(context), classId, &classDef);
 
-    clazzes[key] = std::make_pair(typeName, classId);
+    registeredTypes[typeName] = classId;
 
     JSValue proto = JS_NewObject(context);
-    if (auto* constructor = wrapper.getConstructor()) {
-      JSValue jsConstructor = JS_NewCFunction2(
-          context, constructor, typeName, wrapper.getConstructorArgc(), JS_CFUNC_constructor, 0);
+    if (auto* constructor = WRAPPER::constructorQjs) {
+      int argc = WRAPPER::CONSTRUCTOR_ARGC;
+      JSValue jsConstructor =
+          JS_NewCFunction2(context, constructor, typeName, argc, JS_CFUNC_constructor, 0);
       JS_SetConstructor(context, jsConstructor, proto);
       auto jsGlobal = JS_GetGlobalObject(context);
       JS_SetPropertyStr(context, jsGlobal, typeName, jsConstructor);
       JS_FreeValue(context, jsGlobal);
     }
 
-    JS_SetPropertyFunctionList(context, proto, wrapper.getProperties(context),
-                               wrapper.getPropertiesCount());
-    JS_SetPropertyFunctionList(context, proto, wrapper.getGetters(context),
-                               wrapper.getGettersCount());
-    JS_SetPropertyFunctionList(context, proto, wrapper.getFunctions(context),
-                               wrapper.getFunctionsCount());
-    JS_SetClassProto(context, classId, proto);
-  }
-
-  template <typename T>
-  static JSClassID getJsClassId() {
-    const char* key = typeid(T).name();
-    return isTypeRegistered<T>(key) ? clazzes.at(key).second : 0;
-  }
-
-  template <typename T>
-  static std::string getRegisteredTypeName() {
-    const char* key = typeid(T).name();
-    return isTypeRegistered<T>(key) ? clazzes.at(key).first : key;
-  }
-
-  template <typename T>
-  static void* getOpaqueIfTypeRegistered(const JSValue& value) {
-    if (!isTypeRegistered<T>()) {
-      return nullptr;
+    if (auto& properties = WRAPPER::PROPERTIES_QJS) {
+      auto size = WRAPPER::PROPERTIES_SIZE;
+      JS_SetPropertyFunctionList(context, proto, properties, size);
     }
-    return JS_GetOpaque(value, getJsClassId<T>());
+    if (auto& getters = WRAPPER::GETTERS_QJS) {
+      auto size = WRAPPER::GETTERS_SIZE;
+      JS_SetPropertyFunctionList(context, proto, getters, size);
+    }
+    if (auto& functions = WRAPPER::FUNCTIONS_QJS) {
+      auto size = WRAPPER::FUNCTIONS_SIZE;
+      JS_SetPropertyFunctionList(context, proto, functions, size);
+    }
+
+    JS_SetClassProto(context, classId, proto);
+    DLOG(INFO) << "registered type [" << typeName << "] with classId = " << classId;
   }
 
   template <typename T>
@@ -74,13 +65,10 @@ public:
     if (!hasValue) {
       return JS_NULL;
     }
-    const char* key = typeid(T).name();
-    if (!isTypeRegistered<T>(key)) {
-      return JS_NULL;
-    }
-    JSValue jsobj = JS_NewObjectClass(context, getJsClassId<T>());
+    JSValue jsobj = JS_NewObjectClass(context, JsWrapper<T, JSValue>::JS_CLASS_ID);
     if (JS_IsUndefined(jsobj)) {
-      LOG(ERROR) << "Failed to create a new object with classId = " << getJsClassId<T>();
+      LOG(ERROR) << "Failed to create a new object of type " << JsWrapper<T, JSValue>::TYPENAME
+                 << " with classId = " << JsWrapper<T, JSValue>::JS_CLASS_ID;
       return jsobj;
     }
     if (JS_IsException(jsobj)) {
@@ -90,17 +78,5 @@ public:
   }
 
 private:
-  template <typename T>
-  static bool isTypeRegistered(const char* key = nullptr, bool isLog = true) {
-    const char* typeKey = key ? key : typeid(T).name();
-    auto isRegistered = clazzes.find(typeKey) != clazzes.end();
-    if (isLog && !isRegistered) {
-      LOG(ERROR) << "type: " << typeKey << " has not been registered.";
-    }
-    return isRegistered;
-  }
-
-  // the types will be registered only once to the shared runtime
-  // the key is the typeid of the registering type: typeid(T_RIME_TYPE).name()
-  inline static std::unordered_map<std::string, std::pair<std::string, JSClassID>> clazzes{};
+  inline static std::unordered_map<std::string, JSClassID> registeredTypes{};
 };

@@ -4,8 +4,10 @@
 #include "engines/js_macros.h"
 #include "js_wrapper.h"
 
+using namespace rime;
+
 template <typename T_JS_VALUE>
-class JsWrapper<rime::ConfigItem, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE> {
+class JsWrapper<rime::ConfigItem, T_JS_VALUE> {
   DEFINE_CFUNCTION(getType, {
     auto obj = engine.unwrapShared<rime::ConfigItem>(thisVal);
     const char* strType;
@@ -29,8 +31,9 @@ class JsWrapper<rime::ConfigItem, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE>
   })
 
 public:
-  EXPORT_CLASS(ConfigItem);
-
-  EXPORT_FINALIZER(rime::ConfigItem, finalizer);
-  EXPORT_FUNCTIONS(getType, 0);
+  EXPORT_CLASS_WITH_SHARED_POINTER(ConfigItem,
+                                   WITHOUT_CONSTRUCTOR,
+                                   WITHOUT_PROPERTIES,
+                                   WITHOUT_GETTERS,
+                                   WITH_FUNCTIONS(getType, 0));
 };

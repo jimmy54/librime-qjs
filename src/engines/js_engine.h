@@ -17,6 +17,7 @@ class JsEngine {
 public:
   void setBaseFolderPath(const char* absolutePath);
 
+  // return the memory usaged by the js engine in bytes, -1 if not available
   int64_t getMemoryUsage();
 
   T_JS_VALUE loadJsFile(const char* fileName);
@@ -24,10 +25,6 @@ public:
   T_JS_VALUE getMethodOfClassOrInstance(T_JS_VALUE jsClass,
                                         T_JS_VALUE instance,
                                         const char* methodName);
-
-  template <typename T>
-  void* getOpaque(T_JS_OBJECT value);
-  void setOpaque(T_JS_OBJECT value, void* opaque);
 
   T_JS_VALUE null();
   T_JS_VALUE undefined();
@@ -85,16 +82,7 @@ public:
   void freeValue(const T_JS_VALUE& first, const Args&... rest);
 
   template <typename T_RIME_TYPE>
-  void registerType(JsWrapper<T_RIME_TYPE, T_JS_VALUE>& wrapper);
-
-  typename TypeMap<T_JS_VALUE>::ExposeFunctionType defineFunction(const char* name,
-                                                                  int avgc,
-                                                                  ExposeFunction func);
-
-  typename TypeMap<T_JS_VALUE>::ExposePropertyType defineProperty(
-      const char* name,
-      typename TypeMap<T_JS_VALUE>::GetterFunctionType getter,
-      typename TypeMap<T_JS_VALUE>::SetterFunctionType setter);
+  void registerType();
 
   template <typename T>
   T_JS_OBJECT wrap(T* ptrValue);

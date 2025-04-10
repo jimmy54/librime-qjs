@@ -1,7 +1,6 @@
 #pragma once
 
 #include <glog/logging.h>
-#include "engines/engine_manager.h"
 #include "engines/js_engine.h"
 #include "engines/js_macros.h"
 #include "js_wrapper.h"
@@ -10,7 +9,7 @@
 using namespace rime;
 
 template <typename T_JS_VALUE>
-class JsWrapper<rime::Trie, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE> {
+class JsWrapper<rime::Trie, T_JS_VALUE> {
   DEFINE_CFUNCTION_ARGC(loadTextFile, 1, {
     std::string absolutePath = engine.toStdString(argv[0]);
     size_t size = 0;
@@ -74,22 +73,21 @@ class JsWrapper<rime::Trie, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE> {
     }
     return jsArray;
   })
+  DEFINE_CFUNCTION(makeTrie, { return engine.wrapShared<Trie>(std::make_shared<Trie>()); })
 
 public:
-  EXPORT_CLASS(Trie);
-
-  EXPORT_CONSTRUCTOR(makeTrie, { return engine.wrapShared<Trie>(std::make_shared<Trie>()); });
-
-  EXPORT_FINALIZER(Trie, finalizer);
-
-  EXPORT_FUNCTIONS(loadTextFile,
-                   1,
-                   loadBinaryFile,
-                   1,
-                   saveToBinaryFile,
-                   1,
-                   find,
-                   1,
-                   prefixSearch,
-                   1);
+  EXPORT_CLASS_WITH_SHARED_POINTER(Trie,
+                                   WITH_CONSTRUCTOR(makeTrie, 0),
+                                   WITHOUT_PROPERTIES,
+                                   WITHOUT_GETTERS,
+                                   WITH_FUNCTIONS(loadTextFile,
+                                                  1,
+                                                  loadBinaryFile,
+                                                  1,
+                                                  saveToBinaryFile,
+                                                  1,
+                                                  find,
+                                                  1,
+                                                  prefixSearch,
+                                                  1));
 };

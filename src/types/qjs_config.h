@@ -6,8 +6,10 @@
 #include "engines/js_macros.h"
 #include "js_wrapper.h"
 
+using namespace rime;
+
 template <typename T_JS_VALUE>
-class JsWrapper<rime::Config, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE> {
+class JsWrapper<rime::Config, T_JS_VALUE> {
   DEFINE_CFUNCTION_ARGC(loadFromFile, 1, {
     std::string path = engine.toStdString(argv[0]);
     auto obj = engine.unwrap<rime::Config>(thisVal);
@@ -92,28 +94,30 @@ class JsWrapper<rime::Config, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE> {
   })
 
 public:
-  EXPORT_CLASS(Config);
-
-  EXPORT_FUNCTIONS(loadFromFile,
-                   1,
-                   saveToFile,
-                   1,
-                   getBool,
-                   1,
-                   getInt,
-                   1,
-                   getDouble,
-                   1,
-                   getString,
-                   1,
-                   getList,
-                   1,
-                   setBool,
-                   2,
-                   setInt,
-                   2,
-                   setDouble,
-                   2,
-                   setString,
-                   2);
+  EXPORT_CLASS_WITH_RAW_POINTER(Config,
+                                WITHOUT_CONSTRUCTOR,
+                                WITHOUT_PROPERTIES,
+                                WITHOUT_GETTERS,
+                                WITH_FUNCTIONS(loadFromFile,
+                                               1,
+                                               saveToFile,
+                                               1,
+                                               getBool,
+                                               1,
+                                               getInt,
+                                               1,
+                                               getDouble,
+                                               1,
+                                               getString,
+                                               1,
+                                               getList,
+                                               1,
+                                               setBool,
+                                               2,
+                                               setInt,
+                                               2,
+                                               setDouble,
+                                               2,
+                                               setString,
+                                               2));
 };

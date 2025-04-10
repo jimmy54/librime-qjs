@@ -14,7 +14,7 @@ struct TypeMap {  // Default mapping
   using GetterFunctionType = void*;
   using SetterFunctionType = void*;
 
-  const char* engineName = "Unsupported";  // Engine name for logging and debugging
+  inline static const char* engineName = "Unsupported";  // Engine name for logging and debugging
 };
 
 // Specializations
@@ -30,7 +30,7 @@ struct TypeMap<JSValue> {
   using ExposePropertyType = const JSCFunctionListEntry;
   using GetterFunctionType = JSValue (*)(JSContext*, JSValueConst);
   using SetterFunctionType = JSValue (*)(JSContext*, JSValueConst, JSValue);
-  const char* engineName = "QuickJS-NG";
+  inline static const char* engineName = "QuickJS-NG";
 };
 
 #ifdef __APPLE__
@@ -52,6 +52,6 @@ struct TypeMap<JSValueRef> {
   using GetterFunctionType = JSValueRef (*)(JSContextRef, JSObjectRef, JSStringRef, JSValueRef*);
   using SetterFunctionType =
       bool (*)(JSContextRef, JSObjectRef, JSStringRef, JSValueRef, JSValueRef*);
-  const char* engineName = "JavaScriptCore";
+  inline static const char* engineName = "JavaScriptCore";
 };
 #endif

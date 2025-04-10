@@ -17,42 +17,30 @@
 template <>
 class JsEngine<JSValueRef> {
   JSGlobalContextRef ctx_{nullptr};
-  std::string engineId_;
 
   std::string baseFolderPath_;
 
+  JSValueRef lastException_{nullptr};
+
   // the types should be registered to each jsc context
-  inline static std::unordered_map<
-      std::string,
-      std::tuple<std::string, JSClassRef, JSClassDefinition, std::vector<JSStaticValue>>>
-      clazzes{};
+  using ClassDefTuple = std::tuple<JSClassRef, JSClassDefinition, std::vector<JSStaticValue>>;
+  std::unordered_map<std::string, ClassDefTuple> clazzes_;
 
   inline static std::unordered_map<JSContextRef, JsEngine<JSValueRef>*> engines{};
 
 public:
-  JsEngine<JSValueRef>()
-      : ctx_(JSGlobalContextCreate(nullptr)),
-        engineId_(std::to_string(reinterpret_cast<size_t>(this))) {
-    // Never `LOG(INFO) << engineId_;` here, as it crashes the program.
-    // libc++abi: terminating with uncaught exception of type std::__1::system_error: mutex lock failed: Invalid argument
-
+  JsEngine<JSValueRef>() : ctx_(JSGlobalContextCreate(nullptr)) {
     engines[ctx_] = this;
     JscCodeLoader::exposeLogToJsConsole(ctx_);
   }
 
   ~JsEngine<JSValueRef>() {
-    std::vector<std::string> keysToRemove;
-    for (auto& clazz : clazzes) {
-      if (clazz.first.find(engineId_) != std::string::npos) {
-        auto& clazzDef = std::get<1>(clazz.second);
-        JSClassRelease(clazzDef);
-        keysToRemove.push_back(clazz.first);
-      }
-    }
-    for (auto& key : keysToRemove) {
-      clazzes.erase(key);
+    for (auto& clazz : clazzes_) {
+      auto& clazzDef = std::get<0>(clazz.second);
+      JSClassRelease(clazzDef);
     }
 
+    engines.erase(ctx_);
     JSGlobalContextRelease(ctx_);
   }
 
@@ -70,7 +58,7 @@ public:
   static JsEngine<JSValueRef>& getEngineByContext(JSContextRef ctx) {
     auto it = engines.find(ctx);
     if (it == engines.end()) {
-      throw std::runtime_error("JsEngine<JSValue> not found");
+      throw std::runtime_error("JsEngine<JSValueRef> not found");
     }
     return *it->second;
   }
@@ -81,30 +69,11 @@ public:
     return -1;
   }
 
-  typename TypeMap<JSValueRef>::ExposeFunctionType
-  defineFunction(const char* name, int argc, JSObjectCallAsFunctionCallback func) {
-    return {name, func, static_cast<JSPropertyAttributes>(argc)};
-  }
-
-  typename TypeMap<JSValueRef>::ExposePropertyType defineProperty(
-      const char* name,
-      typename TypeMap<JSValueRef>::GetterFunctionType getter,
-      typename TypeMap<JSValueRef>::SetterFunctionType setter) {
-    return {name, getter, setter, kJSPropertyAttributeNone};
-  }
-
   [[nodiscard]] bool isException(const JSValueRef& value) const {
-    // nullptr is returned if an exception is thrown in `callFunction` and `newClassInstance`
-    return value == nullptr;
+    // the thrown exception in `callFunction` and `newClassInstance` was set to `lastException_`
+    return lastException_ != nullptr;
   }
   // NOLINTEND(readability-convert-member-functions-to-static)
-
-  template <typename T>
-  static void* getOpaque(JSObjectRef value) {
-    return JSObjectGetPrivate(value);
-  }
-
-  static void setOpaque(JSObjectRef value, void* opaque) { JSObjectSetPrivate(value, opaque); }
 
   [[nodiscard]] JSValueRef null() const { return JSValueMakeNull(ctx_); }
   [[nodiscard]] JSValueRef undefined() const { return JSValueMakeUndefined(ctx_); }
@@ -191,19 +160,19 @@ public:
     return JSValueToNumber(ctx_, value, nullptr);
   }
 
-  JSValueRef callFunction(JSObjectRef func, JSObjectRef thisArg, int argc, JSValueRef* argv) const {
-    JSValueRef exception = nullptr;
+  JSValueRef callFunction(JSObjectRef func, JSObjectRef thisArg, int argc, JSValueRef* argv) {
+    lastException_ = nullptr;
     auto* thisVal = isUndefined(thisArg) ? nullptr : thisArg;
-    JSValueRef result = JSObjectCallAsFunction(ctx_, func, thisVal, argc, argv, &exception);
-    logErrorStackTrace(exception, __FILE_NAME__, __LINE__);
+    JSValueRef result = JSObjectCallAsFunction(ctx_, func, thisVal, argc, argv, &lastException_);
+    logErrorStackTrace(lastException_, __FILE_NAME__, __LINE__);
     return result;
   }
 
   JSObjectRef newClassInstance(const JSObjectRef& clazz, int argc, JSValueRef* argv) {
-    JSValueRef exception = nullptr;
-    JSObjectRef result = JSObjectCallAsConstructor(ctx_, clazz, argc, argv, &exception);
-    if (exception != nullptr) {
-      logErrorStackTrace(exception, __FILE_NAME__, __LINE__);
+    lastException_ = nullptr;
+    JSObjectRef result = JSObjectCallAsConstructor(ctx_, clazz, argc, argv, &lastException_);
+    if (lastException_ != nullptr) {
+      logErrorStackTrace(lastException_, __FILE_NAME__, __LINE__);
       return nullptr;
     }
     return result;
@@ -241,10 +210,11 @@ public:
 
   JSObjectRef getMethodOfClassOrInstance(JSObjectRef jsClass,
                                          JSObjectRef instance,
-                                         const char* methodName) const {
-    JSValueRef exception = nullptr;
-    JSValueRef method = JSObjectGetProperty(ctx_, instance, JscStringRAII(methodName), &exception);
-    logErrorStackTrace(exception, __FILE_NAME__, __LINE__);
+                                         const char* methodName) {
+    lastException_ = nullptr;
+    JSValueRef method =
+        JSObjectGetProperty(ctx_, instance, JscStringRAII(methodName), &lastException_);
+    logErrorStackTrace(lastException_, __FILE_NAME__, __LINE__);
     return toObject(method);
   }
 
@@ -288,51 +258,48 @@ public:
   void freeValue() const {}
 
   template <typename T_RIME_TYPE>
-  void registerType(JsWrapper<T_RIME_TYPE, JSValueRef>& wrapper) {
-    auto key = engineId_ + typeid(T_RIME_TYPE).name();
-    const char* typeName = JsWrapper<T_RIME_TYPE, JSValueRef>::getTypeName();
-    if (clazzes.find(key) != clazzes.end()) {
+  void registerType() {
+    using WRAPPER = JsWrapper<T_RIME_TYPE, JSValueRef>;
+    const char* typeName = WRAPPER::TYPENAME;
+    if (clazzes_.find(typeName) != clazzes_.end()) {
       LOG(INFO) << "[jsc] type: " << typeName << " has already been registered.";
       return;
     }
     DLOG(INFO) << "[jsc] registering type: " << typeName;
 
-    // the counts would be available after getting the properties and getters
-    auto properties = wrapper.getPropertiesJsc(ctx_);
-    auto getters = wrapper.getGettersJsc(ctx_);
-    std::vector<JSStaticValue> staticValues(wrapper.getPropertiesCount() +
-                                            wrapper.getGettersCount() + 1);
-    for (int i = 0; i < wrapper.getPropertiesCount(); i++) {
-      staticValues[i] = properties[i];
+    std::vector<JSStaticValue> staticValues;
+    auto& properties = WRAPPER::propertiesJsc;
+    for (int i = 0; i < WRAPPER::PROPERTIES_SIZE; i++) {
+      staticValues.push_back(properties[i]);
     }
-    for (int i = 0; i < wrapper.getGettersCount(); i++) {
-      staticValues[wrapper.getPropertiesCount() + i] = getters[i];
+    auto& getters = WRAPPER::gettersJsc;
+    for (int i = 0; i < WRAPPER::GETTERS_SIZE; i++) {
+      staticValues.push_back(getters[i]);
     }
-    staticValues.back() = {nullptr, nullptr, nullptr, 0};
+    staticValues.push_back({nullptr, nullptr, nullptr, 0});
 
     JSClassDefinition classDef = {.version = 0,
                                   .attributes = kJSClassAttributeNone,
                                   .className = typeName,
                                   .parentClass = nullptr,
                                   .staticValues = staticValues.data(),
-                                  .staticFunctions = wrapper.getFunctionsJsc(ctx_),
+                                  .staticFunctions = WRAPPER::functionsJsc,
                                   .initialize = nullptr,
-                                  .finalize = wrapper.getFinalizerJsc(),
+                                  .finalize = WRAPPER::finalizerJsc,
                                   .hasProperty = nullptr,
                                   .getProperty = nullptr,
                                   .setProperty = nullptr,
                                   .deleteProperty = nullptr,
                                   .getPropertyNames = nullptr,
                                   .callAsFunction = nullptr,
-                                  .callAsConstructor = wrapper.getConstructorJsc(),
-                                  .hasInstance = nullptr,
+                                  .callAsConstructor = WRAPPER::constructorJsc,
                                   .convertToType = nullptr};
 
     DLOG(INFO) << "[jsc] registering type: " << typeName << " with " << (staticValues.size() - 1)
-               << " properties and " << wrapper.getFunctionsCount() << " functions";
+               << " properties and " << countof(WRAPPER::functionsJsc) << " functions";
 
     JSClassRef jsClass = JSClassCreate(&classDef);
-    clazzes[key] = std::make_tuple(typeName, jsClass, classDef, staticValues);
+    clazzes_[typeName] = std::make_tuple(jsClass, classDef, staticValues);
 
     // Add the constructor to the global object
     JSObjectRef globalObj = JSContextGetGlobalObject(ctx_);
@@ -342,15 +309,21 @@ public:
   }
 
   template <typename T>
+  [[nodiscard]] bool isTypeRegistered() const {
+    const char* typeName = JsWrapper<T, JSValueRef>::TYPENAME;
+    if (clazzes_.find(typeName) == clazzes_.end()) {
+      LOG(ERROR) << "type: " << typeName << " has not been registered.";
+      return false;
+    }
+    return true;
+  }
+
+  template <typename T>
   T* unwrap(const JSValueRef& value) {
-    const auto* type = typeid(T).name();
-    auto key = engineId_ + type;
-    if (clazzes.find(key) == clazzes.end()) {
-      LOG(ERROR) << "type: " << type << " has not been registered.";
+    if (!value || !isTypeRegistered<T>() || !isObject(value)) {
       return nullptr;
     }
-
-    if (void* ptr = JSObjectGetPrivate(toObject(value))) {
+    if (auto* ptr = JSObjectGetPrivate(toObject(value))) {
       return static_cast<T*>(ptr);
     }
     return nullptr;
@@ -358,7 +331,10 @@ public:
 
   template <typename T>
   std::shared_ptr<T> unwrapShared(const JSValueRef& value) const {
-    if (void* ptr = JSObjectGetPrivate(toObject(value))) {
+    if (!value || !isTypeRegistered<T>() || !isObject(value)) {
+      return nullptr;
+    }
+    if (void* ptr = isTypeRegistered<T>() ? JSObjectGetPrivate(toObject(value)) : nullptr) {
       if (auto sharedPtr = static_cast<std::shared_ptr<T>*>(ptr)) {
         return *sharedPtr;
       }
@@ -368,47 +344,33 @@ public:
 
   template <typename T>
   JSObjectRef wrap(T* ptrValue) const {
-    if (!ptrValue) {
+    if (!ptrValue || !isTypeRegistered<T>()) {
       return nullptr;
     }
 
-    const auto* type = typeid(T).name();
-    auto key = engineId_ + type;
-    if (clazzes.find(key) == clazzes.end()) {
-      LOG(ERROR) << "type: " << type << " has not been registered.";
-      return nullptr;
-    }
-
-    JSClassRef jsClass = std::get<1>(clazzes[key]);
+    JSClassRef jsClass = std::get<0>(clazzes_.at(JsWrapper<T, JSValueRef>::TYPENAME));
     return JSObjectMake(ctx_, jsClass, ptrValue);
   }
 
   template <typename T>
   JSObjectRef wrapShared(const std::shared_ptr<T>& value) const {
-    if (!value) {
+    if (!value || !isTypeRegistered<T>()) {
       return nullptr;
     }
 
-    const auto* type = typeid(T).name();
-    auto key = engineId_ + type;
-    if (clazzes.find(key) == clazzes.end()) {
-      LOG(ERROR) << "type: " << type << " has not been registered.";
-      return nullptr;
-    }
-
-    JSClassRef jsClass = std::get<1>(clazzes[key]);
+    JSClassRef jsClass = std::get<0>(clazzes_.at(JsWrapper<T, JSValueRef>::TYPENAME));
     auto ptr = std::make_unique<std::shared_ptr<T>>(value);
     return JSObjectMake(ctx_, jsClass, ptr.release());
   }
 
   void setBaseFolderPath(const char* absolutePath) { baseFolderPath_ = absolutePath; }
 
-  JSValueRef loadJsFile(const char* fileName) const {
-    JSValueRef exception = nullptr;
+  JSValueRef loadJsFile(const char* fileName) {
+    lastException_ = nullptr;
     const auto* globalThis =
-        JscCodeLoader::loadJsModuleToGlobalThis(ctx_, baseFolderPath_, fileName, &exception);
-    if (exception != nullptr) {
-      logErrorStackTrace(exception, __FILE_NAME__, __LINE__);
+        JscCodeLoader::loadJsModuleToGlobalThis(ctx_, baseFolderPath_, fileName, &lastException_);
+    if (lastException_ != nullptr) {
+      logErrorStackTrace(lastException_, __FILE_NAME__, __LINE__);
       return undefined();
     }
     return globalThis;
@@ -417,9 +379,9 @@ public:
   JSValueRef eval(const char* code, const char* filename = "<eval>") {
     JscStringRAII jsCode = code;
     JscStringRAII filenameStr = filename;
-    JSValueRef exception = nullptr;
-    JSValueRef result = JSEvaluateScript(ctx_, jsCode, nullptr, filenameStr, 0, &exception);
-    logErrorStackTrace(exception, __FILE_NAME__, __LINE__);
+    lastException_ = nullptr;
+    JSValueRef result = JSEvaluateScript(ctx_, jsCode, nullptr, filenameStr, 0, &lastException_);
+    logErrorStackTrace(lastException_, __FILE_NAME__, __LINE__);
     return result;
   }
 

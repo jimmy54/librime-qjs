@@ -5,8 +5,10 @@
 #include "engines/js_macros.h"
 #include "js_wrapper.h"
 
+using namespace rime;
+
 template <typename T_JS_VALUE>
-class JsWrapper<rime::ConfigList, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE> {
+class JsWrapper<rime::ConfigList, T_JS_VALUE> {
   DEFINE_CFUNCTION(getType, { return engine.toJsString("list"); })
 
   DEFINE_CFUNCTION(getSize, {
@@ -45,8 +47,10 @@ class JsWrapper<rime::ConfigList, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE>
   })
 
 public:
-  EXPORT_CLASS(ConfigList);
-
-  EXPORT_FINALIZER(rime::ConfigList, finalizer);
-  EXPORT_FUNCTIONS(getType, 0, getSize, 0, getItemAt, 1, getValueAt, 1);
+  EXPORT_CLASS_WITH_SHARED_POINTER(
+      ConfigList,
+      WITHOUT_CONSTRUCTOR,
+      WITHOUT_PROPERTIES,
+      WITHOUT_GETTERS,
+      WITH_FUNCTIONS(getType, 0, getSize, 0, getItemAt, 1, getValueAt, 1));
 };

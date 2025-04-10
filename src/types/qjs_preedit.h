@@ -7,7 +7,7 @@
 using namespace rime;
 
 template <typename T_JS_VALUE>
-class JsWrapper<rime::Preedit, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE> {
+class JsWrapper<rime::Preedit, T_JS_VALUE> {
   DEFINE_GETTER_2(Preedit, text, engine.toJsString(obj->text))
   DEFINE_GETTER_2(Preedit, caretPos, engine.toJsInt(obj->caret_pos))
   DEFINE_GETTER_2(Preedit, selectStart, engine.toJsInt(obj->sel_start))
@@ -19,8 +19,9 @@ class JsWrapper<rime::Preedit, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE> {
   DEFINE_SETTER_2(Preedit, selectEnd, engine.toInt, obj->sel_end = value)
 
 public:
-  EXPORT_CLASS(Preedit);
-
-  EXPORT_FINALIZER(rime::Preedit, finalizer);
-  EXPORT_PROPERTIES(text, caretPos, selectStart, selectEnd);
+  EXPORT_CLASS_WITH_SHARED_POINTER(Preedit,
+                                   WITHOUT_CONSTRUCTOR,
+                                   WITH_PROPERTIES(text, caretPos, selectStart, selectEnd),
+                                   WITHOUT_GETTERS,
+                                   WITHOUT_FUNCTIONS);
 };

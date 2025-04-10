@@ -5,8 +5,10 @@
 #include "engines/js_macros.h"
 #include "js_wrapper.h"
 
+using namespace rime;
+
 template <typename T_JS_VALUE>
-class JsWrapper<rime::ConfigMap, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE> {
+class JsWrapper<rime::ConfigMap, T_JS_VALUE> {
   DEFINE_CFUNCTION(getType, { return engine.toJsString("map"); })
 
   DEFINE_CFUNCTION_ARGC(hasKey, 1, {
@@ -45,8 +47,10 @@ class JsWrapper<rime::ConfigMap, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE> 
   })
 
 public:
-  EXPORT_CLASS(ConfigMap);
-
-  EXPORT_FINALIZER(rime::ConfigMap, finalizer);
-  EXPORT_FUNCTIONS(getType, 0, hasKey, 1, getItem, 1, getValue, 1, setItem, 2);
+  EXPORT_CLASS_WITH_SHARED_POINTER(
+      ConfigMap,
+      WITHOUT_CONSTRUCTOR,
+      WITHOUT_PROPERTIES,
+      WITHOUT_GETTERS,
+      WITH_FUNCTIONS(getType, 0, hasKey, 1, getItem, 1, getValue, 1, setItem, 2));
 };

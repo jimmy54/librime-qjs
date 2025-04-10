@@ -16,7 +16,7 @@ public:
   QuickJSTranslation& operator=(QuickJSTranslation&&) = delete;
 
   QuickJSTranslation(rime::an<rime::Translation> translation,
-                     const JsEngine<T_JS_VALUE>* jsEngine,
+                     JsEngine<T_JS_VALUE>* jsEngine,
                      const T_JS_VALUE& filterObj,
                      const T_JS_VALUE& filterFunc,
                      Environment* environment)
@@ -30,7 +30,7 @@ protected:
   bool Replenish() override { return replenished_; }
 
 private:
-  bool doFilter(const JsEngine<T_JS_VALUE>* jsEngine,
+  bool doFilter(JsEngine<T_JS_VALUE>* jsEngine,
                 const T_JS_VALUE& filterObj,
                 const T_JS_VALUE& filterFunc,
                 Environment* environment) {
@@ -51,8 +51,10 @@ private:
     T_JS_VALUE resultArray = jsEngine->callFunction(jsEngine->toObject(filterFunc),
                                                     jsEngine->toObject(filterObj), 2, args);
     jsEngine->freeValue(jsArray, jsEnvironment);
+
     if (jsEngine->isException(resultArray) || !jsEngine->isObject(resultArray) ||
         jsEngine->isUndefined(resultArray) || jsEngine->isNull(resultArray)) {
+      LOG(ERROR) << "[qjs] Failed to filter candidates";
       jsEngine->freeValue(resultArray);
       return false;
     }

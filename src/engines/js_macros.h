@@ -23,37 +23,27 @@
 #define DEFINE_CFUNCTION_ARGC(funcName, expectingArgc, statements) \
   DEFINE_CFUNCTION_ARGC_QJS(funcName, expectingArgc, statements)
 
-#define EXPORT_CONSTRUCTOR(funcName, funcBody) EXPORT_CONSTRUCTOR_QJS(funcName, funcBody)
-#define EXPORT_FINALIZER(T_RIME_TYPE, funcName) EXPORT_FINALIZER_QJS(T_RIME_TYPE, funcName)
-#define EXPORT_PROPERTIES(...) EXPORT_PROPERTIES_QJS(__VA_ARGS__)
-#define EXPORT_FUNCTIONS(...) EXPORT_FUNCTIONS_QJS(__VA_ARGS__)
-#define EXPORT_GETTERS(...) EXPORT_GETTER_QJS(__VA_ARGS__)
+#define WITH_CONSTRUCTOR(funcName, argc) WITH_CONSTRUCTOR_QJS(funcName, argc)
+#define WITHOUT_CONSTRUCTOR WITHOUT_CONSTRUCTOR_QJS
+
+#define WITH_FINALIZER WITH_FINALIZER_QJS
+#define WITHOUT_FINALIZER WITHOUT_FINALIZER_QJS
+
+#define WITH_PROPERTIES(...) WITH_PROPERTIES_QJS(__VA_ARGS__)
+#define WITHOUT_PROPERTIES WITHOUT_PROPERTIES_QJS
+
+#define WITH_GETTERS(...) WITH_GETTER_QJS(__VA_ARGS__)
+#define WITHOUT_GETTERS WITHOUT_GETTER_QJS()
+
+#define WITH_FUNCTIONS(...) WITH_FUNCTIONS_QJS(__VA_ARGS__)
+#define WITHOUT_FUNCTIONS WITHOUT_FUNCTIONS_QJS()
 #endif
 
-// #define countof(array) (sizeof(array) / sizeof(array[0]))
 template <typename T, std::size_t N>
 constexpr std::size_t countof(const T (& /*unused*/)[N]) noexcept {
   return N;
 }
 
-#define EXPORT_CLASS(name)            \
-  static const char* getTypeName() {  \
-    return #name;                     \
-  }                                   \
-  static JSClassID getJSClassId() {   \
-    static JSClassID classId = 0;     \
-    return classId;                   \
-  }                                   \
-  static JSClassDef getJSClassDef() { \
-    static JSClassDef classDef = {    \
-        .class_name = #name,          \
-        .finalizer = nullptr,         \
-        .gc_mark = nullptr,           \
-        .call = nullptr,              \
-        .exotic = nullptr,            \
-    };                                \
-    return classDef;                  \
-  }
 // NOLINTBEGIN(cppcoreguidelines-macro-usage) function-like macro 'DEFINE_GETTER' used; consider a 'constexpr' template function
 // =============== GETTER ===============
 #define DEFINE_GETTER(T_RIME_TYPE, propertieyName, statement) \
@@ -65,7 +55,7 @@ constexpr std::size_t countof(const T (& /*unused*/)[N]) noexcept {
 
 #define DEFINE_GETTER_IMPL_QJS(T_RIME_TYPE, propertieyName, statement, unwrap) \
   static JSValue get_##propertieyName(JSContext* ctx, JSValueConst thisVal) {  \
-    auto& engine = JsEngine<JSValue>::getEngineByContext(ctx);                 \
+    auto& engine = JsEngine<JSValue>::instance();                              \
     if (auto obj = (unwrap)) {                                                 \
       return statement;                                                        \
     }                                                                          \
@@ -81,22 +71,20 @@ constexpr std::size_t countof(const T (& /*unused*/)[N]) noexcept {
   DEFINE_STRING_SETTER_IMPL(T_RIME_TYPE, name, assignment,    \
                             engine.unwrapShared<T_RIME_TYPE>(thisVal))
 
-#define DEFINE_STRING_SETTER_IMPL_QJS(T_RIME_TYPE, name, assignment, unwrap)              \
-  static JSValue set_##name(JSContext* ctx, JSValueConst thisVal, JSValue val) {          \
-    auto& engine = JsEngine<JSValue>::getEngineByContext(ctx);                            \
-    if (auto obj = (unwrap)) {                                                            \
-      auto str = engine.toStdString(val);                                                 \
-      if (!str.empty()) {                                                                 \
-        assignment;                                                                       \
-        return JS_UNDEFINED;                                                              \
-      }                                                                                   \
-      return engine.throwError(                                                           \
-          JsErrorType::TYPE,                                                              \
-          formatString(" %s.%s = rvalue: rvalue is not a string", #T_RIME_TYPE, #name));  \
-    }                                                                                     \
-    return engine.throwError(                                                             \
-        JsErrorType::TYPE,                                                                \
-        formatString("Failed to unwrap the js object to a cpp %s object", #T_RIME_TYPE)); \
+#define DEFINE_STRING_SETTER_IMPL_QJS(T_RIME_TYPE, name, assignment, unwrap)     \
+  static JSValue set_##name(JSContext* ctx, JSValueConst thisVal, JSValue val) { \
+    auto& engine = JsEngine<JSValue>::instance();                                \
+    if (auto obj = (unwrap)) {                                                   \
+      auto str = engine.toStdString(val);                                        \
+      if (!str.empty()) {                                                        \
+        assignment;                                                              \
+        return JS_UNDEFINED;                                                     \
+      }                                                                          \
+      auto* format = "%s.%s = rvalue: rvalue is not a string";                   \
+      return JS_ThrowTypeError(ctx, format, #T_RIME_TYPE, #name);                \
+    }                                                                            \
+    auto* format = "Failed to unwrap the js object to a cpp %s object";          \
+    return JS_ThrowTypeError(ctx, format, #T_RIME_TYPE);                         \
   }
 
 #define DEFINE_SETTER(T_RIME_TYPE, jsName, converter, assignment) \
@@ -107,27 +95,27 @@ constexpr std::size_t countof(const T (& /*unused*/)[N]) noexcept {
   DEFINE_SETTER_IMPL(T_RIME_TYPE, jsName, converter, assignment,    \
                      engine.unwrapShared<T_RIME_TYPE>(thisVal))
 
-#define DEFINE_SETTER_IMPL_QJS(T_RIME_TYPE, jsName, converter, assignment, unwrap)     \
-  static JSValue set_##jsName(JSContext* ctx, JSValueConst thisVal, JSValue val) {     \
-    auto& engine = JsEngine<JSValue>::getEngineByContext(ctx);                         \
-    if (auto obj = (unwrap)) {                                                         \
-      auto value = converter(val);                                                     \
-      assignment;                                                                      \
-      return JS_UNDEFINED;                                                             \
-    }                                                                                  \
-    return JS_ThrowTypeError(ctx, "Failed to unwrap the js object to a cpp %s object", \
-                             #T_RIME_TYPE);                                            \
+#define DEFINE_SETTER_IMPL_QJS(T_RIME_TYPE, jsName, converter, assignment, unwrap) \
+  static JSValue set_##jsName(JSContext* ctx, JSValueConst thisVal, JSValue val) { \
+    auto& engine = JsEngine<JSValue>::instance();                                  \
+    if (auto obj = (unwrap)) {                                                     \
+      auto value = converter(val);                                                 \
+      assignment;                                                                  \
+      return JS_UNDEFINED;                                                         \
+    }                                                                              \
+    auto* format = "Failed to unwrap the js object to a cpp %s object";            \
+    return JS_ThrowTypeError(ctx, format, #T_RIME_TYPE);                           \
   }
 
 // =============== FUNCTION ===============
 
 #define DEFINE_CFUNCTION_QJS(funcName, funcBody)                                      \
   static JSValue funcName(JSContext* ctx, JSValue thisVal, int argc, JSValue* argv) { \
-    auto& engine = JsEngine<JSValue>::getEngineByContext(ctx);                        \
+    auto& engine = JsEngine<JSValue>::instance();                                     \
     try {                                                                             \
       funcBody;                                                                       \
     } catch (const JsException& e) {                                                  \
-      return engine.throwError(JsErrorType::TYPE, e.what());                          \
+      return JS_ThrowTypeError(ctx, "%s", e.what());                                  \
     }                                                                                 \
   }
 
@@ -136,67 +124,89 @@ constexpr std::size_t countof(const T (& /*unused*/)[N]) noexcept {
     if (argc < (expectingArgc)) {                                                                \
       return JS_ThrowSyntaxError(ctx, "%s(...) expects %d arguments", #funcName, expectingArgc); \
     }                                                                                            \
-    auto& engine = JsEngine<JSValue>::getEngineByContext(ctx);                                   \
+    auto& engine = JsEngine<JSValue>::instance();                                                \
     try {                                                                                        \
       statements;                                                                                \
     } catch (const JsException& e) {                                                             \
-      return engine.throwError(JsErrorType::TYPE, e.what());                                     \
+      return JS_ThrowTypeError(ctx, "%s", e.what());                                             \
     }                                                                                            \
   }
 
-#define EXPORT_CONSTRUCTOR_QJS(funcName, funcBody)                           \
-                                                                             \
-  DEFINE_CFUNCTION_QJS(funcName, funcBody)                                   \
-                                                                             \
-  typename TypeMap<JSValue>::FunctionPionterType getConstructor() override { \
-    return funcName;                                                         \
-  }
+// =============== QJS CLASS DEFINITION ===============
+#define EXPORT_CLASS_IMPL(className, block1, block2, block3, block4) \
+                                                                     \
+  using T_RIME_TYPE = className;                                     \
+                                                                     \
+  inline static const char* TYPENAME = #className;                   \
+                                                                     \
+  inline static JSClassID JS_CLASS_ID = 0;                           \
+                                                                     \
+  inline static JSClassDef JS_CLASS_DEF = {                          \
+      .class_name = #className,                                      \
+      .finalizer = nullptr,                                          \
+      .gc_mark = nullptr,                                            \
+      .call = nullptr,                                               \
+      .exotic = nullptr,                                             \
+  };                                                                 \
+                                                                     \
+  block1;                                                            \
+  block2;                                                            \
+  block3;                                                            \
+  block4;
 
-#define EXPORT_FINALIZER_QJS(T_RIME_TYPE, funcName)                                 \
-  typename TypeMap<JSValue>::FinalizerFunctionPionterType getFinalizer() override { \
-    return funcName;                                                                \
-  }                                                                                 \
-                                                                                    \
-  static void funcName(typename TypeMap<JSValue>::RuntimeType* rt, JSValue val) {   \
-    if (void* ptr = JsEngine<JSValue>::getOpaque<T_RIME_TYPE>(val)) {               \
-      auto* ppObj = static_cast<std::shared_ptr<T_RIME_TYPE>*>(ptr);                \
-      ppObj->reset();                                                               \
-      delete ppObj;                                                                 \
-      JsEngine<JSValue>::setOpaque(val, nullptr);                                   \
-    }                                                                               \
-  }
+#define EXPORT_CLASS_WITH_RAW_POINTER(className, block1, block2, block3, block4)                \
+  EXPORT_CLASS_IMPL(className, EXPAND(block1), EXPAND(block2), EXPAND(block3), EXPAND(block4)); \
+  WITHOUT_FINALIZER;  // the attached raw pointer is passed from Rime, should not free it in qjs
 
-#define DEFINE_PROPERTY(name) engine.defineProperty(#name, get_##name, set_##name),
+#define EXPORT_CLASS_WITH_SHARED_POINTER(className, block1, block2, block3, block4)             \
+  EXPORT_CLASS_IMPL(className, EXPAND(block1), EXPAND(block2), EXPAND(block3), EXPAND(block4)); \
+  WITH_FINALIZER;  // the attached shared pointer's reference count should be decremented when the js object is freed
 
-#define EXPORT_PROPERTIES_QJS(...)                                                       \
-  JSCFunctionListEntry* getProperties(JSContext* ctx) override {                         \
-    auto& engine = JsEngine<JSValue>::getEngineByContext(ctx);                           \
-    static JSCFunctionListEntry properties[] = {FOR_EACH(DEFINE_PROPERTY, __VA_ARGS__)}; \
-                                                                                         \
-    this->setPropertyCount(countof(properties));                                         \
-                                                                                         \
-    return static_cast<JSCFunctionListEntry*>(properties);                               \
-  }
+#define WITH_CONSTRUCTOR_QJS(funcName, argc)            \
+  inline static JSCFunction* constructorQjs = funcName; \
+  inline static const int CONSTRUCTOR_ARGC = argc;
+#define WITHOUT_CONSTRUCTOR_QJS                        \
+  inline static JSCFunction* constructorQjs = nullptr; \
+  inline static const int CONSTRUCTOR_ARGC = 0;
 
-#define DEFINE_GETTER_QJS(name) engine.defineProperty(#name, get_##name, nullptr),
+#define WITH_FINALIZER_QJS                                                        \
+  inline static JSClassFinalizer* finalizerQjs = [](JSRuntime* rt, JSValue val) { \
+    if (void* ptr = JS_GetOpaque(val, JS_CLASS_ID)) {                             \
+      auto* ppObj = static_cast<std::shared_ptr<T_RIME_TYPE>*>(ptr);              \
+      ppObj->reset();                                                             \
+      delete ppObj;                                                               \
+      JS_SetOpaque(val, nullptr);                                                 \
+    }                                                                             \
+  };
+#define WITHOUT_FINALIZER_QJS() inline static JSClassFinalizer* finalizerQjs = nullptr;
 
-#define EXPORT_GETTER_QJS(...)                                                          \
-  JSCFunctionListEntry* getGetters(JSContext* ctx) override {                           \
-    auto& engine = JsEngine<JSValue>::getEngineByContext(ctx);                          \
-    static JSCFunctionListEntry getters[] = {FOR_EACH(DEFINE_GETTER_QJS, __VA_ARGS__)}; \
-                                                                                        \
-    this->setGetterCount(countof(getters));                                             \
-                                                                                        \
-    return static_cast<JSCFunctionListEntry*>(getters);                                 \
-  }
+#define DEFINE_PROPERTY(name) JS_CGETSET_DEF(#name, get_##name, set_##name),
 
-#define DEFINE_FUNCTION_QJS(name, argc) engine.defineFunction(#name, argc, name),
+#define WITH_PROPERTIES_QJS(...)                                \
+  inline static const JSCFunctionListEntry PROPERTIES_QJS[] = { \
+      FOR_EACH(DEFINE_PROPERTY, __VA_ARGS__)};                  \
+  inline static const size_t PROPERTIES_SIZE = sizeof(PROPERTIES_QJS) / sizeof(PROPERTIES_QJS[0]);
+#define WITHOUT_PROPERTIES_QJS                                    \
+  inline static const JSCFunctionListEntry PROPERTIES_QJS[] = {}; \
+  inline static const size_t PROPERTIES_SIZE = 0;
 
-#define EXPORT_FUNCTIONS_QJS(...)                                                                \
-  JSCFunctionListEntry* getFunctions(JSContext* ctx) override {                                  \
-    auto& engine = JsEngine<JSValue>::getEngineByContext(ctx);                                   \
-    static JSCFunctionListEntry functions[] = {FOR_EACH_PAIR(DEFINE_FUNCTION_QJS, __VA_ARGS__)}; \
-    this->setFunctionCount(countof(functions));                                                  \
-    return static_cast<JSCFunctionListEntry*>(functions);                                        \
-  }
+#define DEFINE_GETTER_QJS(name) JS_CGETSET_DEF(#name, get_##name, nullptr),
+
+#define WITH_GETTER_QJS(...)                                 \
+  inline static const JSCFunctionListEntry GETTERS_QJS[] = { \
+      FOR_EACH(DEFINE_GETTER_QJS, __VA_ARGS__)};             \
+  inline static const size_t GETTERS_SIZE = sizeof(GETTERS_QJS) / sizeof(GETTERS_QJS[0]);
+#define WITHOUT_GETTER_QJS                                     \
+  inline static const JSCFunctionListEntry GETTERS_QJS[] = {}; \
+  inline static const size_t GETTERS_SIZE = 0;
+
+#define DEFINE_FUNCTION_QJS(name, argc) JS_CFUNC_DEF(#name, static_cast<uint8_t>(argc), name),
+
+#define WITH_FUNCTIONS_QJS(...)                                \
+  inline static const JSCFunctionListEntry FUNCTIONS_QJS[] = { \
+      FOR_EACH_PAIR(DEFINE_FUNCTION_QJS, __VA_ARGS__)};        \
+  inline static const size_t FUNCTIONS_SIZE = sizeof(FUNCTIONS_QJS) / sizeof(FUNCTIONS_QJS[0]);
+#define WITHOUT_FUNCTIONS_QJS                                    \
+  inline static const JSCFunctionListEntry FUNCTIONS_QJS[] = {}; \
+  inline static const size_t FUNCTIONS_SIZE = 0;
 // NOLINTEND(cppcoreguidelines-macro-usage)

@@ -9,7 +9,7 @@
 using namespace rime;
 
 template <typename T_JS_VALUE>
-class JsWrapper<rime::Engine, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE> {
+class JsWrapper<rime::Engine, T_JS_VALUE> {
   DEFINE_GETTER(Engine, schema, engine.wrap(obj->schema()))
   DEFINE_GETTER(Engine, context, engine.wrap(obj->context()))
   DEFINE_GETTER(Engine, activeEngine, engine.wrap(obj->active_engine()))
@@ -38,8 +38,9 @@ class JsWrapper<rime::Engine, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE> {
   })
 
 public:
-  EXPORT_CLASS(Engine);
-
-  EXPORT_GETTERS(schema, context, activeEngine);
-  EXPORT_FUNCTIONS(processKey, 1, commitText, 1, applySchema, 1);
+  EXPORT_CLASS_WITH_RAW_POINTER(Engine,
+                                WITHOUT_CONSTRUCTOR,
+                                WITHOUT_PROPERTIES,
+                                WITH_GETTERS(schema, context, activeEngine),
+                                WITH_FUNCTIONS(processKey, 1, commitText, 1, applySchema, 1));
 };

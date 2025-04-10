@@ -51,8 +51,7 @@ JsEngine<JSValueRef> JscLoadBundledPluginTest::engine = newOrShareEngine<JSValue
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
 TEST_F(JscLoadBundledPluginTest, RunTranslatorWithJavaScriptCore) {
-  JsWrapper<rime::Candidate, JSValueRef> wrapper;
-  engine.registerType(wrapper);
+  engine.registerType<rime::Candidate>();
 
   const auto* container = engine.loadJsFile("help_menu.dist.js");
   EXPECT_TRUE(container != nullptr) << "JavaScript evaluation failed";

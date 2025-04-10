@@ -9,7 +9,7 @@
 #include <memory>
 #include <string>
 #include <utility>
-#include "qjs_os_info.h"
+#include "misc/system_info.hpp"
 
 class Environment {
 public:

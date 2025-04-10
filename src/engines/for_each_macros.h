@@ -3,6 +3,10 @@
 
 // =============== FOR_EACH ===============
 #define EXPAND(...) __VA_ARGS__
+
+// #define FOR_EACH_0(...) // NOT WORKING, c++20's __VA_OPT__ is required
+// #define COUNT_ARGS(...) COUNT_ARGS_IMPL(__VA_OPT__(,) __VA_ARGS__, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0)
+
 #define FOR_EACH_1(macro, x) macro(x)
 #define FOR_EACH_2(macro, x, ...) macro(x) EXPAND(FOR_EACH_1(macro, __VA_ARGS__))
 #define FOR_EACH_3(macro, x, ...) macro(x) EXPAND(FOR_EACH_2(macro, __VA_ARGS__))
@@ -29,7 +33,7 @@
                     _18, _19, _20, N, ...)                                                      \
   N
 #define COUNT_ARGS(...) \
-  COUNT_ARGS_(__VA_ARGS__, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1)
+  COUNT_ARGS_(__VA_ARGS__, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0)
 
 // Select the appropriate FOR_EACH macro based on argument count
 #define INTERNAL_FOR_EACH_N(N, macro, ...) FOR_EACH_##N(macro, __VA_ARGS__)
@@ -37,6 +41,7 @@
 #define FOR_EACH(macro, ...) FOR_EACH_N(COUNT_ARGS(__VA_ARGS__), macro, __VA_ARGS__)
 
 // =============== FOR_EACH_PAIR ===============
+#define FOR_EACH_PAIR_0(...)
 #define FOR_EACH_PAIR_1(macro, x, y) macro(x, y)
 #define FOR_EACH_PAIR_2(macro, x, y, ...) macro(x, y) EXPAND(FOR_EACH_PAIR_1(macro, __VA_ARGS__))
 #define FOR_EACH_PAIR_3(macro, x, y, ...) macro(x, y) EXPAND(FOR_EACH_PAIR_2(macro, __VA_ARGS__))
@@ -62,7 +67,7 @@
 
 #define COUNT_PAIRS(...)                                                                           \
   COUNT_PAIRS_(__VA_ARGS__, 16, 16, 15, 15, 14, 14, 13, 13, 12, 12, 11, 11, 10, 10, 9, 9, 8, 8, 7, \
-               7, 6, 6, 5, 5, 4, 4, 3, 3, 2, 2, 1, 1)
+               7, 6, 6, 5, 5, 4, 4, 3, 3, 2, 2, 1, 0, 0)
 
 // Select the appropriate FOR_EACH_PAIR macro based on pair count
 #define INTERNAL_FOR_EACH_PAIR_N(N, macro, ...) FOR_EACH_PAIR_##N(macro, __VA_ARGS__)

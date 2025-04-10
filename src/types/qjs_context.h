@@ -8,7 +8,7 @@
 using namespace rime;
 
 template <typename T_JS_VALUE>
-class JsWrapper<rime::Context, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE> {
+class JsWrapper<rime::Context, T_JS_VALUE> {
   DEFINE_GETTER(Context, input, engine.toJsString(obj->input()))
   DEFINE_GETTER(Context, caretPos, engine.toJsInt(obj->caret_pos()))
 
@@ -47,9 +47,9 @@ class JsWrapper<rime::Context, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE> {
   })
 
 public:
-  EXPORT_CLASS(Context);
-
-  EXPORT_PROPERTIES(input, caretPos);
-  EXPORT_GETTERS(preedit, lastSegment);
-  EXPORT_FUNCTIONS(commit, 0, getCommitText, 0, clear, 0, hasMenu, 0);
+  EXPORT_CLASS_WITH_RAW_POINTER(Context,
+                                WITHOUT_CONSTRUCTOR,
+                                WITH_PROPERTIES(input, caretPos),
+                                WITH_GETTERS(preedit, lastSegment),
+                                WITH_FUNCTIONS(commit, 0, getCommitText, 0, clear, 0, hasMenu, 0));
 };

@@ -5,8 +5,10 @@
 #include "engines/js_macros.h"
 #include "js_wrapper.h"
 
+using namespace rime;
+
 template <typename T_JS_VALUE>
-class JsWrapper<rime::ConfigValue, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE> {
+class JsWrapper<rime::ConfigValue, T_JS_VALUE> {
   DEFINE_CFUNCTION(getType, { return engine.toJsString("scalar"); })
 
   DEFINE_CFUNCTION(getBool, {
@@ -38,8 +40,10 @@ class JsWrapper<rime::ConfigValue, T_JS_VALUE> : public JsWrapperBase<T_JS_VALUE
   })
 
 public:
-  EXPORT_CLASS(ConfigValue);
-
-  EXPORT_FINALIZER(rime::ConfigValue, finalizer);
-  EXPORT_FUNCTIONS(getType, 0, getBool, 0, getInt, 0, getDouble, 0, getString, 0);
+  EXPORT_CLASS_WITH_SHARED_POINTER(
+      ConfigValue,
+      WITHOUT_CONSTRUCTOR,
+      WITHOUT_PROPERTIES,
+      WITHOUT_GETTERS,
+      WITH_FUNCTIONS(getType, 0, getBool, 0, getInt, 0, getDouble, 0, getString, 0));
 };
