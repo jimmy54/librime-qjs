@@ -11,30 +11,25 @@
 
 using namespace rime;
 
+template <typename T>
+static void registerGears(Registry& r, const std::string& prefix) {
+  r.Register(prefix + "_processor", new QuickJSComponent<QuickJSProcessor<T>, Processor, T>());
+  r.Register(prefix + "_filter", new QuickJSComponent<QuickJSFilter<T>, Filter, T>());
+  r.Register(prefix + "_translator", new QuickJSComponent<QuickJSTranslator<T>, Translator, T>());
+}
+
 // NOLINTBEGIN(readability-identifier-naming)
 static void rime_qjs_initialize() {
   LOG(INFO) << "[qjs] registering components from module 'qjs'.";
   Registry& r = Registry::instance();
 
-  r.Register("qjs_processor",
-             new QuickJSComponent<QuickJSProcessor<JSValue>, Processor, JSValue>());
-  r.Register("qjs_filter", new QuickJSComponent<QuickJSFilter<JSValue>, Filter, JSValue>());
-  r.Register("qjs_translator",
-             new QuickJSComponent<QuickJSTranslator<JSValue>, Translator, JSValue>());
+  registerGears<JSValue>(r, "qjs");
 
 #ifdef __APPLE__
-  r.Register("jsc_processor",
-             new QuickJSComponent<QuickJSProcessor<JSValueRef>, Processor, JSValueRef>());
-  r.Register("jsc_filter", new QuickJSComponent<QuickJSFilter<JSValueRef>, Filter, JSValueRef>());
-  r.Register("jsc_translator",
-             new QuickJSComponent<QuickJSTranslator<JSValueRef>, Translator, JSValueRef>());
+  registerGears<JSValueRef>(r, "jsc");
 #else
   // fallback to the quickjs implementation, to share the same Rime schemas across platforms
-  r.Register("jsc_processor",
-             new QuickJSComponent<QuickJSProcessor<JSValue>, Processor, JSValue>());
-  r.Register("jsc_filter", new QuickJSComponent<QuickJSFilter<JSValue>, Filter, JSValue>());
-  r.Register("jsc_translator",
-             new QuickJSComponent<QuickJSTranslator<JSValue>, Translator, JSValue>());
+  registerGears<JSValue>(r, "jsc");
 #endif
 }
 
