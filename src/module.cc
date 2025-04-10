@@ -29,11 +29,13 @@ static void rime_qjs_initialize() {
   registerGears<JSValueRef>(r, "jsc");
 #else
   // fallback to the quickjs implementation, to share the same Rime schemas across platforms
-  registerGears<JSValue>(r, "qjs");
+  registerGears<JSValue>(r, "jsc");
 #endif
 }
 
-static void rime_qjs_finalize() {}
+static void rime_qjs_finalize() {
+  JsEngine<JSValue>::shutdown();
+}
 
 void rime_require_module_qjs() {}
 

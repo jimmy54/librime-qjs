@@ -23,17 +23,14 @@ class JsEngine<JSValue> {
     // Do not trigger GC when heap size is less than 16MB
     // default: rt->malloc_gc_threshold = 256 * 1024
     constexpr size_t SIXTEEN_MEGABYTES = 16L * 1024 * 1024;
-    JS_SetGCThreshold(JS_GetRuntime(context), SIXTEEN_MEGABYTES);
+    JS_SetGCThreshold(runtime, SIXTEEN_MEGABYTES);
 
-    JS_SetModuleLoaderFunc(JS_GetRuntime(context), nullptr, js_module_loader, nullptr);
+    JS_SetModuleLoaderFunc(runtime, nullptr, js_module_loader, nullptr);
     QuickJSCodeLoader::exposeLogToJsConsole(context);
 
     return context;
   }
 
-  // All qjs plugins should share the same runtime and context
-  // Never call JS_FreeContext or JS_FreeRuntime to free them, otherwise the following error will occur:
-  // Assertion failed: (p->ref_count > 0), function gc_decref_child, file quickjs.c, line 5868.
   inline static JSContext* context = newContext();
 
   JsEngine<JSValue>() {}
@@ -45,6 +42,16 @@ public:
   }
 
   static JsEngine<JSValue>& getEngineByContext(JSContext* ctx) { return instance(); }
+
+  static void shutdown() {
+    if (context == nullptr) {
+      return;
+    }
+    auto* rt = JS_GetRuntime(context);
+    JS_FreeContext(context);
+    JS_FreeRuntime(rt);
+    context = nullptr;
+  }
 
   // NOLINTBEGIN(readability-convert-member-functions-to-static)
   [[nodiscard]] int64_t getMemoryUsage() const {

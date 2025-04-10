@@ -88,7 +88,7 @@ TEST_F(QuickJSModuleTest, ImportJsModuleFromAnotherJsFileWithEngine) {
   ASSERT_FALSE(str.empty());
   EXPECT_STREQ(str.c_str(), "Hello QuickJS!");
 
-  engine.freeValue(module, globalObj, myClass, arg, obj, greetArg, greetResult);
+  engine.freeValue(module, globalObj, myClass, arg, obj, greetArg, greeFunction, greetResult);
 }
 
 TEST_F(QuickJSModuleTest, ImportJsModuleToNamespace) {

@@ -104,6 +104,6 @@ TYPED_TEST(QuickJSTypesTest, WrapUnwrapRimeTypes) {
   ASSERT_EQ(newCandidate->comment(), "the comment");
   ASSERT_EQ(newCandidate->quality(), 888);
 
-  jsEngine.freeValue(jsEnvironment, global, jsFunc, retValue, retJsEngine, retJsCandidate,
+  jsEngine.freeValue(jsEnvironment, result, global, jsFunc, retValue, retJsEngine, retJsCandidate,
                      retJsNewCandidate);
 }

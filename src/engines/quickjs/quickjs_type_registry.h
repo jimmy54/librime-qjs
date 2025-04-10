@@ -18,8 +18,8 @@ public:
     JSClassID& classId = WRAPPER::JS_CLASS_ID;
 
     if (registeredTypes.count(typeName) > 0) {
-      DLOG(ERROR) << "type [" << typeName
-                  << "] has already been registered with classId = " << classId;
+      DLOG(INFO) << "type [" << typeName
+                 << "] has already been registered with classId = " << classId;
       return;
     }
 

@@ -3,11 +3,11 @@
 #include <rime/setup.h>
 #include <rime_api.h>
 
+#include <quickjs.h>
 #include <filesystem>
 #include <string>
-#include "engines/engine_manager.h"
 
-#include <quickjs.h>
+#include "engines/quickjs/quickjs_engine.h"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -44,7 +44,10 @@ public:
     rime_get_api()->initialize(&traits);
   }
 
-  void TearDown() override { rime_get_api()->finalize(); }
+  void TearDown() override {
+    JsEngine<JSValue>::shutdown();
+    rime_get_api()->finalize();
+  }
 };
 
 int main(int argc, char** argv) noexcept {
