@@ -20,12 +20,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        compiler: [gcc, clang]
+        compiler: [gcc, clang-19]
         include:
           - compiler: gcc
             cxx_compiler: g++
-          - compiler: clang
-            cxx_compiler: clang++
+          - compiler: clang-19
+            cxx_compiler: clang++-19
     env:
       CC: ${{ matrix.compiler }}
       CXX: ${{ matrix.cxx_compiler }}
@@ -38,7 +38,7 @@ jobs:
           echo "set -g history-limit 50000" > ~/.tmate.conf
           echo "set -g terminal-overrides 'xterm*:smcup@:rmcup@'" >> ~/.tmate.conf
       - name: Setup tmate session
-        if: matrix.compiler == 'clang'
+        if: matrix.compiler == 'clang-19'
         uses: mxschmitt/action-tmate@v3
         with:
           limit-access-to-actor: true
@@ -59,25 +59,19 @@ jobs:
       - name: Install Rime plugins
         run: ./action-install-plugins-linux.sh
 
-      - name: Install clang-20
-        if: matrix.compiler == 'clang'
+      - name: Install clang-19
+        if: matrix.compiler == 'clang-19'
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang-20
+          sudo apt-get install -y clang-19
 
-      - name: Set clang-20 as default
-        if: matrix.compiler == 'clang'
-        run: |
-          sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-20 100
-          sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-20 100
-          
       - name: Build and test
         run: make test
         env:
           CMAKE_GENERATOR: Ninja
 
       - name: Detect Memory Leak
-        if: matrix.compiler == 'clang'
+        if: matrix.compiler == 'clang-19'
         run: |
           make clean
           make test-debug CFLAGS="-g -fsanitize=address" LDFLAGS="-fsanitize=address"
