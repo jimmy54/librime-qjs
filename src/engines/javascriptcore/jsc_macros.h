@@ -114,8 +114,8 @@
     }                                                                \
   };
 
-#define WITHOUT_FINALIZER  \
-  WITHOUT_FINALIZER_QJS(); \
+#define WITHOUT_FINALIZER \
+  WITHOUT_FINALIZER_QJS;  \
   inline static typename TypeMap<JSValueRef>::FinalizerFunctionPionterType finalizerJsc = nullptr;
 
 // NOLINTBEGIN(cppcoreguidelines-macro-usage) variadic macro 'WITH_PROPERTIES' used; consider using a 'constexpr' variadic template function
