@@ -45,18 +45,6 @@ jobs:
           timeout-minutes: 360
           detached: true
 
-      - name: Install clang-20
-        if: matrix.compiler == 'clang'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y clang-20
-
-      - name: Set clang-20 as default
-        if: matrix.compiler == 'clang'
-        run: |
-        sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-20 100
-        sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-20 100
-
       - name: Checkout last commit
         uses: actions/checkout@v4
         with:
@@ -71,6 +59,18 @@ jobs:
       - name: Install Rime plugins
         run: ./action-install-plugins-linux.sh
 
+      - name: Install clang-20
+        if: matrix.compiler == 'clang'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-20
+
+      - name: Set clang-20 as default
+        if: matrix.compiler == 'clang'
+        run: |
+          sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-20 100
+          sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-20 100
+          
       - name: Build and test
         run: make test
         env:
