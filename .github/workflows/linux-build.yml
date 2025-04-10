@@ -31,19 +31,32 @@ jobs:
       CXX: ${{ matrix.cxx_compiler }}
       RIME_PLUGINS: ${{ inputs.rime_plugins }}
     steps:
-      # - name: Configure tmate scrolling
-      #   # in copy mode (press Ctrl-b [ then use arrow keys or Page Up/Page Down)
-      #   run: |
-      #     mkdir -p ~/.tmate
-      #     echo "set -g history-limit 50000" > ~/.tmate.conf
-      #     echo "set -g terminal-overrides 'xterm*:smcup@:rmcup@'" >> ~/.tmate.conf
-      # - name: Setup tmate session
-      #   if: matrix.compiler == 'clang'
-      #   uses: mxschmitt/action-tmate@v3
-      #   with:
-      #     limit-access-to-actor: true
-      #     timeout-minutes: 360
-      #     detached: true
+      - name: Configure tmate scrolling
+        # in copy mode (press Ctrl-b [ then use arrow keys or Page Up/Page Down)
+        run: |
+          mkdir -p ~/.tmate
+          echo "set -g history-limit 50000" > ~/.tmate.conf
+          echo "set -g terminal-overrides 'xterm*:smcup@:rmcup@'" >> ~/.tmate.conf
+      - name: Setup tmate session
+        if: matrix.compiler == 'clang'
+        uses: mxschmitt/action-tmate@v3
+        with:
+          limit-access-to-actor: true
+          timeout-minutes: 360
+          detached: true
+
+      - name: Install clang-20
+        if: matrix.compiler == 'clang'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-20
+
+      - name: Set clang-20 as default
+        if: matrix.compiler == 'clang'
+        run: |
+        sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-20 100
+        sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-20 100
+
       - name: Checkout last commit
         uses: actions/checkout@v4
         with:
