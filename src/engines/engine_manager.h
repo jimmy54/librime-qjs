@@ -5,11 +5,9 @@
 #include "engines/js_engine.h"
 #include "engines/quickjs/quickjs_engine.h"
 
-#ifdef __APPLE__
+#ifdef _ENABLE_JAVASCRIPTCORE
 #include "engines/javascriptcore/javascriptcore_engine.h"
-#endif
 
-#ifdef __APPLE__
 template <typename T_JS_VALUE>
 inline JsEngine<T_JS_VALUE> newOrShareEngine() {
   if constexpr (std::is_same_v<T_JS_VALUE, JSValueRef>) {

@@ -2,7 +2,7 @@
 
 #include <quickjs.h>
 
-#ifdef __APPLE__
+#ifdef _ENABLE_JAVASCRIPTCORE
 
 #include <JavaScriptCore/JavaScript.h>
 

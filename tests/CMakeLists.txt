@@ -3,7 +3,7 @@ enable_testing()
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../build)
 
 set(JSC_TEST_FILES "")
-if(APPLE)
+if(ENABLE_JAVASCRIPTCORE)
   file(GLOB JSC_TEST_FILES "jsc/*.test.cpp")
 endif()
 
@@ -27,7 +27,7 @@ target_link_libraries(librime-qjs-tests PUBLIC
   ${Marisa_LIBRARY}
 )
 
-if(APPLE)
+if(ENABLE_JAVASCRIPTCORE)
   find_library(JAVASCRIPTCORE JavaScriptCore REQUIRED)
   include_directories(${JAVASCRIPTCORE}/Headers)
   target_link_libraries(librime-qjs-tests PRIVATE ${JAVASCRIPTCORE})

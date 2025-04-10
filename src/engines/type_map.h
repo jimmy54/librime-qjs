@@ -33,7 +33,7 @@ struct TypeMap<JSValue> {
   inline static const char* engineName = "QuickJS-NG";
 };
 
-#ifdef __APPLE__
+#ifdef _ENABLE_JAVASCRIPTCORE
 
 #include <JavaScriptCore/JavaScript.h>
 #include <JavaScriptCore/JavaScriptCore.h>

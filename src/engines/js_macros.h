@@ -6,7 +6,7 @@
 #include "engines/for_each_macros.h"
 #include "engines/quickjs/quickjs_engine.h"  // IWYU pragma: export
 
-#ifdef __APPLE__
+#ifdef _ENABLE_JAVASCRIPTCORE
 #include "engines/javascriptcore/jsc_macros.h"
 #else
 #define DEFINE_GETTER_IMPL(T_RIME_TYPE, propertieyName, statement, unwrap) \
@@ -33,10 +33,10 @@
 #define WITHOUT_PROPERTIES WITHOUT_PROPERTIES_QJS
 
 #define WITH_GETTERS(...) WITH_GETTER_QJS(__VA_ARGS__)
-#define WITHOUT_GETTERS WITHOUT_GETTER_QJS()
+#define WITHOUT_GETTERS WITHOUT_GETTER_QJS
 
 #define WITH_FUNCTIONS(...) WITH_FUNCTIONS_QJS(__VA_ARGS__)
-#define WITHOUT_FUNCTIONS WITHOUT_FUNCTIONS_QJS()
+#define WITHOUT_FUNCTIONS WITHOUT_FUNCTIONS_QJS
 #endif
 
 template <typename T, std::size_t N>
@@ -178,7 +178,7 @@ constexpr std::size_t countof(const T (& /*unused*/)[N]) noexcept {
       JS_SetOpaque(val, nullptr);                                                 \
     }                                                                             \
   };
-#define WITHOUT_FINALIZER_QJS() inline static JSClassFinalizer* finalizerQjs = nullptr;
+#define WITHOUT_FINALIZER_QJS inline static JSClassFinalizer* finalizerQjs = nullptr;
 
 #define DEFINE_PROPERTY(name) JS_CGETSET_DEF(#name, get_##name, set_##name),
 

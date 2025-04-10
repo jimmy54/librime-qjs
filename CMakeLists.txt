@@ -7,6 +7,13 @@ project(LibrimeQjs VERSION 1.0.0)
 
 option(BUILD_TOOLS "Build tools" ON)
 
+option(ENABLE_JAVASCRIPTCORE "Enable JavaScriptCore" OFF)
+if(APPLE)
+  set(ENABLE_JAVASCRIPTCORE ON)
+  add_definitions(-D_ENABLE_JAVASCRIPTCORE)
+endif()
+message(STATUS "ENABLE_JAVASCRIPTCORE: ${ENABLE_JAVASCRIPTCORE}")
+
 add_definitions(-DRIME_QJS_VERSION="${PROJECT_VERSION}")
 
 # Specify C++17 standard
@@ -26,8 +33,8 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build)
 
 list(APPEND qjs_defines _GNU_SOURCE)
 if(WIN32)
-    # NB: Windows 7 is EOL and we are only supporting in so far as it doesn't interfere with progress.
-    list(APPEND qjs_defines WIN32_LEAN_AND_MEAN _WIN32_WINNT=0x0601)
+  # NB: Windows 7 is EOL and we are only supporting in so far as it doesn't interfere with progress.
+  list(APPEND qjs_defines WIN32_LEAN_AND_MEAN _WIN32_WINNT=0x0601)
 endif()
 
 if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/quickjs/quickjs.h")
@@ -36,11 +43,11 @@ endif()
 
 # QuickJS source files
 set(QUICKJS_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/quickjs/quickjs.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/quickjs/libregexp.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/quickjs/libunicode.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/quickjs/libbf.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/quickjs/cutils.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/quickjs/quickjs.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/quickjs/libregexp.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/quickjs/libunicode.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/quickjs/libbf.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/quickjs/cutils.c
 )
 
 include_directories(include ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/quickjs)
@@ -56,7 +63,7 @@ endif()
 target_compile_definitions(qjs PRIVATE ${qjs_defines})
 target_include_directories(qjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/quickjs)
 
-if (BUILD_TOOLS)
+if(BUILD_TOOLS)
   # Create QuickJS executable
   add_executable(qjs_exe
     ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/quickjs/gen/repl.c
@@ -125,7 +132,7 @@ aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/engines SRC_ENGINES)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/engines/quickjs SRC_ENGINE_QUICKJS)
 
 set(SRC_ENGINE_JAVASCRIPTCORE "")
-if(APPLE)
+if(ENABLE_JAVASCRIPTCORE)
   aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/engines/javascriptcore SRC_ENGINE_JAVASCRIPTCORE)
 endif()
 
@@ -147,7 +154,7 @@ if(WIN32)
   target_compile_definitions(librime-qjs-objs PRIVATE RIME_IMPORTS)
 endif()
 
-if(APPLE)
+if(ENABLE_JAVASCRIPTCORE)
   find_library(JAVASCRIPTCORE JavaScriptCore REQUIRED)
   include_directories(${JAVASCRIPTCORE}/Headers)
   target_link_libraries(librime-qjs-objs PRIVATE ${JAVASCRIPTCORE})

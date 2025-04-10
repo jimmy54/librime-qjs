@@ -25,11 +25,11 @@ static void rime_qjs_initialize() {
 
   registerGears<JSValue>(r, "qjs");
 
-#ifdef __APPLE__
+#ifdef _ENABLE_JAVASCRIPTCORE
   registerGears<JSValueRef>(r, "jsc");
 #else
   // fallback to the quickjs implementation, to share the same Rime schemas across platforms
-  registerGears<JSValue>(r, "jsc");
+  registerGears<JSValue>(r, "qjs");
 #endif
 }
 

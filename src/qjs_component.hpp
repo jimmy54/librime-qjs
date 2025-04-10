@@ -59,7 +59,7 @@ public:
   ComponentWrapper<T_ACTUAL, T_BASE, T_JS_VALUE>* Create(const rime::Ticket& ticket) {
     // The same plugin could have difference configurations for different schemas, and then behave differently.
     // So we need to create a new component for each schema.
-    const std::string& schemaId = ticket.engine->schema()->schema_id();
+    const std::string schemaId = ticket.engine->schema()->schema_id();
     KeyType key = std::make_pair(schemaId, ticket.name_space);
 
     auto component = new ComponentWrapper<T_ACTUAL, T_BASE, T_JS_VALUE>(ticket);
