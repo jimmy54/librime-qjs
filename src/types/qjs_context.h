@@ -19,10 +19,15 @@ class JsWrapper<rime::Context, T_JS_VALUE> {
 
   DEFINE_GETTER(Context,
                 lastSegment,
-                obj->composition().empty()
-                    ? engine.null()
-                    : engine.wrap<Segment>(
-                          &obj->composition().back()));  // <-- & is required to pass the reference!
+                obj->composition().empty() ? engine.null()
+                                           : engine.wrap<Segment>(&obj->composition().back()));
+
+  DEFINE_GETTER(Context, commitNotifier, engine.wrap(&obj->commit_notifier()))
+  DEFINE_GETTER(Context, selectNotifier, engine.wrap(&obj->select_notifier()))
+  DEFINE_GETTER(Context, updateNotifier, engine.wrap(&obj->update_notifier()))
+  DEFINE_GETTER(Context, deleteNotifier, engine.wrap(&obj->delete_notifier()))
+
+  DEFINE_GETTER(Context, commitHistory, engine.wrap(&obj->commit_history()))
 
   DEFINE_CFUNCTION(commit, {
     auto obj = engine.unwrap<Context>(thisVal);
@@ -50,6 +55,12 @@ public:
   EXPORT_CLASS_WITH_RAW_POINTER(Context,
                                 WITHOUT_CONSTRUCTOR,
                                 WITH_PROPERTIES(input, caretPos),
-                                WITH_GETTERS(preedit, lastSegment),
+                                WITH_GETTERS(preedit,
+                                             lastSegment,
+                                             commitNotifier,
+                                             selectNotifier,
+                                             updateNotifier,
+                                             deleteNotifier,
+                                             commitHistory),
                                 WITH_FUNCTIONS(commit, 0, getCommitText, 0, clear, 0, hasMenu, 0));
 };

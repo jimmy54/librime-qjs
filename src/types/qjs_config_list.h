@@ -46,11 +46,25 @@ class JsWrapper<rime::ConfigList, T_JS_VALUE> {
     return engine.wrapShared<rime::ConfigValue>(value);
   })
 
+  DEFINE_CFUNCTION_ARGC(pushBack, 1, {
+    if (auto item = engine.unwrapShared<ConfigItem>(argv[0])) {
+      auto obj = engine.unwrapShared<rime::ConfigList>(thisVal);
+      obj->Append(item);
+    }
+    return engine.undefined();
+  })
+
+  DEFINE_CFUNCTION(clear, {
+    auto obj = engine.unwrapShared<rime::ConfigList>(thisVal);
+    obj->Clear();
+    return engine.undefined();
+  })
+
 public:
   EXPORT_CLASS_WITH_SHARED_POINTER(
       ConfigList,
       WITHOUT_CONSTRUCTOR,
       WITHOUT_PROPERTIES,
       WITHOUT_GETTERS,
-      WITH_FUNCTIONS(getType, 0, getSize, 0, getItemAt, 1, getValueAt, 1));
+      WITH_FUNCTIONS(getType, 0, getSize, 0, getItemAt, 1, getValueAt, 1, pushBack, 1, clear, 0));
 };

@@ -139,7 +139,7 @@ public:
   [[nodiscard]] JSValue callFunction(const JSValue& func,
                                      const JSValue& thisArg,
                                      int argc,
-                                     JSValue* argv) {
+                                     JSValue* argv) const {
     return JS_Call(context, func, thisArg, argc, argv);
   }
 
@@ -161,6 +161,9 @@ public:
     return QuickJSCodeLoader::getMethodByNameInClass(context, jsClass, methodName);
   }
 
+  [[nodiscard]] bool isFunction(const JSValue& value) const {
+    return JS_IsFunction(context, value);
+  }
   [[nodiscard]] bool isObject(const JSValue& value) const { return JS_IsObject(value); }
   [[nodiscard]] bool isNull(const JSValue& value) const { return JS_IsNull(value); }
   [[nodiscard]] bool isUndefined(const JSValue& value) const { return JS_IsUndefined(value); }
@@ -169,6 +172,10 @@ public:
 
   void logErrorStackTrace(const JSValue& exception, const char* file, int line) const {
     ErrorHandler::logErrorStackTrace(context, exception, file, line);
+  }
+
+  [[nodiscard]] JSValue duplicateValue(const JSValue& value) const {
+    return JS_DupValue(context, value);
   }
 
   template <typename... Args>

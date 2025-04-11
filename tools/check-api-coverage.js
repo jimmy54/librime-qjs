@@ -13,12 +13,12 @@ function parseCppExports() {
   const exports = new Map()
 
   readdirSync(TYPES_DIR)
-    .filter((f) => f.endsWith('.cc'))
+    .filter((f) => f.startsWith('qjs_') && f.endsWith('.h'))
     .forEach((f) => {
       const content = readFileSync(join(TYPES_DIR, f), 'utf-8')
 
       // Match class definitions
-      const classDefRegex = /DEFINE_JS_CLASS_WITH_(?:RAW_POINTER|SHARED_POINTER)\s*\(\s*\n*(\w+),(\n.+)+\)/gs
+      const classDefRegex = /EXPORT_CLASS_WITH_(?:RAW_POINTER|SHARED_POINTER)\s*\(\s*\n*(\w+),(\n.+)+\)/gs
       let classMatch
 
       while ((classMatch = classDefRegex.exec(content)) !== null) {
@@ -30,28 +30,32 @@ function parseCppExports() {
         const classExports = exports.get(className)
 
         // Parse properties
-        const propsMatch = classBody.match(/DEFINE_PROPERTIES\s*\((.+?)\),?\n/)
+        const propsMatch = classBody.match(/WITH_PROPERTIES\s*\((.+?)\)/s)
         if (propsMatch) {
           const props = propsMatch[1].split(',').map((p) => p.trim())
           props.forEach((p) => classExports.props.add(p))
         }
 
         // Parse getters
-        const gettersMatch = classBody.match(/DEFINE_GETTERS\s*\((.+?)\),?\n/)
+        const gettersMatch = classBody.match(/WITH_GETTERS\s*\((.+?)\)/s)
         if (gettersMatch) {
           const getters = gettersMatch[1].split(',').map((g) => g.trim())
           getters.forEach((g) => classExports.getters.add(g))
         }
 
         // Parse functions
-        const functions = classBody.match(/JS_CFUNC_DEF\s*\(\s*"(.+?)"/g) || []
-        functions.forEach((f) => {
-          const methodName = f.match(/"([^"]+)"/)[1]
-          classExports.methods.add(methodName)
-        })
+        const functionsMatch = classBody.match(/WITH_FUNCTIONS\s*\((.+?)\)/s)
+        if (functionsMatch) {
+          const functions = functionsMatch[1]
+            .split(',')
+            .filter((_, idx) => idx % 2 === 0)
+            .map((f) => f.trim())
+
+          functions.forEach((f) => classExports.methods.add(f))
+        }
 
         // Parse constructor
-        if (classBody.includes('DEFINE_CONSTRUCTOR(' + className)) {
+        if (classBody.includes('WITH_CONSTRUCTOR')) {
           classExports.methods.add('constructor')
         }
       }
@@ -65,7 +69,7 @@ function parseDtsDeclarations() {
   const dtsContent = readFileSync(DTS_FILE, 'utf-8')
   const declarations = new Map()
 
-  const blocks = dtsContent.split(/(?=interface|declare)/g);
+  const blocks = dtsContent.split(/(?=interface|declare)/g)
   blocks.forEach((block) => {
     const interfaceMatch = block?.replace(/extends \w+/g, '').match(/\s*(\w+)\s*{(.+)}/s)
     if (interfaceMatch) {
@@ -135,15 +139,6 @@ const cppExports = parseCppExports()
 
 const interfacesOutsideTypes = [
   {
-    name: 'Environment',
-    getters: ['engine', 'namespace', 'userDataDir', 'sharedDataDir', 'os'],
-    methods: ['loadFile', 'fileExists', 'getRimeInfo', 'popen'],
-  },
-  {
-    name: 'SystemInfo',
-    getters: ['name', 'version', 'architecture'],
-  },
-  {
     name: 'Module',
     methods: ['constructor', 'finalizer'],
   },
@@ -161,11 +156,13 @@ const interfacesOutsideTypes = [
   },
 ]
 
-interfacesOutsideTypes.forEach((i) => cppExports.set(i.name, {
-  props: new Set(i.props),
-  getters: new Set(i.getters),
-  methods: new Set(i.methods),
-}))
+interfacesOutsideTypes.forEach((i) =>
+  cppExports.set(i.name, {
+    props: new Set(i.props),
+    getters: new Set(i.getters),
+    methods: new Set(i.methods),
+  }),
+)
 
 const dtsDeclarations = parseDtsDeclarations()
 const errors =

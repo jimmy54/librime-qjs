@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -125,8 +126,7 @@ void logError(const char* format, ...) {
 
 FILE* tryLoadFile(const char* path) {
   const char* possibleExtensions[] = {"", ".js", ".mjs", ".cjs"};
-  const int numExtensions =
-      sizeof(possibleExtensions) / sizeof(possibleExtensions[0]);
+  const int numExtensions = sizeof(possibleExtensions) / sizeof(possibleExtensions[0]);
 
   char fullPath[PATH_MAX];
   FILE* file = NULL;
@@ -183,8 +183,7 @@ char* tryFindNodeModuleEntryFileName(const char* folder, const char* key) {
   fclose(packageJson);
 
   char entryFilePath[PATH_MAX];
-  snprintf(entryFilePath, sizeof(entryFilePath), "%s/%s", folder,
-           entryFileName);
+  snprintf(entryFilePath, sizeof(entryFilePath), "%s/%s", folder, entryFileName);
   FILE* file = tryLoadFile(entryFilePath);
   if (file) {
     fclose(file);
@@ -197,8 +196,7 @@ char* tryFindNodeModuleEntryFileName(const char* folder, const char* key) {
 char* tryFindNodeModuleEntryPath(const char* baseFolder,
                                  const char* moduleName) {
   char folder[PATH_MAX];
-  snprintf(folder, sizeof(folder), "%s/node_modules/%s", baseFolder,
-           moduleName);
+  snprintf(folder, sizeof(folder), "%s/node_modules/%s", baseFolder, moduleName);
 
   char* entryFileName = tryFindNodeModuleEntryFileName(folder, "\"module\":");
   if (!entryFileName) {
@@ -206,8 +204,7 @@ char* tryFindNodeModuleEntryPath(const char* baseFolder,
   }
 
   if (!entryFileName) {
-    logError("Failed to find the entry file of the node module: %s",
-             moduleName);
+    logError("Failed to find the entry file of the node module: %s", moduleName);
     return NULL;
   }
 
@@ -240,8 +237,7 @@ char* loadFile(const char* absolutePath) {
 
   size_t read = fread(content, 1, length, file);
   if (read != (size_t)length) {
-    logError("Failed to read file: %s, expected %ld bytes but got %zu",
-             absolutePath, length, read);
+    logError("Failed to read file: %s, expected %ld bytes but got %zu", absolutePath, length, read);
     free(content);
     fclose(file);
     return NULL;
@@ -252,16 +248,26 @@ char* loadFile(const char* absolutePath) {
   return content;
 }
 
+bool isAbsolutePath(const char* path) {
+  size_t len = strlen(path);
+  return (len > 0 && path[0] == '/') ||  // Unix-style absolute path
+         (len > 1 && isalpha(path[0]) && path[1] == ':') || // Windows drive letter (e.g., C:)
+         (len > 1 && path[0] == '\\' && path[1] == '\\');  // Windows UNC path
+}
+
 char* readJsCode(JSContext* ctx, const char* relativePath) {
   if (strlen(qjsBaseFolder) == 0) {
     logError("basePath is empty in loading js file: %s", relativePath);
-    JS_ThrowReferenceError(ctx, "basePath is empty in loading js file: %s",
-                           relativePath);
+    JS_ThrowReferenceError(ctx, "basePath is empty in loading js file: %s", relativePath);
     return NULL;
   }
 
   char fullPath[PATH_MAX];
-  snprintf(fullPath, sizeof(fullPath), "%s/%s", qjsBaseFolder, relativePath);
+  if (isAbsolutePath(relativePath)) {
+    snprintf(fullPath, sizeof(fullPath), "%s", relativePath);
+  } else {
+    snprintf(fullPath, sizeof(fullPath), "%s/%s", qjsBaseFolder, relativePath);
+  }
 
   return loadFile(fullPath);
 }
@@ -293,29 +299,31 @@ JSValue loadJsModule(JSContext* ctx, const char* fileName) {
 JSModuleDef* js_module_loader(JSContext* ctx,
                               const char* moduleName,
                               void* opaque) {
-  logInfo("Loading js module: %s", moduleName);
   char fullPath[PATH_MAX];
-  snprintf(fullPath, sizeof(fullPath), "%s/%s", qjsBaseFolder, moduleName);
+  if (isAbsolutePath(moduleName)) {
+    snprintf(fullPath, sizeof(fullPath), "%s", moduleName);
+  } else {
+    snprintf(fullPath, sizeof(fullPath), "%s/%s", qjsBaseFolder, moduleName);
+  }
 
   FILE* file = tryLoadFile(fullPath);
-  if (!file) {
-    char* nodeModuleEntryFile =
-        tryFindNodeModuleEntryPath(qjsBaseFolder, moduleName);
-    if (!nodeModuleEntryFile) {
-      logError("Failed to load the js module: %s", moduleName);
-      return NULL;
-    }
-
-    char modulePath[PATH_MAX];
-    snprintf(modulePath, sizeof(modulePath), "/node_modules/%s/%s", moduleName,
-             nodeModuleEntryFile);
-    free(nodeModuleEntryFile);
-
-    JSValue funcObj = loadJsModule(ctx, modulePath);
+  if (file) { // file exists, it's a js file outside node_modules
+    fclose(file);
+    JSValue funcObj = loadJsModule(ctx, moduleName);
     return (JSModuleDef*)JS_VALUE_GET_PTR(funcObj);
   }
-  fclose(file);
 
-  JSValue funcObj = loadJsModule(ctx, moduleName);
+  // try to load the file from node_modules
+  char* nodeModuleEntryFile = tryFindNodeModuleEntryPath(qjsBaseFolder, moduleName);
+  if (!nodeModuleEntryFile) {
+    logError("Failed to load the js module: %s", moduleName);
+    return NULL;
+  }
+
+  char modulePath[PATH_MAX];
+  snprintf(modulePath, sizeof(modulePath), "node_modules/%s/%s", moduleName, nodeModuleEntryFile);
+  free(nodeModuleEntryFile);
+
+  JSValue funcObj = loadJsModule(ctx, modulePath);
   return (JSModuleDef*)JS_VALUE_GET_PTR(funcObj);
 }

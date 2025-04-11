@@ -2,6 +2,8 @@
 
 #include "engines/js_engine.h"
 #include "qjs_candidate.h"
+#include "qjs_commit_history.h"
+#include "qjs_commit_record.h"
 #include "qjs_config.h"
 #include "qjs_config_item.h"
 #include "qjs_config_list.h"
@@ -11,6 +13,8 @@
 #include "qjs_engine.h"
 #include "qjs_environment.h"
 #include "qjs_key_event.h"
+#include "qjs_notifier.h"
+#include "qjs_notifier_connection.h"
 #include "qjs_os_info.h"
 #include "qjs_preedit.h"
 #include "qjs_schema.h"
@@ -42,4 +46,8 @@ void registerTypesToJsEngine(JsEngine<T_JS_VALUE>& engine) {
   engine.template registerType<rime::ConfigMap>();
   engine.template registerType<Environment>();
   engine.template registerType<SystemInfo>();
+  engine.template registerType<CommitRecord>();
+  engine.template registerType<CommitHistory>();
+  engine.template registerType<NotifierConnection>();
+  engine.template registerType<Notifier>();
 }

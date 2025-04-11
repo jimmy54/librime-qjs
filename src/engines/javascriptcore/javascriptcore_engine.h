@@ -73,6 +73,16 @@ public:
     // the thrown exception in `callFunction` and `newClassInstance` was set to `lastException_`
     return lastException_ != nullptr;
   }
+
+  [[nodiscard]] JSValueRef duplicateValue(const JSValueRef& value) const {
+    // JavaScriptCore handles memory management automatically
+    return value;
+  }
+
+  template <typename... Args>
+  void freeValue(const Args&... args) const {
+    // JavaScriptCore handles memory management automatically
+  }
   // NOLINTEND(readability-convert-member-functions-to-static)
 
   [[nodiscard]] JSValueRef null() const { return JSValueMakeNull(ctx_); }
@@ -222,6 +232,10 @@ public:
     return JSValueMakeString(ctx_, JscStringRAII(message.c_str()));
   }
 
+  [[nodiscard]] bool isFunction(const JSValueRef& value) const {
+    return isObject(value) && JSObjectIsFunction(ctx_, toObject(value));
+  }
+
   [[nodiscard]] bool isObject(const JSValueRef& value) const {
     return JSValueIsObject(ctx_, value);
   }
@@ -244,18 +258,6 @@ public:
     JSStringGetUTF8CString(exceptionStr, buffer.data(), bufferSize);
     LOG(ERROR) << "[qjs] JS exception at " << file << ':' << line << " => " << buffer.data();
   }
-
-  void freeValue(const JSValueRef& value) const {
-    // JavaScriptCore handles memory management automatically
-  }
-
-  template <typename... Args>
-  void freeValue(const JSValueRef& first, const Args&... rest) const {
-    freeValue(first);
-    freeValue(rest...);
-  }
-
-  void freeValue() const {}
 
   template <typename T_RIME_TYPE>
   void registerType() {

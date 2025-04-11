@@ -66,6 +66,7 @@ public:
   T_JS_VALUE callFunction(T_JS_VALUE func, T_JS_VALUE thisArg, int argc, T_JS_VALUE* argv);
   T_JS_VALUE newClassInstance(T_JS_VALUE clazz, int argc, T_JS_VALUE* argv);
 
+  bool isFunction(const T_JS_VALUE& value);
   bool isObject(const T_JS_VALUE& value);
   bool isNull(const T_JS_VALUE& value);
   bool isUndefined(const T_JS_VALUE& value);
@@ -75,6 +76,8 @@ public:
   void logErrorStackTrace(const T_JS_OBJECT& exception,
                           const char* file = __FILE_NAME__,
                           int line = __LINE__);
+
+  T_JS_VALUE duplicateValue(const T_JS_VALUE& value);
 
   void freeValue(const T_JS_VALUE& value);
 

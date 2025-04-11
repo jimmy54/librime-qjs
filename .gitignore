@@ -3,6 +3,7 @@ Makefile
 CMakeCache.txt
 CMakeFiles/
 build/
+.cache
 
 lib
 _deps
@@ -25,3 +26,8 @@ compile_commands.json
 .cache
 
 requirement.md
+
+# visual studio files
+*.vcxproj
+*.vcxproj.filters
+*.sln

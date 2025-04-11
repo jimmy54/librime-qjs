@@ -4,6 +4,9 @@
 #include <rime/schema.h>
 #include <rime_api.h>
 
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+#include <boost/uuid/uuid_io.hpp>
 #include <cstddef>
 #include <cstdio>
 #include <memory>
@@ -14,8 +17,9 @@
 class Environment {
 public:
   explicit Environment(rime::Engine* engine, std::string nameSpace)
-      : engine_(engine), nameSpace_(std::move(nameSpace)) {}
+      : id_(generateUuid()), engine_(engine), nameSpace_(std::move(nameSpace)) {}
 
+  [[nodiscard]] std::string getId() const { return id_; }
   [[nodiscard]] rime::Engine* getEngine() const { return engine_; }
   [[nodiscard]] const std::string& getNameSpace() const { return nameSpace_; }
   [[nodiscard]] SystemInfo* getSystemInfo() { return &systemInfo_; }
@@ -30,7 +34,14 @@ public:
   static std::string formatMemoryUsage(size_t usage);
 
 private:
+  std::string id_;
   rime::Engine* engine_;
   std::string nameSpace_;
   SystemInfo systemInfo_{};
+
+  static std::string generateUuid() {
+    boost::uuids::random_generator gen;
+    boost::uuids::uuid uuid = gen();
+    return boost::uuids::to_string(uuid);
+  }
 };

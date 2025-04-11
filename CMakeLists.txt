@@ -15,6 +15,7 @@ endif()
 message(STATUS "ENABLE_JAVASCRIPTCORE: ${ENABLE_JAVASCRIPTCORE}")
 
 add_definitions(-DRIME_QJS_VERSION="${PROJECT_VERSION}")
+message(STATUS "LibrimeQjs version: ${PROJECT_VERSION}") # to update the version in releases
 
 # Specify C++17 standard
 set(CMAKE_CXX_STANDARD 17)
