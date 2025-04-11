@@ -278,8 +278,14 @@ JSValue loadJsModule(JSContext* ctx, const char* fileName) {
     return JS_ThrowReferenceError(ctx, "Could not open %s", fileName);
   }
 
+  size_t codeLen = strlen(code);
+  if (codeLen == 0) {
+    free(code);
+    return JS_ThrowReferenceError(ctx, "Empty module content: %s", fileName);
+  }
+
   int flags = JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_COMPILE_ONLY;
-  JSValue funcObj = JS_Eval(ctx, code, strlen(code), fileName, flags);
+  JSValue funcObj = JS_Eval(ctx, code, codeLen, fileName, flags);
   free(code);
 
   if (JS_IsException(funcObj)) {
