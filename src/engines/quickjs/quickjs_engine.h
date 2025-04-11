@@ -6,6 +6,8 @@
 #include <memory>
 #include <string>
 
+#include <mutex>
+
 #include "engines/js_engine.h"
 #include "engines/quickjs/quickjs_code_loader.h"
 #include "engines/quickjs/quickjs_type_registry.h"
@@ -15,28 +17,34 @@
 
 template <>
 class JsEngine<JSValue> {
-  // define them in a static way to avoid the initialization order fiasco
-  static JSContext* newContext() {
-    static auto* runtime = JS_NewRuntime();
-    static auto* context = JS_NewContext(runtime);
+  inline static std::mutex runtimeMutex;
+  inline static JSRuntime* runtime = nullptr;
+  inline static JSContext* context = nullptr;
 
-    // Do not trigger GC when heap size is less than 16MB
-    // default: rt->malloc_gc_threshold = 256 * 1024
-    constexpr size_t SIXTEEN_MEGABYTES = 16L * 1024 * 1024;
-    JS_SetGCThreshold(runtime, SIXTEEN_MEGABYTES);
+  static void setup() {
+    if (runtime == nullptr) {
+      runtime = JS_NewRuntime();
+      // Do not trigger GC when heap size is less than 16MB
+      // default: rt->malloc_gc_threshold = 256 * 1024
+      constexpr size_t SIXTEEN_MEGABYTES = 16L * 1024 * 1024;
+      JS_SetGCThreshold(runtime, SIXTEEN_MEGABYTES);
+      JS_SetModuleLoaderFunc(runtime, nullptr, js_module_loader, nullptr);
+    }
 
-    JS_SetModuleLoaderFunc(runtime, nullptr, js_module_loader, nullptr);
-    QuickJSCodeLoader::exposeLogToJsConsole(context);
-
-    return context;
+    if (context == nullptr) {
+      context = JS_NewContext(runtime);
+      QuickJSCodeLoader::exposeLogToJsConsole(context);
+    }
   }
-
-  inline static JSContext* context = newContext();
 
   JsEngine<JSValue>() {}
 
 public:
   static JsEngine<JSValue>& instance() {
+    std::lock_guard<std::mutex> lock(runtimeMutex);
+    if (context == nullptr) {
+      setup();
+    }
     static auto instance = JsEngine<JSValue>();
     return instance;
   }
@@ -44,19 +52,23 @@ public:
   static JsEngine<JSValue>& getEngineByContext(JSContext* ctx) { return instance(); }
 
   static void shutdown() {
-    if (context == nullptr) {
-      return;
+    std::lock_guard<std::mutex> lock(runtimeMutex);
+    if (context != nullptr) {
+      JS_FreeContext(context);
+      context = nullptr;
     }
-    auto* rt = JS_GetRuntime(context);
-    JS_FreeContext(context);
-    JS_FreeRuntime(rt);
-    context = nullptr;
+
+    if (runtime != nullptr) {
+      JS_FreeRuntime(runtime);
+      runtime = nullptr;
+    }
+    QuickJSTypeRegistry::clear();
   }
 
   // NOLINTBEGIN(readability-convert-member-functions-to-static)
   [[nodiscard]] int64_t getMemoryUsage() const {
     JSMemoryUsage qjsMemStats;
-    JS_ComputeMemoryUsage(JS_GetRuntime(context), &qjsMemStats);
+    JS_ComputeMemoryUsage(runtime, &qjsMemStats);
     return qjsMemStats.memory_used_size;
   }
 

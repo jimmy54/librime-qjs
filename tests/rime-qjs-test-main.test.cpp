@@ -45,7 +45,7 @@ public:
   }
 
   void TearDown() override {
-    JsEngine<JSValue>::shutdown();
+    // `JsEngine<JSValue>::shutdown();` is not needed since it's called in module.cc
     rime_get_api()->finalize();
   }
 };

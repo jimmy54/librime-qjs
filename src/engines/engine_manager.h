@@ -24,7 +24,7 @@ inline JsEngine<T_JS_VALUE> newOrShareEngine() {
 }
 #else
 template <typename T_JS_VALUE>
-inline JsEngine<T_JS_VALUE>& newOrShareEngine() {
+inline JsEngine<T_JS_VALUE> newOrShareEngine() {
   if constexpr (std::is_same_v<T_JS_VALUE, JSValue>) {
     return JsEngine<JSValue>::instance();
   } else {

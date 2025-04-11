@@ -77,6 +77,8 @@ public:
     return jsobj;
   }
 
+  static void clear() { registeredTypes.clear(); }
+
 private:
   inline static std::unordered_map<std::string, JSClassID> registeredTypes{};
 };

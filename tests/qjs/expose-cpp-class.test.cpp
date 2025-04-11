@@ -226,3 +226,13 @@ TEST_F(QuickJSExposeClassTest, TestExposeClassToQuickJSWithEngine) {
   EXPECT_STREQ(str.c_str(), "Hello, QuickJS! Hello, Trae!");
   engine.freeValue(result);
 }
+TEST_F(QuickJSExposeClassTest, TestRestartEngine) {
+  JsEngine<JSValue>::shutdown();
+  auto& engine = JsEngine<JSValue>::instance();
+  engine.registerType<MyClass>();
+
+  auto result = engine.eval(SCRIPT);
+  auto str = engine.toStdString(result);
+  EXPECT_STREQ(str.c_str(), "Hello, QuickJS! Hello, Trae!");
+  engine.freeValue(result);
+}

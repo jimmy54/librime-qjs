@@ -99,7 +99,7 @@ public:
 
   virtual T_JS_VALUE eval(const char* code, const char* filename = "<eval>");
 
-  virtual T_JS_VALUE getGlobalObject();
+  virtual T_JS_OBJECT getGlobalObject();
 };
 
 static std::string formatString(const char* format, ...) {
