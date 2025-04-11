@@ -172,10 +172,10 @@ constexpr std::size_t countof(const T (& /*unused*/)[N]) noexcept {
 #define WITH_FINALIZER_QJS                                                        \
   inline static JSClassFinalizer* finalizerQjs = [](JSRuntime* rt, JSValue val) { \
     if (void* ptr = JS_GetOpaque(val, JS_CLASS_ID)) {                             \
-      auto* ppObj = static_cast<std::shared_ptr<T_RIME_TYPE>*>(ptr);              \
-      ppObj->reset();                                                             \
-      delete ppObj;                                                               \
-      JS_SetOpaque(val, nullptr);                                                 \
+      if (auto* ppObj = static_cast<std::shared_ptr<T_RIME_TYPE>*>(ptr)) {        \
+        delete ppObj;                                                             \
+        JS_SetOpaque(val, nullptr);                                               \
+      }                                                                           \
     }                                                                             \
   };
 #define WITHOUT_FINALIZER_QJS inline static JSClassFinalizer* finalizerQjs = nullptr;

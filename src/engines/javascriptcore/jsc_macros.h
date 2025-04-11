@@ -103,15 +103,15 @@
   WITHOUT_CONSTRUCTOR_QJS;  \
   inline static JSObjectCallAsConstructorCallback constructorJsc = nullptr;
 
-#define WITH_FINALIZER                                               \
-  WITH_FINALIZER_QJS;                                                \
-  static void finalizerJsc(JSObjectRef val) {                        \
-    if (void* ptr = JSObjectGetPrivate(val)) {                       \
-      auto* ppObj = static_cast<std::shared_ptr<T_RIME_TYPE>*>(ptr); \
-      ppObj->reset();                                                \
-      delete ppObj;                                                  \
-      JSObjectSetPrivate(val, nullptr);                              \
-    }                                                                \
+#define WITH_FINALIZER                                                     \
+  WITH_FINALIZER_QJS;                                                      \
+  static void finalizerJsc(JSObjectRef val) {                              \
+    if (void* ptr = JSObjectGetPrivate(val)) {                             \
+      if (auto* ppObj = static_cast<std::shared_ptr<T_RIME_TYPE>*>(ptr)) { \
+        delete ppObj;                                                      \
+        JSObjectSetPrivate(val, nullptr);                                  \
+      }                                                                    \
+    }                                                                      \
   };
 
 #define WITHOUT_FINALIZER \
