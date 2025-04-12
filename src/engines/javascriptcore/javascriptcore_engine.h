@@ -236,6 +236,8 @@ public:
     return isObject(value) && JSObjectIsFunction(ctx_, toObject(value));
   }
 
+  [[nodiscard]] bool isArray(const JSValueRef& value) const { return JSValueIsArray(ctx_, value); }
+
   [[nodiscard]] bool isObject(const JSValueRef& value) const {
     return JSValueIsObject(ctx_, value);
   }

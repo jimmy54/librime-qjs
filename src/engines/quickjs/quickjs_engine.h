@@ -176,6 +176,7 @@ public:
   [[nodiscard]] bool isFunction(const JSValue& value) const {
     return JS_IsFunction(context, value);
   }
+  [[nodiscard]] bool isArray(const JSValue& value) const { return JS_IsArray(value); }
   [[nodiscard]] bool isObject(const JSValue& value) const { return JS_IsObject(value); }
   [[nodiscard]] bool isNull(const JSValue& value) const { return JS_IsNull(value); }
   [[nodiscard]] bool isUndefined(const JSValue& value) const { return JS_IsUndefined(value); }

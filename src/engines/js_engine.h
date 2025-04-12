@@ -67,6 +67,7 @@ public:
   T_JS_VALUE newClassInstance(T_JS_VALUE clazz, int argc, T_JS_VALUE* argv);
 
   bool isFunction(const T_JS_VALUE& value);
+  bool isArray(const T_JS_VALUE& value);
   bool isObject(const T_JS_VALUE& value);
   bool isNull(const T_JS_VALUE& value);
   bool isUndefined(const T_JS_VALUE& value);

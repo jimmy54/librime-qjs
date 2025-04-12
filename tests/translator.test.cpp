@@ -127,7 +127,6 @@ TYPED_TEST(QuickJSTranslatorTest, NonExistentModule) {
 
   auto candidate = translation->Peek();
   EXPECT_TRUE(candidate == nullptr);
-  // FIXME: it crashes randomly, maybe memory used after free?
 }
 
 TYPED_TEST(QuickJSTranslatorTest, NoReturnShouldNotCrash) {
