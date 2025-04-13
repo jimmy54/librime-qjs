@@ -10,6 +10,7 @@
 
 #include "type_map.h"
 
+// NEVER USE TEMPLATE IN THIS HEADER FILE
 class JscEngineImpl {
 public:
   using ClassDefTuple = std::tuple<JSClassRef, JSClassDefinition, std::vector<JSStaticValue>>;

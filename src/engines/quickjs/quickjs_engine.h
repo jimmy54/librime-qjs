@@ -1,109 +1,90 @@
 #pragma once
 
-#include <glog/logging.h>
-#include <quickjs.h>
-#include <cstdint>
 #include <memory>
-#include <string>
 
-#include <mutex>
+#include <quickjs.h>
 
 #include "engines/js_engine.h"
-#include "engines/quickjs/quickjs_code_loader.h"
-#include "engines/quickjs/quickjs_type_registry.h"
-#include "engines/quickjs/quickjs_utils.h"
-#include "patch/quickjs/node_module_loader.h"
+#include "engines/js_exception.h"
+#include "engines/quickjs/quickjs_engine_impl.h"
 #include "types/js_wrapper.h"
 
 template <>
 class JsEngine<JSValue> {
-  inline static std::mutex runtimeMutex;
-  inline static JSRuntime* runtime = nullptr;
-  inline static JSContext* context = nullptr;
+  inline static std::mutex instanceMutex;
 
-  static void setup() {
-    if (runtime == nullptr) {
-      runtime = JS_NewRuntime();
-      // Do not trigger GC when heap size is less than 16MB
-      // default: rt->malloc_gc_threshold = 256 * 1024
-      constexpr size_t SIXTEEN_MEGABYTES = 16L * 1024 * 1024;
-      JS_SetGCThreshold(runtime, SIXTEEN_MEGABYTES);
-      JS_SetModuleLoaderFunc(runtime, nullptr, js_module_loader, nullptr);
-    }
+  std::shared_ptr<QuickJsEngineImpl> impl_{std::make_shared<QuickJsEngineImpl>()};
 
-    if (context == nullptr) {
-      context = JS_NewContext(runtime);
-      QuickJSCodeLoader::exposeLogToJsConsole(context);
-    }
-  }
-
-  JsEngine<JSValue>() {}
+  JsEngine() = default;
 
 public:
+  ~JsEngine() = default;
+
+  JsEngine(const JsEngine& other) = default;
+  JsEngine(JsEngine&&) = delete;
+  JsEngine& operator=(const JsEngine& other) = delete;
+  JsEngine& operator=(JsEngine&&) = delete;
+
   static JsEngine<JSValue>& instance() {
-    std::lock_guard<std::mutex> lock(runtimeMutex);
-    if (context == nullptr) {
-      setup();
-    }
-    static auto instance = JsEngine<JSValue>();
+    std::lock_guard<std::mutex> lock(instanceMutex);
+    static JsEngine<JSValue> instance;
     return instance;
   }
 
   static JsEngine<JSValue>& getEngineByContext(JSContext* ctx) { return instance(); }
 
-  static void shutdown() {
-    std::lock_guard<std::mutex> lock(runtimeMutex);
-    if (context != nullptr) {
-      JS_FreeContext(context);
-      context = nullptr;
-    }
-
-    if (runtime != nullptr) {
-      JS_FreeRuntime(runtime);
-      runtime = nullptr;
-    }
-    QuickJSTypeRegistry::clear();
+  static void setup() {
+    // a new QuickJsEngineImpl object is already created in `instance()` or `shutdown()`
   }
+  static void shutdown() {
+    auto& sharedInstance = instance();
+
+    std::lock_guard<std::mutex> lock(instanceMutex);
+    sharedInstance.impl_ = std::make_shared<QuickJsEngineImpl>();
+  }
+
+  [[nodiscard]] int64_t getMemoryUsage() const { return impl_->getMemoryUsage(); }
 
   // NOLINTBEGIN(readability-convert-member-functions-to-static)
-  [[nodiscard]] int64_t getMemoryUsage() const {
-    JSMemoryUsage qjsMemStats;
-    JS_ComputeMemoryUsage(runtime, &qjsMemStats);
-    return qjsMemStats.memory_used_size;
-  }
-
   [[nodiscard]] JSValue null() const { return JS_NULL; }
   [[nodiscard]] JSValue undefined() const { return JS_UNDEFINED; }
 
   [[nodiscard]] JSValue jsTrue() const { return JS_TRUE; }
   [[nodiscard]] JSValue jsFalse() const { return JS_FALSE; }
 
-  [[nodiscard]] JSValue newArray() const { return JS_NewArray(context); }
+  [[nodiscard]] bool isArray(const JSValue& value) const { return JS_IsArray(value); }
+  [[nodiscard]] bool isObject(const JSValue& value) const { return JS_IsObject(value); }
+  [[nodiscard]] bool isNull(const JSValue& value) const { return JS_IsNull(value); }
+  [[nodiscard]] bool isUndefined(const JSValue& value) const { return JS_IsUndefined(value); }
+  [[nodiscard]] bool isException(const JSValue& value) const { return JS_IsException(value); }
+
+  [[nodiscard]] JSValue toObject(const JSValue& value) const { return value; }
+
+  void setBaseFolderPath(const char* absolutePath) { setQjsBaseFolder(absolutePath); }
+  // NOLINTEND(readability-convert-member-functions-to-static)
+
+  [[nodiscard]] JSValue newArray() const { return JS_NewArray(impl_->getContext()); }
 
   [[nodiscard]] size_t getArrayLength(const JSValue& array) const {
-    auto lengthVal = JS_GetPropertyStr(context, array, "length");
-    if (JS_IsException(lengthVal)) {
-      return 0;
-    }
-    return toInt(lengthVal);
+    return impl_->getArrayLength(array);
   }
 
   void insertItemToArray(JSValue array, size_t index, const JSValue& value) const {
-    JS_SetPropertyUint32(context, array, index, value);
+    impl_->insertItemToArray(array, index, value);
   }
 
   [[nodiscard]] JSValue getArrayItem(const JSValue& array, size_t index) const {
-    return JS_GetPropertyUint32(context, array, index);
+    return impl_->getArrayItem(array, index);
   }
 
-  [[nodiscard]] JSValue newObject() const { return JS_NewObject(context); }
+  [[nodiscard]] JSValue newObject() const { return JS_NewObject(impl_->getContext()); }
 
   [[nodiscard]] JSValue getObjectProperty(const JSValue& obj, const char* propertyName) const {
-    return JS_GetPropertyStr(context, obj, propertyName);
+    return impl_->getObjectProperty(obj, propertyName);
   }
 
   int setObjectProperty(JSValue obj, const char* propertyName, const JSValue& value) const {
-    return JS_SetPropertyStr(context, obj, propertyName, value);
+    return impl_->setObjectProperty(obj, propertyName, value);
   }
 
   using ExposeFunction = JSCFunction*;
@@ -111,94 +92,81 @@ public:
                         const char* functionName,
                         ExposeFunction cppFunction,
                         int expectingArgc) const {
-    return JS_SetPropertyStr(context, obj, functionName,
-                             JS_NewCFunction(context, cppFunction, functionName, expectingArgc));
+    return impl_->setObjectFunction(obj, functionName, cppFunction, expectingArgc);
   }
 
-  [[nodiscard]] JSValue toObject(const JSValue& value) const { return value; }
-
-  [[nodiscard]] JSValue toJsString(const char* str) const {
-    return TypeConverter::toJsString(context, str);
-  }
-  [[nodiscard]] JSValue toJsString(const std::string& str) const {
-    return TypeConverter::toJsString(context, str);
-  }
+  [[nodiscard]] JSValue toJsString(const char* str) const { return impl_->toJsString(str); }
+  [[nodiscard]] JSValue toJsString(const std::string& str) const { return impl_->toJsString(str); }
 
   [[nodiscard]] std::string toStdString(const JSValue& value) const {
-    return TypeConverter::toStdString(context, value);
+    return impl_->toStdString(value);
   }
 
-  [[nodiscard]] JSValue toJsBool(bool value) const { return JS_NewBool(context, value); }
+  [[nodiscard]] JSValue toJsBool(bool value) const {
+    return JS_NewBool(impl_->getContext(), value);
+  }
 
-  [[nodiscard]] bool toBool(const JSValue& value) const { return JS_ToBool(context, value) != 0; }
+  [[nodiscard]] bool toBool(const JSValue& value) const {
+    return JS_ToBool(impl_->getContext(), value) != 0;
+  }
 
   [[nodiscard]] JSValue toJsInt(size_t value) const {
-    return TypeConverter::toJsNumber(context, static_cast<int64_t>(value));
+    return impl_->toJsNumber(static_cast<int64_t>(value));
   }
 
-  [[nodiscard]] size_t toInt(const JSValue& value) const {
-    return TypeConverter::toUint32(context, value);
-  }
+  [[nodiscard]] size_t toInt(const JSValue& value) const { return impl_->toInt(value); }
 
-  [[nodiscard]] JSValue toJsDouble(double value) const {
-    return TypeConverter::toJsNumber(context, value);
-  }
+  [[nodiscard]] JSValue toJsDouble(double value) const { return impl_->toJsNumber(value); }
 
-  [[nodiscard]] double toDouble(const JSValue& value) const {
-    return TypeConverter::toDouble(context, value);
-  }
+  [[nodiscard]] double toDouble(const JSValue& value) const { return impl_->toDouble(value); }
 
   [[nodiscard]] JSValue callFunction(const JSValue& func,
                                      const JSValue& thisArg,
                                      int argc,
                                      JSValue* argv) const {
-    return JS_Call(context, func, thisArg, argc, argv);
+    return impl_->callFunction(func, thisArg, argc, argv);
   }
 
   [[nodiscard]] JSValue newClassInstance(const JSValue& clazz, int argc, JSValue* argv) const {
-    JSValue constructor = getMethodOfClassOrInstance(clazz, JS_UNDEFINED, "constructor");
-    auto instance = JS_CallConstructor(context, constructor, argc, argv);
-    JS_FreeValue(context, constructor);
-    return instance;
+    return impl_->newClassInstance(clazz, argc, argv);
   }
 
   [[nodiscard]] JSValue getJsClassHavingMethod(const JSValue& module,
                                                const char* methodName) const {
-    return QuickJSCodeLoader::getExportedClassHavingMethodNameInModule(context, module, methodName);
+    return impl_->getJsClassHavingMethod(module, methodName);
   }
 
   [[nodiscard]] JSValue getMethodOfClassOrInstance(JSValue jsClass,
                                                    JSValue instance,
                                                    const char* methodName) const {
-    return QuickJSCodeLoader::getMethodByNameInClass(context, jsClass, methodName);
+    return impl_->getMethodOfClassOrInstance(jsClass, instance, methodName);
   }
 
   [[nodiscard]] bool isFunction(const JSValue& value) const {
-    return JS_IsFunction(context, value);
+    return JS_IsFunction(impl_->getContext(), value);
   }
-  [[nodiscard]] bool isArray(const JSValue& value) const { return JS_IsArray(value); }
-  [[nodiscard]] bool isObject(const JSValue& value) const { return JS_IsObject(value); }
-  [[nodiscard]] bool isNull(const JSValue& value) const { return JS_IsNull(value); }
-  [[nodiscard]] bool isUndefined(const JSValue& value) const { return JS_IsUndefined(value); }
-  [[nodiscard]] bool isException(const JSValue& value) const { return JS_IsException(value); }
-  [[nodiscard]] JSValue getLatestException() const { return JS_GetException(context); }
+  [[nodiscard]] JSValue getLatestException() const { return JS_GetException(impl_->getContext()); }
 
   void logErrorStackTrace(const JSValue& exception, const char* file, int line) const {
-    ErrorHandler::logErrorStackTrace(context, exception, file, line);
+    impl_->logErrorStackTrace(exception, file, line);
   }
 
   [[nodiscard]] JSValue duplicateValue(const JSValue& value) const {
-    return JS_DupValue(context, value);
+    return JS_DupValue(impl_->getContext(), value);
   }
 
   template <typename... Args>
   void freeValue(const Args&... args) const {
-    (JS_FreeValue(context, args), ...);
+    (JS_FreeValue(impl_->getContext(), args), ...);
   }
 
   template <typename T_RIME_TYPE>
   void registerType() {
-    QuickJSTypeRegistry::registerType<T_RIME_TYPE>(context);
+    using WRAPPER = JsWrapper<T_RIME_TYPE, JSValue>;
+    impl_->registerType(WRAPPER::TYPENAME, WRAPPER::JS_CLASS_ID, WRAPPER::JS_CLASS_DEF,
+                        WRAPPER::constructorQjs, WRAPPER::CONSTRUCTOR_ARGC, WRAPPER::finalizerQjs,
+                        WRAPPER::PROPERTIES_QJS, WRAPPER::PROPERTIES_SIZE, WRAPPER::GETTERS_QJS,
+                        WRAPPER::GETTERS_SIZE, WRAPPER::FUNCTIONS_QJS, WRAPPER::FUNCTIONS_SIZE);
   }
 
   template <typename T>
@@ -221,50 +189,26 @@ public:
 
   template <typename T>
   [[nodiscard]] JSValue wrap(T* ptrValue) const {
-    JSValue jsobj = QuickJSTypeRegistry::createJsObjectForType<T>(context, ptrValue != nullptr);
-    if (JS_IsNull(jsobj) || JS_IsException(jsobj)) {
-      return jsobj;
-    }
-    if (JS_SetOpaque(jsobj, ptrValue) < 0) {
-      JS_FreeValue(context, jsobj);
-      const auto* format = "Failed to set a raw pointer to a %s object with classId = %d";
-      return JS_ThrowInternalError(context, format, JsWrapper<T, JSValue>::TYPENAME,
-                                   JsWrapper<T, JSValue>::JS_CLASS_ID);
-    }
-    return jsobj;
+    return impl_->wrap(JsWrapper<T, JSValue>::TYPENAME, ptrValue, "raw");
   }
 
   template <typename T>
   [[nodiscard]] JSValue wrapShared(const std::shared_ptr<T>& value) const {
-    JSValue jsobj = QuickJSTypeRegistry::createJsObjectForType<T>(context, value != nullptr);
-    if (JS_IsNull(jsobj) || JS_IsException(jsobj)) {
-      return jsobj;
-    }
     auto ptr = std::make_unique<std::shared_ptr<T>>(value);
-    if (JS_SetOpaque(jsobj, ptr.release()) < 0) {
-      JS_FreeValue(context, jsobj);
-      const auto* format = "Failed to set a shared pointer to a %s object with classId = %d";
-      return JS_ThrowInternalError(context, format, JsWrapper<T, JSValue>::TYPENAME,
-                                   JsWrapper<T, JSValue>::JS_CLASS_ID);
-    }
-    return jsobj;
+    return impl_->wrap(JsWrapper<T, JSValue>::TYPENAME, ptr.release(), "shared");
   }
 
-  void setBaseFolderPath(const char* absolutePath) { setQjsBaseFolder(absolutePath); }
-
   [[nodiscard]] JSValue loadJsFile(const char* fileName) const {
-    return QuickJSCodeLoader::loadJsModuleToNamespace(context, fileName);
+    return impl_->loadJsFile(fileName);
   }
 
   [[nodiscard]] JSValue eval(const char* code, const char* filename = "<eval>") const {
-    return JS_Eval(context, code, strlen(code), filename, JS_EVAL_TYPE_GLOBAL);
+    return JS_Eval(impl_->getContext(), code, strlen(code), filename, JS_EVAL_TYPE_GLOBAL);
   }
 
-  [[nodiscard]] JSValue getGlobalObject() const { return JS_GetGlobalObject(context); }
+  [[nodiscard]] JSValue getGlobalObject() const { return JS_GetGlobalObject(impl_->getContext()); }
 
   [[nodiscard]] JSValue throwError(JsErrorType errorType, const std::string& message) const {
-    return ErrorHandler::throwError(context, errorType, message);
+    return impl_->throwError(errorType, message);
   }
 };
-
-// NOLINTEND(readability-convert-member-functions-to-static)
