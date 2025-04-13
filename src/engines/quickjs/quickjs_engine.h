@@ -1,8 +1,8 @@
 #pragma once
 
-#include <memory>
-
 #include <quickjs.h>
+#include <memory>
+#include <mutex>
 
 #include "engines/js_engine.h"
 #include "engines/js_exception.h"
