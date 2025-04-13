@@ -20,6 +20,9 @@ function checkArgument(env) {
   assertEquals(list.getValueAt(2).getString(), 'item3')
   assertEquals(list.getValueAt(3), null)
 
+  // should return null if the key does not exist
+  assertEquals(config.getList('none'), null)
+
   config.setString('greet', 'hello from js')
 
   const context = env.engine.context

@@ -194,6 +194,9 @@ public:
 
   template <typename T>
   [[nodiscard]] JSValue wrapShared(const std::shared_ptr<T>& value) const {
+    if (value == nullptr) {
+      return JS_NULL;
+    }
     auto ptr = std::make_unique<std::shared_ptr<T>>(value);
     return impl_->wrap(JsWrapper<T, JSValue>::TYPENAME, ptr.release(), "shared");
   }
