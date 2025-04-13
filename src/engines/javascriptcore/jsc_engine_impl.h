@@ -1,0 +1,78 @@
+#pragma once
+
+#include <JavaScriptCore/JavaScript.h>
+#include <JavaScriptCore/JavaScriptCore.h>
+#include <glog/logging.h>
+#include <memory>
+#include <string>
+#include <tuple>
+#include <unordered_map>
+
+#include "type_map.h"
+
+class JscEngineImpl {
+public:
+  using ClassDefTuple = std::tuple<JSClassRef, JSClassDefinition, std::vector<JSStaticValue>>;
+
+  JscEngineImpl();
+  ~JscEngineImpl();
+
+  JscEngineImpl(const JscEngineImpl& other) = default;
+  JscEngineImpl(JscEngineImpl&&) = delete;
+  JscEngineImpl& operator=(const JscEngineImpl&) = delete;
+  JscEngineImpl& operator=(JscEngineImpl&&) = delete;
+
+  [[nodiscard]] JSGlobalContextRef getContext() const { return ctx_; }
+  [[nodiscard]] JSValueRef getLastException() const { return lastException_; }
+  void setLastException(JSValueRef exception) { lastException_ = exception; }
+
+  [[nodiscard]] std::string toStdString(const JSValueRef& value) const;
+
+  void setBaseFolderPath(const char* absolutePath);
+  JSValueRef loadJsFile(const char* fileName);
+  JSValueRef eval(const char* code, const char* filename = "<eval>");
+  JSObjectRef getGlobalObject();
+
+  [[nodiscard]] size_t getArrayLength(const JSValueRef& array) const;
+  void insertItemToArray(JSValueRef array, size_t index, const JSValueRef& value) const;
+  [[nodiscard]] JSValueRef getArrayItem(const JSValueRef& array, size_t index) const;
+
+  JSValueRef getObjectProperty(const JSObjectRef& obj, const char* propertyName) const;
+  int setObjectProperty(const JSObjectRef& obj, const char* propertyName, const JSValueRef& value);
+  int setObjectFunction(JSObjectRef obj,
+                        const char* functionName,
+                        JSObjectCallAsFunctionCallback cppFunction,
+                        int expectingArgc);
+
+  JSValueRef callFunction(JSObjectRef func, JSObjectRef thisArg, int argc, JSValueRef* argv);
+  JSObjectRef newClassInstance(const JSObjectRef& clazz, int argc, JSValueRef* argv);
+
+  JSValueRef getJsClassHavingMethod(const JSValueRef& module, const char* methodName) const;
+  JSObjectRef getMethodOfClassOrInstance(JSObjectRef jsClass,
+                                         JSObjectRef instance,
+                                         const char* methodName);
+
+  void logErrorStackTrace(const JSValueRef& exception,
+                          const char* file = __FILE_NAME__,
+                          int line = __LINE__) const;
+
+  void registerType(const char* typeName,
+                    JSObjectCallAsConstructorCallback constructor,
+                    TypeMap<JSValueRef>::FinalizerFunctionPionterType finalizer,
+                    JSStaticFunction* functions,
+                    int numFunctions,
+                    JSStaticValue* properties,
+                    int numProperties,
+                    JSStaticValue* getters,
+                    int numGetters);
+
+  [[nodiscard]] bool isTypeRegistered(const std::string& typeName) const;
+
+  [[nodiscard]] JSClassRef getRegisteredClass(const std::string& typeName) const;
+
+private:
+  JSGlobalContextRef ctx_{nullptr};
+  std::string baseFolderPath_;
+  JSValueRef lastException_{nullptr};
+  std::unordered_map<std::string, ClassDefTuple> clazzes_;
+};

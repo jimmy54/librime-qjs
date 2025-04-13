@@ -7,11 +7,22 @@
 #include "js_wrapper.h"
 #include "qjs_notifier_connection.h"
 
-using Notifier = rime::signal<void(rime::Context* ctx)>;
+using Notifier = rime::signal<void(rime::Context*)>;
 using NotifierConnection = rime::connection;
 
 template <typename T_JS_VALUE>
 class JsWrapper<Notifier, T_JS_VALUE> {
+  template <typename T>  // <-- make it a template function to satisfy the clang compiler
+  static void handleNotification(JsEngine<T>& engine, const T& jsFunc, rime::Context* rimeContext) {
+    auto undefined = engine.toObject(engine.undefined());
+    T arg = engine.wrap(rimeContext);
+    auto result = engine.callFunction(engine.toObject(jsFunc), undefined, 1, &arg);
+    if (engine.isException(result)) {
+      LOG(ERROR) << "Error in notifying the js connection";
+    }
+    engine.freeValue(result, arg);
+  }
+
   DEFINE_CFUNCTION_ARGC(connect, 1, {
     auto jsListenerFunc = argv[0];
     if (!engine.isFunction(jsListenerFunc)) {
@@ -20,21 +31,16 @@ class JsWrapper<Notifier, T_JS_VALUE> {
     }
 
     // IMPORTANT: jsListenerFunc should be duplicated before passing to JS_Call,
-    // otherwise it will be released by the js engine and the function will not be called
+    // otherwise it will be released by the quickjs engine and the function will not be called
     auto duplicatedFunc = engine.duplicateValue(jsListenerFunc);
 
     auto obj = engine.unwrap<Notifier>(thisVal);
     auto connection = std::make_shared<NotifierConnection>(
-        obj->connect([ctx, duplicatedFunc](rime::Context* rimeContext) {
-          auto& engine = JsEngine<T_JS_VALUE>::getEngineByContext(ctx);
-          auto undefined = engine.toObject(engine.undefined());
-          auto arg = engine.wrap(rimeContext);
-          T_JS_VALUE args[] = {arg};
-          auto result = engine.callFunction(engine.toObject(duplicatedFunc), undefined, 1, args);
-          if (engine.isException(result)) {
-            LOG(ERROR) << "Error in notifying the js connection";
-          }
-          engine.freeValue(result, arg);
+        // NOTE: duplicatedFunc should be passed by value but not by reference "&duplicatedFunc",
+        // otherwise it could crash the program when running with the JavaScriptCore engine.
+        // I guess it could have been released in jsc's garbage collection.
+        obj->connect([&engine, duplicatedFunc](rime::Context* rimeContext) {
+          handleNotification(engine, duplicatedFunc, rimeContext);
         }));
 
     auto jsConnection = engine.wrapShared(connection);

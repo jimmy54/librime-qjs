@@ -24,18 +24,24 @@ TYPED_TEST(QuickJSNotifierTest, ConnectToRimeNotifier) {
     let connection = null;
     let notifiedTimes = 0;
     function connectToNotifier(env) {
+      console.log('connecting to notifier');
       connection = env.engine.context.commitNotifier.connect((ctx) => {
+        console.log('notified');
         ++notifiedTimes;
         ctx.commitHistory.push('js', 'text' + notifiedTimes);
       })
+      console.log('connected to notifier');
     }
     function disconnectFromNotifier() {
+      console.log('disconnecting from notifier');
       connection.disconnect();
     }
     function isConnected() {
+      console.log('isConnected: ' + connection?.isConnected);
       return connection?.isConnected || false;
     }
     function getNotifiedTimes() {
+      console.log('notifiedTimes:' + notifiedTimes);
       return notifiedTimes;
     }
   )";
@@ -65,19 +71,19 @@ TYPED_TEST(QuickJSNotifierTest, ConnectToRimeNotifier) {
   {
     auto connectToNotifierFunc =
         jsEngine.toObject(jsEngine.getObjectProperty(global, "connectToNotifier"));
-    auto connectToNotifier = jsEngine.callFunction(connectToNotifierFunc, undefined, 1, &env);
-    auto isConnected = jsEngine.callFunction(isConnectedFunc, undefined, 0, nullptr);
+    auto connectToNotifier = jsEngine.callFunction(connectToNotifierFunc, global, 1, &env);
+    auto isConnected = jsEngine.callFunction(isConnectedFunc, global, 0, nullptr);
     ASSERT_TRUE(jsEngine.toBool(isConnected));
-    auto notifiedTimes = jsEngine.callFunction(getNotifiedTimesFunc, undefined, 0, nullptr);
+    auto notifiedTimes = jsEngine.callFunction(getNotifiedTimesFunc, global, 0, nullptr);
     ASSERT_EQ(jsEngine.toInt(notifiedTimes), 0);
     jsEngine.freeValue(notifiedTimes, isConnected, connectToNotifier, connectToNotifierFunc);
   }
   {
     engine->context()->set_input("notify");
     engine->context()->Commit();
-    auto isConnected = jsEngine.callFunction(isConnectedFunc, undefined, 0, nullptr);
+    auto isConnected = jsEngine.callFunction(isConnectedFunc, global, 0, nullptr);
     ASSERT_TRUE(jsEngine.toBool(isConnected));
-    auto notifiedTimes = jsEngine.callFunction(getNotifiedTimesFunc, undefined, 0, nullptr);
+    auto notifiedTimes = jsEngine.callFunction(getNotifiedTimesFunc, global, 0, nullptr);
     ASSERT_EQ(jsEngine.toInt(notifiedTimes), 1);
     LOG(INFO) << "commit_history: " << engine->context()->commit_history().repr();
     ASSERT_TRUE(engine->context()->commit_history().repr().find("[js]text1") != std::string::npos);

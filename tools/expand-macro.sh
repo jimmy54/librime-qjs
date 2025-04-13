@@ -31,6 +31,7 @@ filename=$(basename "$file")
   -I${root}/../../include/glog \
   -I${root}/thirdparty/quickjs \
   -stdlib=libc++ \
+  -D_ENABLE_JAVASCRIPTCORE \
   -D_GNU_SOURCE \
   -DGLOG_EXPORT=__attribute__\(\(visibility\(\"default\"\)\)\) \
   -DGLOG_NO_EXPORT=__attribute__\(\(visibility\(\"default\"\)\)\) \
