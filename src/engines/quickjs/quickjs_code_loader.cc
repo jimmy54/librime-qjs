@@ -33,47 +33,6 @@ JSValue QuickJSCodeLoader::loadJsModuleToGlobalThis(JSContext* ctx, const char* 
   return JS_Eval(ctx, jsCodeStr.c_str(), jsCodeStr.size(), moduleName, JS_EVAL_TYPE_MODULE);
 }
 
-void QuickJSCodeLoader::exposeLogToJsConsole(JSContext* ctx) {
-  JSValue globalObj = JS_GetGlobalObject(ctx);
-  JSValue console = JS_NewObject(ctx);
-  JS_SetPropertyStr(ctx, console, "log", JS_NewCFunction(ctx, jsLog, "log", 1));
-  JS_SetPropertyStr(ctx, console, "error", JS_NewCFunction(ctx, jsError, "error", 1));
-  JS_SetPropertyStr(ctx, globalObj, "console", console);
-  JS_FreeValue(ctx, globalObj);
-}
-
-static std::string logToStringStream(JSContext* ctx, int argc, JSValueConst* argv) {
-  // FIXME: Unicode characters display incorrectly on Windows, showing "鉁?" instead of "✓".
-  // While quickjs-ng's `js_print` function could help with console output,
-  // I haven't found a way to integrate it with glog's `LOG(severity)` statements.
-  // See related fix: https://github.com/quickjs-ng/quickjs/pull/449/files
-  std::ostringstream oss;
-  for (int i = 0; i < argc; i++) {
-    const char* str = JS_ToCString(ctx, argv[i]);
-    if (str != nullptr) {
-      oss << (i != 0 ? " " : "") << str;
-      JS_FreeCString(ctx, str);
-    }
-  }
-  return oss.str();
-}
-
-JSValue QuickJSCodeLoader::jsLog(JSContext* ctx,
-                                 JSValueConst thisVal,
-                                 int argc,
-                                 JSValueConst* argv) {
-  LOG(INFO) << "$qjs$ " << logToStringStream(ctx, argc, argv);
-  return JS_UNDEFINED;
-}
-
-JSValue QuickJSCodeLoader::jsError(JSContext* ctx,
-                                   JSValueConst thisVal,
-                                   int argc,
-                                   JSValueConst* argv) {
-  LOG(ERROR) << "$qjs$ " << logToStringStream(ctx, argc, argv);
-  return JS_UNDEFINED;
-}
-
 JSValue QuickJSCodeLoader::getMethodByNameInClass(JSContext* ctx,
                                                   JSValue classObj,
                                                   const char* methodName) {

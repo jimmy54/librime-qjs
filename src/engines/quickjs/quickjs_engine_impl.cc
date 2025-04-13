@@ -9,7 +9,7 @@ QuickJsEngineImpl::QuickJsEngineImpl()
   JS_SetGCThreshold(runtime_, SIXTEEN_MEGABYTES);
   JS_SetModuleLoaderFunc(runtime_, nullptr, js_module_loader, nullptr);
 
-  QuickJSCodeLoader::exposeLogToJsConsole(context_);
+  exposeLogToJsConsole(context_);
 }
 
 QuickJsEngineImpl::~QuickJsEngineImpl() {
@@ -88,14 +88,16 @@ void QuickJsEngineImpl::logErrorStackTrace(const JSValue& exception,
                                            int line) const {
   JSValue actualException = JS_GetException(context_);
   std::string message = toStdString(actualException);
-  LOG(ERROR) << "[qjs] JS exception at " << file << ':' << line << " => " << message;
+  google::LogMessage(file, line, google::GLOG_ERROR).stream() << "[qjs] " << message;
 
   JSValue stack = JS_GetPropertyStr(context_, actualException, "stack");
   std::string stackTrace = toStdString(stack);
   if (stackTrace.empty()) {
-    LOG(ERROR) << "[qjs] JS stack trace is null.";
+    google::LogMessage(file, line, google::GLOG_ERROR).stream()
+        << "[qjs] " << "\t\tJS stack trace is null.";
   } else {
-    LOG(ERROR) << "[qjs] JS stack trace: " << stackTrace;
+    google::LogMessage(file, line, google::GLOG_ERROR).stream()
+        << "[qjs] " << "\t\tJS stack trace: " << stackTrace;
   }
 
   JS_FreeValue(context_, stack);
@@ -231,4 +233,45 @@ JSValue QuickJsEngineImpl::wrap(const char* typeName, void* ptr, const char* poi
     return JS_ThrowInternalError(context_, format, pointerType, typeName, it->second);
   }
   return jsobj;
+}
+
+void QuickJsEngineImpl::exposeLogToJsConsole(JSContext* ctx) {
+  JSValue globalObj = JS_GetGlobalObject(ctx);
+  JSValue console = JS_NewObject(ctx);
+  JS_SetPropertyStr(ctx, console, "log", JS_NewCFunction(ctx, jsLog, "log", 1));
+  JS_SetPropertyStr(ctx, console, "error", JS_NewCFunction(ctx, jsError, "error", 1));
+  JS_SetPropertyStr(ctx, globalObj, "console", console);
+  JS_FreeValue(ctx, globalObj);
+}
+
+static std::string logToStringStream(JSContext* ctx, int argc, JSValueConst* argv) {
+  // FIXME: Unicode characters display incorrectly on Windows, showing "鉁?" instead of "✓".
+  // While quickjs-ng's `js_print` function could help with console output,
+  // I haven't found a way to integrate it with glog's `LOG(severity)` statements.
+  // See related fix: https://github.com/quickjs-ng/quickjs/pull/449/files
+  std::ostringstream oss;
+  for (int i = 0; i < argc; i++) {
+    const char* str = JS_ToCString(ctx, argv[i]);
+    if (str != nullptr) {
+      oss << (i != 0 ? " " : "") << str;
+      JS_FreeCString(ctx, str);
+    }
+  }
+  return oss.str();
+}
+
+JSValue QuickJsEngineImpl::jsLog(JSContext* ctx,
+                                 JSValueConst thisVal,
+                                 int argc,
+                                 JSValueConst* argv) {
+  google::LogMessage("$qjs$", 0, google::GLOG_INFO).stream() << logToStringStream(ctx, argc, argv);
+  return JS_UNDEFINED;
+}
+
+JSValue QuickJsEngineImpl::jsError(JSContext* ctx,
+                                   JSValueConst thisVal,
+                                   int argc,
+                                   JSValueConst* argv) {
+  google::LogMessage("$qjs$", 0, google::GLOG_ERROR).stream() << logToStringStream(ctx, argc, argv);
+  return JS_UNDEFINED;
 }

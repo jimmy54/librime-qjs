@@ -4,7 +4,7 @@
 
 #include "engines/quickjs/quickjs_code_loader.h"
 #include "engines/quickjs/quickjs_engine.h"
-#include "patch/quickjs/node_module_loader.h"
+#include "engines/quickjs/quickjs_engine_impl.h"
 
 class QuickJSModuleTest : public testing::Test {
 protected:
@@ -18,7 +18,7 @@ protected:
     path = path.parent_path().parent_path() / "js";
     setQjsBaseFolder(path.generic_string().c_str());
 
-    QuickJSCodeLoader::exposeLogToJsConsole(ctx_);
+    QuickJsEngineImpl::exposeLogToJsConsole(ctx_);
   }
 
   void TearDown() override {

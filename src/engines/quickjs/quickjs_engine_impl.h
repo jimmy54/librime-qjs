@@ -74,7 +74,12 @@ public:
 
   [[nodiscard]] JSValue wrap(const char* typeName, void* ptr, const char* pointerType) const;
 
+  static void exposeLogToJsConsole(JSContext* ctx);
+
 private:
+  static JSValue jsLog(JSContext* ctx, JSValueConst thisVal, int argc, JSValueConst* argv);
+  static JSValue jsError(JSContext* ctx, JSValueConst thisVal, int argc, JSValueConst* argv);
+
   std::mutex runtimeMutex_;
   JSRuntime* runtime_;
   JSContext* context_;
