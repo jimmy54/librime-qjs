@@ -180,6 +180,7 @@ std::string JscEngineImpl::toStdString(const JSValueRef& value) const {
 }
 
 void JscEngineImpl::registerType(const char* typeName,
+                                 JSClassRef& jsClass,
                                  JSObjectCallAsConstructorCallback constructor,
                                  TypeMap<JSValueRef>::FinalizerFunctionPionterType finalizer,
                                  JSStaticFunction* functions,
@@ -225,7 +226,7 @@ void JscEngineImpl::registerType(const char* typeName,
   DLOG(INFO) << "[jsc] registering type: " << typeName << " with " << (staticValues.size() - 1)
              << " properties and " << numFunctions << " functions";
 
-  JSClassRef jsClass = JSClassCreate(&classDef);
+  jsClass = JSClassCreate(&classDef);
   clazzes_[typeName] = std::make_tuple(jsClass, classDef, staticValues);
 
   // Add the constructor to the global object
@@ -243,9 +244,9 @@ bool JscEngineImpl::isTypeRegistered(const std::string& typeName) const {
   return true;
 }
 
-JSClassRef JscEngineImpl::getRegisteredClass(const std::string& typeName) const {
+const JSClassRef& JscEngineImpl::getRegisteredClass(const std::string& typeName) const {
   if (!isTypeRegistered(typeName)) {
-    return nullptr;
+    throw std::runtime_error("type: " + typeName + " has not been registered.");
   }
   return std::get<0>(clazzes_.at(typeName));
 }

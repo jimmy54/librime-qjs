@@ -91,6 +91,11 @@
     }                                                                                            \
   }
 
+#define EXPORT_CLASS_IMPL(className, block1, block2, block3, block4)               \
+  EXPORT_CLASS_IMPL_QJS(className, EXPAND(block1), EXPAND(block2), EXPAND(block3), \
+                        EXPAND(block4));                                           \
+  inline static JSClassRef classDefJsc = nullptr;
+
 #define WITH_CONSTRUCTOR(funcName, expectingArgc)                                        \
   WITH_CONSTRUCTOR_QJS(funcName, expectingArgc);                                         \
   static JSObjectRef constructorJsc(JSContextRef ctx, JSObjectRef function, size_t argc, \

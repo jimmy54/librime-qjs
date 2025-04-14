@@ -23,6 +23,9 @@
 #define DEFINE_CFUNCTION_ARGC(funcName, expectingArgc, statements) \
   DEFINE_CFUNCTION_ARGC_QJS(funcName, expectingArgc, statements)
 
+#define EXPORT_CLASS_IMPL(className, block1, block2, block3, block4) \
+  EXPORT_CLASS_IMPL_QJS(className, EXPAND(block1), EXPAND(block2), EXPAND(block3), EXPAND(block4));
+
 #define WITH_CONSTRUCTOR(funcName, argc) WITH_CONSTRUCTOR_QJS(funcName, argc)
 #define WITHOUT_CONSTRUCTOR WITHOUT_CONSTRUCTOR_QJS
 
@@ -133,25 +136,25 @@ constexpr std::size_t countof(const T (& /*unused*/)[N]) noexcept {
   }
 
 // =============== QJS CLASS DEFINITION ===============
-#define EXPORT_CLASS_IMPL(className, block1, block2, block3, block4) \
-                                                                     \
-  using T_RIME_TYPE = className;                                     \
-                                                                     \
-  inline static const char* TYPENAME = #className;                   \
-                                                                     \
-  inline static JSClassID JS_CLASS_ID = 0;                           \
-                                                                     \
-  inline static JSClassDef JS_CLASS_DEF = {                          \
-      .class_name = #className,                                      \
-      .finalizer = nullptr,                                          \
-      .gc_mark = nullptr,                                            \
-      .call = nullptr,                                               \
-      .exotic = nullptr,                                             \
-  };                                                                 \
-                                                                     \
-  block1;                                                            \
-  block2;                                                            \
-  block3;                                                            \
+#define EXPORT_CLASS_IMPL_QJS(className, block1, block2, block3, block4) \
+                                                                         \
+  using T_RIME_TYPE = className;                                         \
+                                                                         \
+  inline static const char* TYPENAME = #className;                       \
+                                                                         \
+  inline static JSClassID JS_CLASS_ID = 0;                               \
+                                                                         \
+  inline static JSClassDef JS_CLASS_DEF = {                              \
+      .class_name = #className,                                          \
+      .finalizer = nullptr,                                              \
+      .gc_mark = nullptr,                                                \
+      .call = nullptr,                                                   \
+      .exotic = nullptr,                                                 \
+  };                                                                     \
+                                                                         \
+  block1;                                                                \
+  block2;                                                                \
+  block3;                                                                \
   block4;
 
 #define EXPORT_CLASS_WITH_RAW_POINTER(className, block1, block2, block3, block4)                \

@@ -191,9 +191,10 @@ public:
   template <typename T_RIME_TYPE>
   void registerType() {
     using WRAPPER = JsWrapper<T_RIME_TYPE, JSValueRef>;
-    impl_->registerType(WRAPPER::TYPENAME, WRAPPER::constructorJsc, WRAPPER::finalizerJsc,
-                        WRAPPER::functionsJsc, WRAPPER::FUNCTIONS_SIZE, WRAPPER::propertiesJsc,
-                        WRAPPER::PROPERTIES_SIZE, WRAPPER::gettersJsc, WRAPPER::GETTERS_SIZE);
+    impl_->registerType(WRAPPER::TYPENAME, WRAPPER::classDefJsc, WRAPPER::constructorJsc,
+                        WRAPPER::finalizerJsc, WRAPPER::functionsJsc, WRAPPER::FUNCTIONS_SIZE,
+                        WRAPPER::propertiesJsc, WRAPPER::PROPERTIES_SIZE, WRAPPER::gettersJsc,
+                        WRAPPER::GETTERS_SIZE);
   }
 
   template <typename T>
@@ -231,7 +232,7 @@ public:
       return nullptr;
     }
 
-    JSClassRef jsClass = impl_->getRegisteredClass(JsWrapper<T, JSValueRef>::TYPENAME);
+    const JSClassRef& jsClass = impl_->getRegisteredClass(JsWrapper<T, JSValueRef>::TYPENAME);
     return JSObjectMake(impl_->getContext(), jsClass, ptrValue);
   }
 
@@ -241,7 +242,7 @@ public:
       return nullptr;
     }
 
-    JSClassRef jsClass = impl_->getRegisteredClass(JsWrapper<T, JSValueRef>::TYPENAME);
+    const JSClassRef& jsClass = impl_->getRegisteredClass(JsWrapper<T, JSValueRef>::TYPENAME);
     auto ptr = std::make_unique<std::shared_ptr<T>>(value);
     return JSObjectMake(impl_->getContext(), jsClass, ptr.release());
   }

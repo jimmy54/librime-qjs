@@ -58,6 +58,7 @@ public:
                           int line = __LINE__) const;
 
   void registerType(const char* typeName,
+                    JSClassRef& jsClass,
                     JSObjectCallAsConstructorCallback constructor,
                     TypeMap<JSValueRef>::FinalizerFunctionPionterType finalizer,
                     JSStaticFunction* functions,
@@ -69,7 +70,7 @@ public:
 
   [[nodiscard]] bool isTypeRegistered(const std::string& typeName) const;
 
-  [[nodiscard]] JSClassRef getRegisteredClass(const std::string& typeName) const;
+  [[nodiscard]] const JSClassRef& getRegisteredClass(const std::string& typeName) const;
 
 private:
   JSGlobalContextRef ctx_{nullptr};
