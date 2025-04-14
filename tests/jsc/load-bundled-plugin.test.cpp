@@ -1,57 +1,33 @@
 #include <JavaScriptCore/JavaScriptCore.h>
 #include <gtest/gtest.h>
 #include <filesystem>
-#include <iostream>
 #include <string>
+#include <vector>
 
+#include "../fake_translation.hpp"
 #include "engines/engine_manager.h"
-#include "types/js_wrapper.h"
-#include "types/qjs_candidate.h"
+#include "qjs_translation.h"
+#include "qjs_types.h"
 
 class JscLoadBundledPluginTest : public testing::Test {
 protected:
   void SetUp() override {
     std::filesystem::path path = __FILE__;
     path = path.parent_path().parent_path() / "js";
+    engine_.setBaseFolderPath(path.generic_string().c_str());
 
-    engine.setBaseFolderPath(path.generic_string().c_str());
+    registerTypesToJsEngine(engine_);
   }
 
-  static JSValueRef getRimeInfoCallback(JSContextRef ctx,
-                                        JSObjectRef function,
-                                        JSObjectRef thisObject,
-                                        size_t argumentCount,
-                                        const JSValueRef arguments[],
-                                        JSValueRef* exception) {
-    std::cout << "getRimeInfoCallback" << '\n';
-    return engine.toJsString("rimeInfo");
-  }
+  JsEngine<JSValueRef>& getEngine() { return engine_; }
 
-  static JSObjectRef createMockEnvObject() {
-    JSObjectRef envObj = engine.newObject();
-    JSObjectRef osObj = engine.newObject();
-    engine.setObjectProperty(osObj, "name", engine.toJsString("macOS"));
-    engine.setObjectProperty(envObj, "os", osObj);
-    engine.setObjectFunction(envObj, "getRimeInfo", getRimeInfoCallback, 0);
-    return envObj;
-  }
-
-  static JSObjectRef createMockSegmentObject() {
-    JSObjectRef segmentObj = engine.newObject();
-    engine.setObjectProperty(segmentObj, "start", engine.toJsInt(0));
-    engine.setObjectProperty(segmentObj, "end", engine.toJsInt(std::string("/help").size()));
-    engine.setObjectProperty(segmentObj, "prompt", engine.toJsString(""));
-    return segmentObj;
-  }
-
-  static JsEngine<JSValueRef> engine;
+private:
+  JsEngine<JSValueRef> engine_ = newOrShareEngine<JSValueRef>();
 };
-
-JsEngine<JSValueRef> JscLoadBundledPluginTest::engine = newOrShareEngine<JSValueRef>();
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
 TEST_F(JscLoadBundledPluginTest, RunTranslatorWithJavaScriptCore) {
-  engine.registerType<rime::Candidate>();
+  auto& engine = getEngine();
 
   const auto* container = engine.loadJsFile("help_menu.dist.js");
   EXPECT_TRUE(container != nullptr) << "JavaScript evaluation failed";
@@ -59,23 +35,104 @@ TEST_F(JscLoadBundledPluginTest, RunTranslatorWithJavaScriptCore) {
   const auto* clazz = engine.getJsClassHavingMethod(container, "translate");
   EXPECT_TRUE(clazz != nullptr);
 
-  JSValueRef arg = createMockEnvObject();
-  JSObjectRef instance = engine.newClassInstance(engine.toObject(clazz), 1, &arg);
+  the<Engine> rimeEngine(Engine::Create());
+  auto env = std::make_unique<Environment>(rimeEngine.get(), "help_menu");
+  const auto* jsEnv = engine.wrap(env.get());
+  JSObjectRef instance = engine.newClassInstance(engine.toObject(clazz), 1, &jsEnv);
   EXPECT_TRUE(instance != nullptr) << "Failed to create instance of class with translate method";
 
   // Verify the instance has the translate method
   JSValueRef translateMethod = engine.getObjectProperty(instance, "translate");
-  EXPECT_TRUE(engine.isObject(translateMethod));
-  EXPECT_FALSE(engine.isUndefined(translateMethod));
+  EXPECT_TRUE(engine.isFunction(translateMethod));
 
   // Execute the translate method
   JSValueRef input = engine.toJsString("/help");
-  JSValueRef args[] = {input, createMockSegmentObject(), createMockEnvObject()};
-  JSValueRef translateResult = engine.callFunction(engine.toObject(translateMethod), instance,
-                                                   countof(args), static_cast<JSValueRef*>(args));
-  EXPECT_FALSE(engine.isUndefined(translateResult));
+  Segment segment;
+  JSValueRef args[] = {input, engine.wrap(&segment), jsEnv};
+  int size = sizeof(args) / sizeof(args[0]);
+  JSValueRef translateResult = engine.callFunction(engine.toObject(translateMethod), instance, size,
+                                                   static_cast<JSValueRef*>(args));
+  EXPECT_TRUE(engine.isArray(translateResult));
 
   // Count items in translateResult
   size_t itemCount = engine.getArrayLength(translateResult);
   EXPECT_EQ(itemCount, 14) << "translateResult should contain items";
+}
+
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
+TEST_F(JscLoadBundledPluginTest, RunFilterWithJavaScriptCore) {
+  auto& engine = getEngine();
+
+  const auto* container = engine.loadJsFile("sort_by_pinyin.dist.js");
+  EXPECT_TRUE(container != nullptr) << "JavaScript evaluation failed";
+
+  const auto* clazz = engine.getJsClassHavingMethod(container, "filter");
+  EXPECT_TRUE(clazz != nullptr);
+
+  the<Engine> rimeEngine(Engine::Create());
+  rimeEngine->context()->set_input("pinyin");
+  auto env = std::make_unique<Environment>(rimeEngine.get(), "sort_by_pinyin");
+  const auto* jsEnv = engine.wrap(env.get());
+  JSObjectRef instance = engine.newClassInstance(engine.toObject(clazz), 1, &jsEnv);
+  EXPECT_TRUE(instance != nullptr) << "Failed to create instance of class with filter method";
+
+  // Verify the instance has the translate method
+  JSValueRef filterMethod = engine.getObjectProperty(instance, "filter");
+  EXPECT_TRUE(engine.isFunction(filterMethod));
+
+  std::vector<an<Candidate>> candidates;
+  candidates.push_back(New<SimpleCandidate>("mock", 0, 1, "text1", "[pinyin]"));
+  candidates.push_back(New<SimpleCandidate>("mock", 0, 1, "text2", "〖pīn yīn〗"));
+  candidates.push_back(New<SimpleCandidate>("mock", 0, 1, "text3", "［pin yin］"));
+  candidates.push_back(New<SimpleCandidate>("user_phrase", 0, 1, "text4", ""));
+  candidates.push_back(New<SimpleCandidate>("user_phrase", 0, 1, "text5"));
+
+  const auto* jsCandidates = engine.newArray();
+  for (size_t i = 0; i < candidates.size(); ++i) {
+    JSValueRef jsCandidate = engine.wrapShared(candidates[i]);
+    engine.insertItemToArray(jsCandidates, i, jsCandidate);
+  }
+
+  // Execute the translate method
+  JSValueRef args[] = {jsCandidates, jsEnv};
+  int size = sizeof(args) / sizeof(args[0]);
+  JSValueRef filterResult = engine.callFunction(engine.toObject(filterMethod), instance, size,
+                                                static_cast<JSValueRef*>(args));
+  EXPECT_TRUE(engine.isArray(filterResult));
+  size_t itemCount = engine.getArrayLength(filterResult);
+  EXPECT_EQ(itemCount, candidates.size()) << "translateResult should contain items";
+}
+
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
+TEST_F(JscLoadBundledPluginTest, FilterTranslationWithJavaScriptCore) {
+  auto& engine = getEngine();
+
+  const auto* container = engine.loadJsFile("sort_by_pinyin.dist.js");
+  EXPECT_TRUE(container != nullptr) << "JavaScript evaluation failed";
+
+  const auto* clazz = engine.getJsClassHavingMethod(container, "filter");
+  EXPECT_TRUE(clazz != nullptr);
+
+  the<Engine> rimeEngine(Engine::Create());
+  rimeEngine->context()->set_input("pinyin");
+  auto env = std::make_unique<Environment>(rimeEngine.get(), "sort_by_pinyin");
+
+  auto fakeTranslation = New<FakeTranslation>();
+  fakeTranslation->append(New<SimpleCandidate>("mock", 0, 1, "text1", "[pinyin]"));
+  fakeTranslation->append(New<SimpleCandidate>("mock", 0, 1, "text2", "〖pīn yīn〗"));
+  fakeTranslation->append(New<SimpleCandidate>("mock", 0, 1, "text3", "［pin yin］"));
+  fakeTranslation->append(New<SimpleCandidate>("user_phrase", 0, 1, "text4", ""));
+  fakeTranslation->append(New<SimpleCandidate>("user_phrase", 0, 1, "text5"));
+
+  const auto* jsEnv = engine.wrap(env.get());
+  JSObjectRef instance = engine.newClassInstance(engine.toObject(clazz), 1, &jsEnv);
+  JSValueRef filterMethod = engine.getObjectProperty(instance, "filter");
+  EXPECT_TRUE(engine.isFunction(filterMethod));
+
+  QuickJSTranslation<JSValueRef> translation(fakeTranslation, &engine, instance, filterMethod,
+                                             env.get());
+
+  EXPECT_FALSE(translation.exhausted());
+  EXPECT_TRUE(translation.Next());
+  // EXPECT_EQ(translation.Peek()->text(), "");
 }

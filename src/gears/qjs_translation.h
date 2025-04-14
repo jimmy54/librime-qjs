@@ -52,8 +52,7 @@ private:
                                                     jsEngine->toObject(filterObj), 2, args);
     jsEngine->freeValue(jsArray, jsEnvironment);
 
-    if (jsEngine->isException(resultArray) || !jsEngine->isObject(resultArray) ||
-        jsEngine->isUndefined(resultArray) || jsEngine->isNull(resultArray)) {
+    if (!jsEngine->isArray(resultArray)) {
       LOG(ERROR) << "[qjs] Failed to filter candidates";
       jsEngine->freeValue(resultArray);
       return false;
