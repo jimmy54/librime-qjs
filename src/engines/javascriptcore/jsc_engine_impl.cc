@@ -8,7 +8,7 @@ JscEngineImpl::JscEngineImpl() : ctx_(JSGlobalContextCreate(nullptr)) {
 
 JscEngineImpl::~JscEngineImpl() {
   for (auto& clazz : clazzes_) {
-    auto& clazzDef = std::get<0>(clazz.second);
+    auto& clazzDef = clazz.second;
     JSClassRelease(clazzDef);
   }
   JSGlobalContextRelease(ctx_);
@@ -227,7 +227,7 @@ void JscEngineImpl::registerType(const char* typeName,
              << " properties and " << numFunctions << " functions";
 
   jsClass = JSClassCreate(&classDef);
-  clazzes_[typeName] = std::make_tuple(jsClass, classDef, staticValues);
+  clazzes_[typeName] = jsClass;
 
   // Add the constructor to the global object
   JSObjectRef globalObj = JSContextGetGlobalObject(ctx_);
@@ -248,7 +248,7 @@ const JSClassRef& JscEngineImpl::getRegisteredClass(const std::string& typeName)
   if (!isTypeRegistered(typeName)) {
     throw std::runtime_error("type: " + typeName + " has not been registered.");
   }
-  return std::get<0>(clazzes_.at(typeName));
+  return clazzes_.at(typeName);
 }
 
 void JscEngineImpl::exposeLogToJsConsole(JSContextRef ctx) {

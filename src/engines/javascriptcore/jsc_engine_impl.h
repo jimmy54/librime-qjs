@@ -5,7 +5,6 @@
 #include <glog/logging.h>
 #include <memory>
 #include <string>
-#include <tuple>
 #include <unordered_map>
 
 #include "type_map.h"
@@ -13,8 +12,6 @@
 // NEVER USE TEMPLATE IN THIS HEADER FILE
 class JscEngineImpl {
 public:
-  using ClassDefTuple = std::tuple<JSClassRef, JSClassDefinition, std::vector<JSStaticValue>>;
-
   JscEngineImpl();
   ~JscEngineImpl();
 
@@ -91,5 +88,5 @@ private:
   JSGlobalContextRef ctx_{nullptr};
   std::string baseFolderPath_;
   JSValueRef lastException_{nullptr};
-  std::unordered_map<std::string, ClassDefTuple> clazzes_;
+  std::unordered_map<std::string, JSClassRef> clazzes_;
 };
