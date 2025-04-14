@@ -20,21 +20,4 @@ public:
   static JSValueRef getMethodByNameInClass(JSContextRef ctx,
                                            JSValueRef classObj,
                                            const char* methodName);
-
-  static void exposeLogToJsConsole(JSContextRef ctx);
-
-private:
-  static JSValueRef jsLog(JSContextRef ctx,
-                          JSObjectRef function,
-                          JSObjectRef thisObject,
-                          size_t argumentCount,
-                          const JSValueRef arguments[],
-                          JSValueRef* exception);
-
-  static JSValueRef jsError(JSContextRef ctx,
-                            JSObjectRef function,
-                            JSObjectRef thisObject,
-                            size_t argumentCount,
-                            const JSValueRef arguments[],
-                            JSValueRef* exception);
 };

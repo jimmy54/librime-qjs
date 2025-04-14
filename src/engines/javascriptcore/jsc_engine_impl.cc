@@ -3,7 +3,7 @@
 #include "jsc_code_loader.h"
 
 JscEngineImpl::JscEngineImpl() : ctx_(JSGlobalContextCreate(nullptr)) {
-  JscCodeLoader::exposeLogToJsConsole(ctx_);
+  exposeLogToJsConsole(ctx_);
 }
 
 JscEngineImpl::~JscEngineImpl() {
@@ -249,4 +249,68 @@ const JSClassRef& JscEngineImpl::getRegisteredClass(const std::string& typeName)
     throw std::runtime_error("type: " + typeName + " has not been registered.");
   }
   return std::get<0>(clazzes_.at(typeName));
+}
+
+void JscEngineImpl::exposeLogToJsConsole(JSContextRef ctx) {
+  JSObjectRef globalObject = JSContextGetGlobalObject(ctx);
+
+  // Create console object
+  JSObjectRef consoleObj = JSObjectMake(ctx, nullptr, nullptr);
+
+  // Create log function
+  JscStringRAII logStr = "log";
+  JSObjectRef logFunc = JSObjectMakeFunctionWithCallback(ctx, logStr, jsLog);
+
+  // Create error function
+  JscStringRAII errorStr = "error";
+  JSObjectRef errorFunc = JSObjectMakeFunctionWithCallback(ctx, errorStr, jsError);
+
+  // Add functions to console object
+  JSObjectSetProperty(ctx, consoleObj, logStr, logFunc, kJSPropertyAttributeNone, nullptr);
+  JSObjectSetProperty(ctx, consoleObj, errorStr, errorFunc, kJSPropertyAttributeNone, nullptr);
+
+  // Add console object to global scope
+  JSObjectSetProperty(ctx, globalObject, JscStringRAII("console"), consoleObj,
+                      kJSPropertyAttributeNone, nullptr);
+}
+
+static std::string processJsArguments(JSContextRef ctx,
+                                      size_t argumentCount,
+                                      const JSValueRef arguments[],
+                                      JSValueRef* exception) {
+  std::stringstream ss;
+  for (size_t i = 0; i < argumentCount; i++) {
+    JscStringRAII strRef = JSValueToStringCopy(ctx, arguments[i], exception);
+    size_t bufferSize = JSStringGetMaximumUTF8CStringSize(strRef);
+    char* buffer = new char[bufferSize];
+    JSStringGetUTF8CString(strRef, buffer, bufferSize);
+    ss << buffer;
+    if (i < argumentCount - 1) {
+      ss << " ";
+    }
+    delete[] buffer;
+  }
+  return ss.str();
+}
+
+JSValueRef JscEngineImpl::jsLog(JSContextRef ctx,
+                                JSObjectRef function,
+                                JSObjectRef thisObject,
+                                size_t argumentCount,
+                                const JSValueRef arguments[],
+                                JSValueRef* exception) {
+  std::string message = processJsArguments(ctx, argumentCount, arguments, exception);
+  google::LogMessage("$jsc$", 0, google::GLOG_INFO).stream() << message;
+  return JSValueMakeUndefined(ctx);
+}
+
+JSValueRef JscEngineImpl::jsError(JSContextRef ctx,
+                                  JSObjectRef function,
+                                  JSObjectRef thisObject,
+                                  size_t argumentCount,
+                                  const JSValueRef arguments[],
+                                  JSValueRef* exception) {
+  std::string message = processJsArguments(ctx, argumentCount, arguments, exception);
+  google::LogMessage("$jsc$", 0, google::GLOG_ERROR).stream() << message;
+  return JSValueMakeUndefined(ctx);
 }

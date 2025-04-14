@@ -3,7 +3,6 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
-#include <sstream>
 #include <string>
 
 #include "engines/javascriptcore/jsc_string_raii.hpp"
@@ -111,68 +110,4 @@ JSValueRef JscCodeLoader::getMethodByNameInClass(JSContextRef ctx,
   }
 
   return JSValueMakeNull(ctx);
-}
-
-void JscCodeLoader::exposeLogToJsConsole(JSContextRef ctx) {
-  JSObjectRef globalObject = JSContextGetGlobalObject(ctx);
-
-  // Create console object
-  JSObjectRef consoleObj = JSObjectMake(ctx, nullptr, nullptr);
-
-  // Create log function
-  JscStringRAII logStr = "log";
-  JSObjectRef logFunc = JSObjectMakeFunctionWithCallback(ctx, logStr, JscCodeLoader::jsLog);
-
-  // Create error function
-  JscStringRAII errorStr = "error";
-  JSObjectRef errorFunc = JSObjectMakeFunctionWithCallback(ctx, errorStr, JscCodeLoader::jsError);
-
-  // Add functions to console object
-  JSObjectSetProperty(ctx, consoleObj, logStr, logFunc, kJSPropertyAttributeNone, nullptr);
-  JSObjectSetProperty(ctx, consoleObj, errorStr, errorFunc, kJSPropertyAttributeNone, nullptr);
-
-  // Add console object to global scope
-  JSObjectSetProperty(ctx, globalObject, JscStringRAII("console"), consoleObj,
-                      kJSPropertyAttributeNone, nullptr);
-}
-
-static std::string processJsArguments(JSContextRef ctx,
-                                      size_t argumentCount,
-                                      const JSValueRef arguments[],
-                                      JSValueRef* exception) {
-  std::stringstream ss;
-  for (size_t i = 0; i < argumentCount; i++) {
-    JscStringRAII strRef = JSValueToStringCopy(ctx, arguments[i], exception);
-    size_t bufferSize = JSStringGetMaximumUTF8CStringSize(strRef);
-    char* buffer = new char[bufferSize];
-    JSStringGetUTF8CString(strRef, buffer, bufferSize);
-    ss << buffer;
-    if (i < argumentCount - 1) {
-      ss << " ";
-    }
-    delete[] buffer;
-  }
-  return ss.str();
-}
-
-JSValueRef JscCodeLoader::jsLog(JSContextRef ctx,
-                                JSObjectRef function,
-                                JSObjectRef thisObject,
-                                size_t argumentCount,
-                                const JSValueRef arguments[],
-                                JSValueRef* exception) {
-  std::string message = processJsArguments(ctx, argumentCount, arguments, exception);
-  LOG(INFO) << "$jsc$ " << message;
-  return JSValueMakeUndefined(ctx);
-}
-
-JSValueRef JscCodeLoader::jsError(JSContextRef ctx,
-                                  JSObjectRef function,
-                                  JSObjectRef thisObject,
-                                  size_t argumentCount,
-                                  const JSValueRef arguments[],
-                                  JSValueRef* exception) {
-  std::string message = processJsArguments(ctx, argumentCount, arguments, exception);
-  LOG(ERROR) << "$jsc$ " << message;
-  return JSValueMakeUndefined(ctx);
 }

@@ -72,7 +72,22 @@ public:
 
   [[nodiscard]] const JSClassRef& getRegisteredClass(const std::string& typeName) const;
 
+  static void exposeLogToJsConsole(JSContextRef ctx);
+
 private:
+  static JSValueRef jsLog(JSContextRef ctx,
+                          JSObjectRef function,
+                          JSObjectRef thisObject,
+                          size_t argumentCount,
+                          const JSValueRef arguments[],
+                          JSValueRef* exception);
+
+  static JSValueRef jsError(JSContextRef ctx,
+                            JSObjectRef function,
+                            JSObjectRef thisObject,
+                            size_t argumentCount,
+                            const JSValueRef arguments[],
+                            JSValueRef* exception);
   JSGlobalContextRef ctx_{nullptr};
   std::string baseFolderPath_;
   JSValueRef lastException_{nullptr};
