@@ -30,7 +30,7 @@ TEST_F(JscLoadBundledPluginTest, RunTranslatorWithJavaScriptCore) {
   auto& engine = getEngine();
 
   const auto* container = engine.loadJsFile("help_menu.dist.js");
-  EXPECT_TRUE(container != nullptr) << "JavaScript evaluation failed";
+  EXPECT_TRUE(engine.isObject(container)) << "JavaScript evaluation failed";
 
   const auto* clazz = engine.getJsClassHavingMethod(container, "translate");
   EXPECT_TRUE(clazz != nullptr);
@@ -64,7 +64,7 @@ TEST_F(JscLoadBundledPluginTest, RunFilterWithJavaScriptCore) {
   auto& engine = getEngine();
 
   const auto* container = engine.loadJsFile("sort_by_pinyin.dist.js");
-  EXPECT_TRUE(container != nullptr) << "JavaScript evaluation failed";
+  EXPECT_TRUE(engine.isObject(container)) << "JavaScript evaluation failed";
 
   const auto* clazz = engine.getJsClassHavingMethod(container, "filter");
   EXPECT_TRUE(clazz != nullptr);
@@ -108,7 +108,7 @@ TEST_F(JscLoadBundledPluginTest, FilterTranslationWithJavaScriptCore) {
   auto& engine = getEngine();
 
   const auto* container = engine.loadJsFile("sort_by_pinyin.dist.js");
-  EXPECT_TRUE(container != nullptr) << "JavaScript evaluation failed";
+  EXPECT_TRUE(engine.isObject(container)) << "JavaScript evaluation failed";
 
   const auto* clazz = engine.getJsClassHavingMethod(container, "filter");
   EXPECT_TRUE(clazz != nullptr);

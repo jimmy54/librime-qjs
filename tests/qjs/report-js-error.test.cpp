@@ -3,6 +3,7 @@
 
 #include <string>
 
+#include "../test_switch.h"
 #include "engines/engine_manager.h"
 
 std::string trim(const std::string& str) {
@@ -15,29 +16,31 @@ std::string trim(const std::string& str) {
   return str.substr(start, end - start + 1);
 }
 
+template <typename T>
 class QuickJSErrorTest : public ::testing::Test {};
 
-TEST_F(QuickJSErrorTest, TestJsRuntimeError) {
-  auto jsEngine = newOrShareEngine<JSValue>();
-  JSValue module = jsEngine.loadJsFile("runtime-error.js");
-  JSValue globalObj = jsEngine.getGlobalObject();
-  JSValue func = jsEngine.getObjectProperty(globalObj, "funcWithRuntimeError");
-  ASSERT_FALSE(JS_IsException(func));
+SETUP_JS_ENGINES(QuickJSErrorTest);
 
-  JSValue result = jsEngine.callFunction(func, JS_UNDEFINED, 0, nullptr);
-  ASSERT_TRUE(JS_IsException(result));
+TYPED_TEST(QuickJSErrorTest, TestJsRuntimeError) {
+  auto jsEngine = newOrShareEngine<JSValue>();
+  auto module = jsEngine.loadJsFile("runtime-error.js");
+  auto globalObj = jsEngine.getGlobalObject();
+  auto func = jsEngine.getObjectProperty(globalObj, "funcWithRuntimeError");
+  ASSERT_TRUE(jsEngine.isFunction(func));
+
+  auto result = jsEngine.callFunction(func, JS_UNDEFINED, 0, nullptr);
+  ASSERT_TRUE(jsEngine.isException(result));
 
   // ReferenceError: abcdefg is not defined
   //      at <anonymous> (runtime-error.js:7:21)
-  JSValue exception = jsEngine.getLatestException();
+
+  auto exception = jsEngine.getLatestException();
   auto message = jsEngine.toStdString(exception);
   ASSERT_STREQ(message.c_str(), "ReferenceError: abcdefg is not defined");
 
-  JSValue stack = jsEngine.getObjectProperty(exception, "stack");
+  auto stack = jsEngine.getObjectProperty(exception, "stack");
   auto stackTrace = trim(jsEngine.toStdString(stack));
   ASSERT_STREQ(stackTrace.c_str(), "at <anonymous> (runtime-error.js:7:19)");
 
-  for (auto obj : {module, globalObj, func, result, exception, stack}) {
-    jsEngine.freeValue(obj);
-  }
+  jsEngine.freeValue(module, globalObj, func, result, exception, stack);
 }

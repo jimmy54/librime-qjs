@@ -43,7 +43,8 @@ JSValueRef JscCodeLoader::loadJsModuleToGlobalThis(JSContextRef ctx,
   auto source = buffer.str();
   removeExportStatementsInPlace(source);
 
-  JSEvaluateScript(ctx, JscStringRAII(source.c_str()), nullptr, nullptr, 0, exception);
+  auto sourceUrl = JscStringRAII(filePath.generic_string().c_str());
+  JSEvaluateScript(ctx, JscStringRAII(source.c_str()), nullptr, sourceUrl, 0, exception);
 
   return globalObject;
 }

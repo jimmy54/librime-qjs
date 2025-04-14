@@ -52,7 +52,7 @@ public:
 
   void logErrorStackTrace(const JSValueRef& exception,
                           const char* file = __FILE_NAME__,
-                          int line = __LINE__) const;
+                          int line = __LINE__);
 
   void registerType(const char* typeName,
                     JSClassRef& jsClass,

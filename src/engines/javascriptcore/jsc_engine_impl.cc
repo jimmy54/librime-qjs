@@ -1,6 +1,6 @@
-#include "jsc_engine_impl.h"
-#include "javascriptcore/jsc_string_raii.hpp"
-#include "jsc_code_loader.h"
+#include "engines/javascriptcore/jsc_engine_impl.h"
+#include "engines/javascriptcore/jsc_code_loader.h"
+#include "engines/javascriptcore/jsc_string_raii.hpp"
 
 JscEngineImpl::JscEngineImpl() : ctx_(JSGlobalContextCreate(nullptr)) {
   exposeLogToJsConsole(ctx_);
@@ -19,11 +19,12 @@ void JscEngineImpl::setBaseFolderPath(const char* absolutePath) {
 }
 
 JSValueRef JscEngineImpl::loadJsFile(const char* fileName) {
-  lastException_ = nullptr;
+  JSValueRef exception = nullptr;
   const auto* globalThis =
-      JscCodeLoader::loadJsModuleToGlobalThis(ctx_, baseFolderPath_, fileName, &lastException_);
-  if (lastException_ != nullptr) {
-    logErrorStackTrace(lastException_, __FILE_NAME__, __LINE__);
+      JscCodeLoader::loadJsModuleToGlobalThis(ctx_, baseFolderPath_, fileName, &exception);
+  if (exception != nullptr) {
+    lastException_ = exception;
+    logErrorStackTrace(exception, __FILE_NAME__, __LINE__);
     return JSValueMakeUndefined(ctx_);
   }
   return globalThis;
@@ -32,9 +33,9 @@ JSValueRef JscEngineImpl::loadJsFile(const char* fileName) {
 JSValueRef JscEngineImpl::eval(const char* code, const char* filename) {
   JscStringRAII jsCode = code;
   JscStringRAII filenameStr = filename;
-  lastException_ = nullptr;
-  JSValueRef result = JSEvaluateScript(ctx_, jsCode, nullptr, filenameStr, 0, &lastException_);
-  logErrorStackTrace(lastException_, __FILE_NAME__, __LINE__);
+  JSValueRef exception = nullptr;
+  JSValueRef result = JSEvaluateScript(ctx_, jsCode, nullptr, filenameStr, 0, &exception);
+  logErrorStackTrace(exception, __FILE_NAME__, __LINE__);
   return result;
 }
 
@@ -87,18 +88,18 @@ JSValueRef JscEngineImpl::callFunction(JSObjectRef func,
                                        JSObjectRef thisArg,
                                        int argc,
                                        JSValueRef* argv) {
-  lastException_ = nullptr;
+  JSValueRef exception = nullptr;
   auto* thisVal = JSValueIsUndefined(ctx_, thisArg) ? getGlobalObject() : thisArg;
-  JSValueRef result = JSObjectCallAsFunction(ctx_, func, thisVal, argc, argv, &lastException_);
-  logErrorStackTrace(lastException_, __FILE_NAME__, __LINE__);
+  JSValueRef result = JSObjectCallAsFunction(ctx_, func, thisVal, argc, argv, &exception);
+  logErrorStackTrace(exception, __FILE_NAME__, __LINE__);
   return result;
 }
 
 JSObjectRef JscEngineImpl::newClassInstance(const JSObjectRef& clazz, int argc, JSValueRef* argv) {
-  lastException_ = nullptr;
-  JSObjectRef result = JSObjectCallAsConstructor(ctx_, clazz, argc, argv, &lastException_);
-  if (lastException_ != nullptr) {
-    logErrorStackTrace(lastException_, __FILE_NAME__, __LINE__);
+  JSValueRef exception = nullptr;
+  JSObjectRef result = JSObjectCallAsConstructor(ctx_, clazz, argc, argv, &exception);
+  if (exception != nullptr) {
+    logErrorStackTrace(exception, __FILE_NAME__, __LINE__);
     return nullptr;
   }
   return result;
@@ -106,13 +107,13 @@ JSObjectRef JscEngineImpl::newClassInstance(const JSObjectRef& clazz, int argc, 
 
 JSValueRef JscEngineImpl::getJsClassHavingMethod(const JSValueRef& module,
                                                  const char* methodName) const {
-  JSObjectRef globalObj = JSContextGetGlobalObject(ctx_);
-  JSPropertyNameArrayRef propertyNames = JSObjectCopyPropertyNames(ctx_, globalObj);
+  JSObjectRef moduleObj = JSValueToObject(ctx_, module, nullptr);
+  JSPropertyNameArrayRef propertyNames = JSObjectCopyPropertyNames(ctx_, moduleObj);
   size_t count = JSPropertyNameArrayGetCount(propertyNames);
 
   for (size_t i = count - 1; i >= 0; i--) {
     JSStringRef propertyName = JSPropertyNameArrayGetNameAtIndex(propertyNames, i);
-    JSValueRef value = JSObjectGetProperty(ctx_, globalObj, propertyName, nullptr);
+    JSValueRef value = JSObjectGetProperty(ctx_, moduleObj, propertyName, nullptr);
 
     if (JSValueIsObject(ctx_, value)) {
       JSObjectRef obj = JSValueToObject(ctx_, value, nullptr);
@@ -138,24 +139,23 @@ JSValueRef JscEngineImpl::getJsClassHavingMethod(const JSValueRef& module,
 JSObjectRef JscEngineImpl::getMethodOfClassOrInstance(JSObjectRef jsClass,
                                                       JSObjectRef instance,
                                                       const char* methodName) {
-  lastException_ = nullptr;
-  JSValueRef method =
-      JSObjectGetProperty(ctx_, instance, JscStringRAII(methodName), &lastException_);
-  logErrorStackTrace(lastException_, __FILE_NAME__, __LINE__);
+  JSValueRef exception = nullptr;
+  JSValueRef method = JSObjectGetProperty(ctx_, instance, JscStringRAII(methodName), &exception);
+  logErrorStackTrace(exception, __FILE_NAME__, __LINE__);
   return JSValueToObject(ctx_, method, nullptr);
 }
 
-void JscEngineImpl::logErrorStackTrace(const JSValueRef& exception,
-                                       const char* file,
-                                       int line) const {
+void JscEngineImpl::logErrorStackTrace(const JSValueRef& exception, const char* file, int line) {
   if (exception == nullptr) {
     return;
   }
-  JscStringRAII exceptionStr = JSValueToStringCopy(ctx_, exception, nullptr);
-  size_t bufferSize = JSStringGetMaximumUTF8CStringSize(exceptionStr);
-  std::vector<char> buffer(bufferSize);
-  JSStringGetUTF8CString(exceptionStr, buffer.data(), bufferSize);
-  LOG(ERROR) << "[qjs] JS exception at " << file << ':' << line << " => " << buffer.data();
+
+  lastException_ = exception;
+  auto* objException = JSValueToObject(ctx_, exception, nullptr);
+  auto strStack = toStdString(getObjectProperty(objException, "stack"));
+  google::LogMessage(file, line, google::GLOG_ERROR).stream()
+      << "[qjs] JSC exception: " << toStdString(exception) << "\n"
+      << (strStack.empty() ? "No stack trace available." : strStack);
 }
 
 std::string JscEngineImpl::toStdString(const JSValueRef& value) const {
