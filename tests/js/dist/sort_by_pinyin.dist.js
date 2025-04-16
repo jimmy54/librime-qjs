@@ -28,12 +28,12 @@ var SortCandidatesByPinyinFilter = class {
     const size = candidates.length > this.#topN ? this.#topN : candidates.length
     candidates.slice(0, size).forEach((candidate, idx) => {
       const pinyin = this.extractPinyin(candidate.comment)?.replaceAll(' ', '')
-      if (candidate.type === 'phrase') {
+      if (candidate.type === 'user_phrase') {
         const weight = this.getWeightByPinyin(pinyin, input, true) + size - idx
         userPhrasesIndices.push(idx)
         userPhrases.push({ candidate, weight })
       } else if (pinyin) {
-        const weight = this.getWeightByPinyin(pinyin, input, true) + size - idx
+        const weight = this.getWeightByPinyin(pinyin, input, false) + size - idx
         candidatesWithPinyinIndices.push(idx)
         candidatesWithPinyin.push({ candidate, weight })
       }

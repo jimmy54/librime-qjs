@@ -13,6 +13,25 @@
 #include <windows.h>
 #endif
 
+void setJavaScriptCoreOptionsToDebug() {
+#if defined(_ENABLE_JAVASCRIPTCORE)
+  LOG(INFO) << "setting the undocumented JavaScriptCore options to debug";
+
+  setenv("JSC_dumpOptions", "1", 1);  // Logs JSC runtime options at startup
+
+  setenv("JSC_logGC", "2", 1);  // Enable GC logging: 0 = None, 1 = Basic, 2 = Verbose
+  setenv("JSC_useSigillCrashAnalyzer", "1", 1);  // Enhances crash logs for JSC-related crashes
+
+// setenv("JSC_dumpDFGDisassembly", "1", 1); // Dumps DFG JIT assembly code
+// setenv("JSC_dumpFTLDisassembly", "1", 1); // Dumps FTL JIT assembly code
+
+// setenv("JSC_showDisassembly", "1", 1); // Logs JIT-compiled code disassembly (advanced debugging)
+
+// Seems not working: Set JSGC_MAX_HEAP_SIZE to 500MB (in bytes) before creating any JSC context
+// setenv("JSGC_MAX_HEAP_SIZE", "524288000", 1); // 500MB = 500 * 1024 * 1024
+#endif
+}
+
 using rime::kDefaultModules;
 
 class GlobalEnvironment : public testing::Environment {
@@ -42,6 +61,8 @@ public:
     };
     rime_get_api()->setup(&traits);
     rime_get_api()->initialize(&traits);
+
+    setJavaScriptCoreOptionsToDebug();
   }
 
   void TearDown() override {

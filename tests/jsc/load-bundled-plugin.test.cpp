@@ -134,5 +134,5 @@ TEST_F(JscLoadBundledPluginTest, FilterTranslationWithJavaScriptCore) {
 
   EXPECT_FALSE(translation.exhausted());
   EXPECT_TRUE(translation.Next());
-  // EXPECT_EQ(translation.Peek()->text(), "");
+  EXPECT_EQ(translation.Peek()->text(), "text2");
 }
