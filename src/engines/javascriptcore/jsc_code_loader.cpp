@@ -35,7 +35,8 @@ JSValueRef JscCodeLoader::loadJsModuleToGlobalThis(JSContextRef ctx,
     std::string message = "Failed to open file: " + filePath.string();
     LOG(ERROR) << "[jsc] " << message;
 
-    return JSValueMakeString(ctx, JscStringRAII(message.c_str()));
+    *exception = JSValueMakeString(ctx, JscStringRAII(message.c_str()));
+    return nullptr;
   }
 
   std::stringstream buffer;

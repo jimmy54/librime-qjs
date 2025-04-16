@@ -160,6 +160,16 @@ public:
     (JS_FreeValue(impl_->getContext(), args), ...);
   }
 
+  template <typename... Args>
+  void protectFromGC(const Args&... args) const {
+    // quickjs uses reference counting, so we don't need to protect from GC
+  }
+
+  template <typename... Args>
+  void unprotectFromGC(const Args&... args) const {
+    // quickjs uses reference counting, so we don't need to protect from GC
+  }
+
   template <typename T_RIME_TYPE>
   void registerType() {
     using WRAPPER = JsWrapper<T_RIME_TYPE, JSValue>;
@@ -193,7 +203,8 @@ public:
   }
 
   template <typename T>
-  [[nodiscard]] JSValue wrapShared(const std::shared_ptr<T>& value) const {
+  [[nodiscard]] JSValue wrapShared(
+      std::shared_ptr<T> value) const {  // pass by value to copy the shared_ptr
     if (value == nullptr) {
       return JS_NULL;
     }

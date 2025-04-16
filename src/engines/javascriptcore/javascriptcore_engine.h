@@ -57,6 +57,19 @@ public:
     // JavaScriptCore handles memory management automatically
   }
 
+  template <typename... Args>
+  void protectFromGC(const Args&... args) const {
+    (((args != nullptr && !isUndefined(args)) ? JSValueProtect(impl_->getContext(), args) : void()),
+     ...);
+  }
+
+  template <typename... Args>
+  void unprotectFromGC(const Args&... args) const {
+    (((args != nullptr && !isUndefined(args)) ? JSValueUnprotect(impl_->getContext(), args)
+                                              : void()),
+     ...);
+  }
+
   // NOLINTEND(readability-convert-member-functions-to-static)
   [[nodiscard]] JSValueRef null() const { return JSValueMakeNull(impl_->getContext()); }
   [[nodiscard]] JSValueRef undefined() const { return JSValueMakeUndefined(impl_->getContext()); }
@@ -173,7 +186,7 @@ public:
   }
 
   [[nodiscard]] bool isObject(const JSValueRef& value) const {
-    return JSValueIsObject(impl_->getContext(), value);
+    return value != nullptr && JSValueIsObject(impl_->getContext(), value);
   }
 
   [[nodiscard]] bool isNull(const JSValueRef& value) const {
@@ -237,7 +250,7 @@ public:
   }
 
   template <typename T>
-  JSObjectRef wrapShared(const std::shared_ptr<T>& value) const {
+  JSObjectRef wrapShared(std::shared_ptr<T> value) const {  // pass by value to copy the shared_ptr
     if (!value || !isTypeRegistered<T>()) {
       return nullptr;
     }

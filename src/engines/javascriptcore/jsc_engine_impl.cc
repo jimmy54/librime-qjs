@@ -22,11 +22,7 @@ JSValueRef JscEngineImpl::loadJsFile(const char* fileName) {
   JSValueRef exception = nullptr;
   const auto* globalThis =
       JscCodeLoader::loadJsModuleToGlobalThis(ctx_, baseFolderPath_, fileName, &exception);
-  if (exception != nullptr) {
-    lastException_ = exception;
-    logErrorStackTrace(exception, __FILE_NAME__, __LINE__);
-    return JSValueMakeUndefined(ctx_);
-  }
+  logErrorStackTrace(exception, __FILE_NAME__, __LINE__);
   return globalThis;
 }
 

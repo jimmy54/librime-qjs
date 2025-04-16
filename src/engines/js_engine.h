@@ -80,10 +80,14 @@ public:
 
   T_JS_VALUE duplicateValue(const T_JS_VALUE& value);
 
-  void freeValue(const T_JS_VALUE& value);
+  template <typename... Args>
+  void freeValue(const Args&... args) const;
 
   template <typename... Args>
-  void freeValue(const T_JS_VALUE& first, const Args&... rest);
+  void protectFromGC(const Args&... args) const;
+
+  template <typename... Args>
+  void unprotectFromGC(const Args&... args) const;
 
   template <typename T_RIME_TYPE>
   void registerType();
@@ -94,7 +98,7 @@ public:
   T* unwrap(const T_JS_VALUE& value);
 
   template <typename T>
-  T_JS_OBJECT wrapShared(const std::shared_ptr<T>& value);
+  T_JS_OBJECT wrapShared(std::shared_ptr<T> value);  //pass by value to copy the shared_ptr
   template <typename T>
   std::shared_ptr<T> unwrapShared(const T_JS_VALUE& value);
 

@@ -21,10 +21,12 @@ protected:
     registerTypesToJsEngine(jsEngine_);
 
     std::string fileName = nameSpace + ".js";
-    T_JS_VALUE container = jsEngine_.loadJsFile(fileName.c_str());  // module or globalThis
+    // gets a module for quickjs, exception if failed
+    // gets globalThis for javascriptcore, nullptr if failed
+    T_JS_VALUE container = jsEngine_.loadJsFile(fileName.c_str());
     if (!jsEngine_.isObject(container)) {
       jsEngine_.freeValue(container);
-      LOG(ERROR) << "[qjs] Failed to load " << fileName;
+      LOG(ERROR) << "[qjs] Failed to load plugin: " << mainFuncName << '@' << nameSpace;
       return;
     }
 
@@ -54,6 +56,7 @@ protected:
         jsEngine_.toObject(jsEngine_.getMethodOfClassOrInstance(objClass, instance_, "finalizer"));
 
     jsEngine_.freeValue(container, jsClass, jsEnvironment);
+    jsEngine_.protectFromGC(instance_, mainFunc_, finalizer_);
 
     isLoaded_ = true;
   }
@@ -70,6 +73,9 @@ protected:
       jsEngine_.freeValue(finalizerResult);
     }
 
+    if (isLoaded_) {
+      jsEngine_.unprotectFromGC(instance_, mainFunc_, finalizer_);
+    }
     jsEngine_.freeValue(instance_, mainFunc_, finalizer_);
   }
 
