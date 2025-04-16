@@ -1,5 +1,3 @@
-var __defProp = Object.defineProperty
-var __name = (target, value) => __defProp(target, 'name', { value, configurable: true })
 var totalTests = 0
 var passedTests = 0
 function assert(condition, message = '') {
@@ -13,8 +11,7 @@ function assert(condition, message = '') {
     throw new Error('Assertion failed' + (message ? ': ' + message : ''))
   }
 }
-__name(assert, 'assert')
-var _TestFilter = class _TestFilter {
+var TestFilter = class {
   constructor(env) {
     console.log('filter_test init')
     assert(env.namespace === 'filter_test')
@@ -38,6 +35,4 @@ var _TestFilter = class _TestFilter {
     return candidates.filter((it) => it.text === expectingText)
   }
 }
-__name(_TestFilter, 'TestFilter')
-var TestFilter = _TestFilter
 export { TestFilter }

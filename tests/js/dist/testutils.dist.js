@@ -1,5 +1,3 @@
-var __defProp = Object.defineProperty
-var __name = (target, value) => __defProp(target, 'name', { value, configurable: true })
 var totalTests = 0
 var passedTests = 0
 function assert(condition, message = '') {
@@ -13,7 +11,6 @@ function assert(condition, message = '') {
     throw new Error('Assertion failed' + (message ? ': ' + message : ''))
   }
 }
-__name(assert, 'assert')
 function assertEquals(actual, expected, message = '') {
   totalTests++
   const actualStr = JSON.stringify(actual)
@@ -28,5 +25,4 @@ function assertEquals(actual, expected, message = '') {
     throw new Error('Assertion failed' + (message ? ': ' + message : ''))
   }
 }
-__name(assertEquals, 'assertEquals')
 export { assert, assertEquals, passedTests, totalTests }

@@ -1,5 +1,3 @@
-var __defProp = Object.defineProperty
-var __name = (target, value) => __defProp(target, 'name', { value, configurable: true })
 var totalTests = 0
 var passedTests = 0
 function assert(condition, message = '') {
@@ -13,7 +11,6 @@ function assert(condition, message = '') {
     throw new Error('Assertion failed' + (message ? ': ' + message : ''))
   }
 }
-__name(assert, 'assert')
 function assertEquals(actual, expected, message = '') {
   totalTests++
   const actualStr = JSON.stringify(actual)
@@ -28,7 +25,6 @@ function assertEquals(actual, expected, message = '') {
     throw new Error('Assertion failed' + (message ? ': ' + message : ''))
   }
 }
-__name(assertEquals, 'assertEquals')
 function checkArgument(env) {
   assertEquals(env.namespace, 'namespace')
   assertEquals(env.candidate.text, 'text')
@@ -46,6 +42,7 @@ function checkArgument(env) {
   assertEquals(list.getValueAt(1).getString(), 'item2')
   assertEquals(list.getValueAt(2).getString(), 'item3')
   assertEquals(list.getValueAt(3), null)
+  assert(!config.getList('none'), 'should not crash if the key does not exist')
   config.setString('greet', 'hello from js')
   const context = env.engine.context
   assertEquals(context.input, 'hello')
@@ -62,7 +59,6 @@ function checkArgument(env) {
   testTrie(env)
   return env
 }
-__name(checkArgument, 'checkArgument')
 function testEnvUtilities(env) {
   const info = env.getRimeInfo()
   console.log(`Rime info = ${info}`)
@@ -81,7 +77,6 @@ function testEnvUtilities(env) {
   const content = env.loadFile(env.currentFolder + '/js/types_test.js')
   assert(content.includes('\u6D4B\u8BD5 UTF-8 \u7F16\u7801'))
 }
-__name(testEnvUtilities, 'testEnvUtilities')
 function testTrie(env) {
   const trie = new Trie()
   trie.loadTextFile(env.currentFolder + '/dummy_dict.txt', 6)
@@ -91,7 +86,6 @@ function testTrie(env) {
   trie2.loadBinaryFile(env.currentFolder + '/dumm.bin')
   checkTrieData(trie2)
 }
-__name(testTrie, 'testTrie')
 function checkTrieData(trie) {
   const result1 = trie.find('accord')
   assertEquals(
@@ -105,5 +99,4 @@ function checkTrieData(trie) {
   const prefix_results = trie.prefixSearch('accord')
   assertEquals(prefix_results.length, 6)
 }
-__name(checkTrieData, 'checkTrieData')
 globalThis.checkArgument = checkArgument

@@ -20,10 +20,9 @@ protected:
     // As a result, we must register types for each new engine instance.
     registerTypesToJsEngine(jsEngine_);
 
-    std::string fileName = nameSpace + ".js";
     // gets a module for quickjs, exception if failed
     // gets globalThis for javascriptcore, nullptr if failed
-    T_JS_VALUE container = jsEngine_.loadJsFile(fileName.c_str());
+    T_JS_VALUE container = jsEngine_.loadJsFile(nameSpace.c_str());
     if (!jsEngine_.isObject(container)) {
       jsEngine_.freeValue(container);
       LOG(ERROR) << "[qjs] Failed to load plugin: " << mainFuncName << '@' << nameSpace;
@@ -34,7 +33,7 @@ protected:
     if (!jsEngine_.isObject(jsClass)) {
       jsEngine_.freeValue(jsClass);
       LOG(ERROR) << "[qjs] No exported class having `" << mainFuncName << "` function in "
-                 << fileName;
+                 << nameSpace;
       return;
     }
 
@@ -43,12 +42,12 @@ protected:
     T_JS_VALUE args[] = {jsEnvironment};
     instance_ = jsEngine_.newClassInstance(objClass, 1, static_cast<T_JS_VALUE*>(args));
     if (jsEngine_.isException(instance_)) {
-      LOG(ERROR) << "[qjs] Error creating an instance of the exported class in " << fileName;
+      LOG(ERROR) << "[qjs] Error creating an instance of the exported class in " << nameSpace;
       jsEngine_.logErrorStackTrace(instance_, __FILE_NAME__, __LINE__);
       jsEngine_.freeValue(jsClass, jsEnvironment);
       return;
     }
-    DLOG(INFO) << "[qjs] constructor function executed successfully in " << fileName;
+    DLOG(INFO) << "[qjs] constructor function executed successfully in " << nameSpace;
 
     mainFunc_ =
         jsEngine_.toObject(jsEngine_.getMethodOfClassOrInstance(objClass, instance_, mainFuncName));

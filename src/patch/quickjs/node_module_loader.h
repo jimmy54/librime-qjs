@@ -9,7 +9,7 @@ void setQjsBaseFolder(const char* path);
 // NOLINTNEXTLINE(readability-identifier-naming)
 JSModuleDef* js_module_loader(JSContext* ctx, const char* moduleName, void* opaque);
 
-JSValue loadJsModule(JSContext* ctx, const char* fileName);
+JSValue loadJsModule(JSContext* ctx, const char* moduleName);
 
 char* readJsCode(JSContext* ctx, const char* relativePath);
 

@@ -3,7 +3,6 @@
 #include <glog/logging.h>
 
 #include <cstddef>
-#include <sstream>
 
 #include <quickjs.h>
 

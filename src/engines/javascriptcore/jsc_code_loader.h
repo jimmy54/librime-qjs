@@ -8,7 +8,7 @@ class JscCodeLoader {
 public:
   static JSValueRef loadJsModuleToGlobalThis(JSContextRef ctx,
                                              const std::string& baseFolderPath,
-                                             const char* moduleName,
+                                             const std::string& moduleName,
                                              JSValueRef* exception);
 
   static JSValueRef getExportedClassHavingMethodNameInModule(JSContextRef ctx,

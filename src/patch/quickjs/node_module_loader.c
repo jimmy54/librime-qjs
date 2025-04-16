@@ -124,6 +124,15 @@ void logError(const char* format, ...) {
 
 #endif
 
+static bool isFileExists(const char* path) {
+  FILE* file = fopen(path, "r");
+  if (file) {
+    fclose(file);
+    return true;
+  }
+  return false;
+}
+
 FILE* tryLoadFile(const char* path) {
   const char* possibleExtensions[] = {"", ".js", ".mjs", ".cjs"};
   const int numExtensions = sizeof(possibleExtensions) / sizeof(possibleExtensions[0]);
@@ -272,7 +281,41 @@ char* readJsCode(JSContext* ctx, const char* relativePath) {
   return loadFile(fullPath);
 }
 
-JSValue loadJsModule(JSContext* ctx, const char* fileName) {
+static const char* getActualFileName(const char* moduleName) {
+  static char fileNameAttempt[PATH_MAX];
+  char fullPath[PATH_MAX];
+
+  const char* extensions[] = {".js", ".mjs", ".cjs"};
+  const int numExtensions = sizeof(extensions) / sizeof(extensions[0]);
+  for (int i = 0; i < numExtensions; i++) {
+    unsigned long extLen = strlen(extensions[i]);
+    if (strlen(moduleName) > extLen && strcmp(moduleName + strlen(moduleName) - extLen, extensions[i]) == 0) {
+      snprintf(fullPath, sizeof(fullPath), "%s/%s", qjsBaseFolder, moduleName);
+      // has extension and file exists, return moduleName without modification
+      return isFileExists(fullPath) ? moduleName : NULL;
+    }
+  }
+
+  // file lookup order: ./dist/module.dist.js > ./dist/module.js > ./module.dist.js > ./module.js
+  const char* filePatterns[] = {"dist/%s.dist.js", "dist/%s.js", "%s.dist.js", "%s.js"};
+  const int numPatterns = sizeof(filePatterns) / sizeof(filePatterns[0]);
+
+  for (int i = 0; i < numPatterns; i++) {
+    snprintf(fileNameAttempt, sizeof(fileNameAttempt), filePatterns[i], moduleName);
+    snprintf(fullPath, sizeof(fullPath), "%s/%s", qjsBaseFolder, fileNameAttempt);
+    if (isFileExists(fullPath)) {
+      return fileNameAttempt;
+    }
+  }
+  return NULL;
+}
+
+JSValue loadJsModule(JSContext* ctx, const char* moduleName) {
+  const char* fileName = getActualFileName(moduleName);
+  if (!fileName) {
+    return JS_ThrowReferenceError(ctx, "File not found: %s", moduleName);
+  }
+
   char* code = readJsCode(ctx, fileName);
   if (!code) {
     return JS_ThrowReferenceError(ctx, "Could not open %s", fileName);

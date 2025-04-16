@@ -71,7 +71,7 @@ TYPED_TEST(QuickJSTypesTest, WrapUnwrapRimeTypes) {
   jsEngine.setObjectProperty(jsEnvironment, "candidate",
                              jsEngine.template wrapShared<Candidate>(candidate));
 
-  auto result = jsEngine.loadJsFile("types_test.js");
+  auto result = jsEngine.loadJsFile("types_test");
   auto global = jsEngine.getGlobalObject();
   auto jsFunc = jsEngine.getObjectProperty(jsEngine.toObject(global), "checkArgument");
   auto retValue =

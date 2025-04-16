@@ -4,6 +4,7 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <vector>
 
 #include "engines/javascriptcore/jsc_string_raii.hpp"
 
@@ -23,31 +24,35 @@ static void removeExportStatementsInPlace(std::string& source) {
 
 JSValueRef JscCodeLoader::loadJsModuleToGlobalThis(JSContextRef ctx,
                                                    const std::string& baseFolderPath,
-                                                   const char* moduleName,
+                                                   const std::string& moduleName,
                                                    JSValueRef* exception) {
-  // Get the global object
-  JSObjectRef globalObject = JSContextGetGlobalObject(ctx);
+  // file lookup order: ./dist/module.dist.js > ./dist/module.js > ./module.dist.js > ./module.js
+  std::vector<std::string> fileNames = {"dist/" + moduleName + ".dist.js",
+                                        "dist/" + moduleName + ".js", moduleName + ".dist.js",
+                                        moduleName + ".js"};
 
-  // todo: find the js file in these orders: ./dist/module.js > ./module.js
-  std::filesystem::path filePath = std::filesystem::path(baseFolderPath + "/dist/" + moduleName);
-  std::ifstream file(filePath);
-  if (!file.is_open()) {
-    std::string message = "Failed to open file: " + filePath.string();
-    LOG(ERROR) << "[jsc] " << message;
+  for (const auto& fileName : fileNames) {
+    std::filesystem::path filePath = std::filesystem::path(baseFolderPath) / fileName;
+    if (!std::filesystem::exists(filePath)) {
+      continue;
+    }
 
-    *exception = JSValueMakeString(ctx, JscStringRAII(message.c_str()));
-    return nullptr;
+    std::ifstream file(filePath);
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    auto source = buffer.str();
+    removeExportStatementsInPlace(source);
+
+    auto sourceUrl = JscStringRAII(filePath.generic_string().c_str());
+    JSEvaluateScript(ctx, JscStringRAII(source.c_str()), nullptr, sourceUrl, 0, exception);
+
+    return JSContextGetGlobalObject(ctx);
   }
 
-  std::stringstream buffer;
-  buffer << file.rdbuf();
-  auto source = buffer.str();
-  removeExportStatementsInPlace(source);
-
-  auto sourceUrl = JscStringRAII(filePath.generic_string().c_str());
-  JSEvaluateScript(ctx, JscStringRAII(source.c_str()), nullptr, sourceUrl, 0, exception);
-
-  return globalObject;
+  std::string message = "Failed to open file for module: " + moduleName;
+  LOG(ERROR) << "[jsc] " << message;
+  *exception = JSValueMakeString(ctx, JscStringRAII(message.c_str()));
+  return nullptr;
 }
 
 JSValueRef JscCodeLoader::getExportedClassHavingMethodNameInModule(JSContextRef ctx,

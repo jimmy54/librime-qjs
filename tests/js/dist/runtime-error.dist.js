@@ -1,10 +1,7 @@
-var __defProp = Object.defineProperty
-var __name = (target, value) => __defProp(target, 'name', { value, configurable: true })
 function greet(name) {
   return `Hello ${name}!`
 }
-__name(greet, 'greet')
-var _MyClass = class _MyClass {
+var MyClass = class {
   constructor(value) {
     this.value = value
   }
@@ -15,8 +12,6 @@ var _MyClass = class _MyClass {
     return greet(name)
   }
 }
-__name(_MyClass, 'MyClass')
-var MyClass = _MyClass
 globalThis.funcWithRuntimeError = function () {
   const obj = new MyClass(abcdefg)
   obj.hi()

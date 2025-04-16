@@ -1,5 +1,3 @@
-var __defProp = Object.defineProperty
-var __name = (target, value) => __defProp(target, 'name', { value, configurable: true })
 var totalTests = 0
 var passedTests = 0
 function assertEquals(actual, expected, message = '') {
@@ -16,8 +14,7 @@ function assertEquals(actual, expected, message = '') {
     throw new Error('Assertion failed' + (message ? ': ' + message : ''))
   }
 }
-__name(assertEquals, 'assertEquals')
-var _TestProcessor = class _TestProcessor {
+var TestProcessor = class {
   constructor(env) {
     console.log('[processor_test] init')
     const config = env.engine.schema.config
@@ -30,12 +27,7 @@ var _TestProcessor = class _TestProcessor {
     console.log('[processor_test] finit')
   }
   process(keyEvent, env) {
-    var _a
-    assertEquals(
-      (_a = env.engine.context.lastSegment) == null ? void 0 : _a.prompt,
-      'prompt',
-      'should have lastSegment with prompt',
-    )
+    assertEquals(env.engine.context.lastSegment?.prompt, 'prompt', 'should have lastSegment with prompt')
     const repr = keyEvent.repr
     if (repr === 'space') {
       return 'kAccepted'
@@ -45,6 +37,4 @@ var _TestProcessor = class _TestProcessor {
     return 'kNoop'
   }
 }
-__name(_TestProcessor, 'TestProcessor')
-var TestProcessor = _TestProcessor
 export { TestProcessor }
