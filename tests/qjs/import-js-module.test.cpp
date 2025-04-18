@@ -2,9 +2,8 @@
 #include <quickjs.h>
 #include <filesystem>
 
+#include "engines/common.h"
 #include "engines/quickjs/quickjs_code_loader.h"
-#include "engines/quickjs/quickjs_engine.h"
-#include "engines/quickjs/quickjs_engine_impl.h"
 
 class QuickJSModuleTest : public testing::Test {
 protected:
@@ -118,7 +117,8 @@ TEST_F(QuickJSModuleTest, ImportJsModuleToNamespace) {
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
 TEST_F(QuickJSModuleTest, FindImportedClass) {
   auto* ctx = getContext();
-  JSValue moduleNamespace = QuickJSCodeLoader::loadJsModuleToNamespace(ctx, "lib.js");
+  JSValue moduleNamespace =
+      QuickJSCodeLoader::loadJsModuleToNamespace(ctx, "lib");  // loads ./dist/lib.esm.js
   ASSERT_FALSE(JS_IsException(moduleNamespace));
 
   JSValue myClass =
@@ -168,7 +168,7 @@ TEST_F(QuickJSModuleTest, FindImportedClass) {
 
 TEST_F(QuickJSModuleTest, ImportNodeModule) {
   auto* ctx = getContext();
-  JSValue module = QuickJSCodeLoader::loadJsModuleToGlobalThis(ctx, "node-modules.test.js");
+  JSValue module = QuickJSCodeLoader::loadJsModuleToGlobalThis(ctx, "node-modules.test");
   ASSERT_FALSE(JS_IsException(module));
   JS_FreeValue(ctx, module);
 }

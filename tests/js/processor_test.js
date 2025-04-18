@@ -17,6 +17,7 @@ export class TestProcessor {
   process(keyEvent, env) {
     assertEquals(env.engine.context.lastSegment?.prompt, 'prompt', 'should have lastSegment with prompt')
 
+    console.log(`[processor_test] process: ${keyEvent.repr}`)
     const repr = keyEvent.repr
     if (repr === 'space') {
       return 'kAccepted'

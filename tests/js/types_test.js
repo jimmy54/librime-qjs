@@ -105,3 +105,6 @@ const load_file_test_data = [
   '🌟 Emoji test',
   'Mixed content: あいうえお',
 ]
+
+// to bundle it to IIFE format to run in JavaScriptCore
+export class DummyClass {}

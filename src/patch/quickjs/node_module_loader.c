@@ -6,6 +6,14 @@
 
 #include "node_module_loader.h"
 
+#define LOG_AND_RETURN_ERROR(ctx, format, ...) \
+  logError(format, __VA_ARGS__); \
+  return JS_ThrowReferenceError(ctx, format, __VA_ARGS__);
+
+#define LOG_AND_THROW_ERROR(ctx, format, ...) \
+  logError(format, __VA_ARGS__); \
+  JS_ThrowReferenceError(ctx, format, __VA_ARGS__);
+
 enum { PATH_MAX = 1024 };
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
@@ -133,18 +141,44 @@ static bool isFileExists(const char* path) {
   return false;
 }
 
-FILE* tryLoadFile(const char* path) {
+static const char* getActualFileName(const char* moduleName) {
+  static char fileNameAttempt[PATH_MAX];
+  char fullPath[PATH_MAX];
+
+  // has extension and file exists, return moduleName without modification
+  const char* extensions[] = {".js", ".mjs", ".cjs"};
+  const int numExtensions = sizeof(extensions) / sizeof(extensions[0]);
+  for (int i = 0; i < numExtensions; i++) {
+    unsigned long extLen = strlen(extensions[i]);
+    if (strlen(moduleName) > extLen && strcmp(moduleName + strlen(moduleName) - extLen, extensions[i]) == 0) {
+      snprintf(fullPath, sizeof(fullPath), "%s/%s", qjsBaseFolder, moduleName);
+      return isFileExists(fullPath) ? moduleName : NULL;
+    }
+  }
+
+  // file lookup order: ./dist/module.esm.js > ./dist/module.js > ./module.esm.js > ./module.js
+  const char* filePatterns[] = {"dist/%s.esm.js", "dist/%s.js", "%s.esm.js", "%s.js"};
+  const int numPatterns = sizeof(filePatterns) / sizeof(filePatterns[0]);
+
+  for (int i = 0; i < numPatterns; i++) {
+    snprintf(fileNameAttempt, sizeof(fileNameAttempt), filePatterns[i], moduleName);
+    snprintf(fullPath, sizeof(fullPath), "%s/%s", qjsBaseFolder, fileNameAttempt);
+    if (isFileExists(fullPath)) {
+      return fileNameAttempt;
+    }
+  }
+  return NULL;
+}
+
+static const char* getActualFilePath(const char* path) {
   const char* possibleExtensions[] = {"", ".js", ".mjs", ".cjs"};
   const int numExtensions = sizeof(possibleExtensions) / sizeof(possibleExtensions[0]);
 
-  char fullPath[PATH_MAX];
-  FILE* file = NULL;
-
+  static char fullPath[PATH_MAX];
   for (int i = 0; i < numExtensions; i++) {
     snprintf(fullPath, sizeof(fullPath), "%s%s", path, possibleExtensions[i]);
-    file = fopen(fullPath, "rb");
-    if (file != NULL) {
-      return file;
+    if (isFileExists(fullPath)) {
+      return fullPath;
     }
   }
 
@@ -184,8 +218,7 @@ char* tryFindNodeModuleEntryFileName(const char* folder, const char* key) {
     strncpy(entryFileName, leftQuote + 1, len);
     entryFileName[len] = '\0';
 
-    logInfo("Found entry file: [%s] from package.json line: %s", entryFileName,
-            line);
+    logInfo("Found entry file: [%s] from package.json line: %s", entryFileName, line);
     break;
   }
 
@@ -193,9 +226,8 @@ char* tryFindNodeModuleEntryFileName(const char* folder, const char* key) {
 
   char entryFilePath[PATH_MAX];
   snprintf(entryFilePath, sizeof(entryFilePath), "%s/%s", folder, entryFileName);
-  FILE* file = tryLoadFile(entryFilePath);
-  if (file) {
-    fclose(file);
+  const char* actualPath = getActualFilePath(entryFilePath);
+  if (actualPath) {
     return entryFileName;
   }
 
@@ -221,7 +253,13 @@ char* tryFindNodeModuleEntryPath(const char* baseFolder,
 }
 
 char* loadFile(const char* absolutePath) {
-  FILE* file = tryLoadFile(absolutePath);
+  const char* actualPath  = getActualFilePath(absolutePath);
+  if (!actualPath) {
+    logError("Failed to open file at: %s", absolutePath);
+    return NULL;
+  }
+
+  FILE* file = fopen(actualPath, "rb");
   if (!file) {
     logError("Failed to open file at: %s", absolutePath);
     return NULL;
@@ -245,18 +283,17 @@ char* loadFile(const char* absolutePath) {
   }
 
   size_t read = fread(content, 1, length, file);
+  fclose(file);
+
   if (read != (size_t)length) {
     logError("Failed to read file: %s, expected %ld bytes but got %zu", absolutePath, length, read);
     free(content);
-    fclose(file);
     return NULL;
   }
 
   content[length] = '\0';
-  fclose(file);
   return content;
 }
-
 bool isAbsolutePath(const char* path) {
   size_t len = strlen(path);
   return (len > 0 && path[0] == '/') ||  // Unix-style absolute path
@@ -264,71 +301,41 @@ bool isAbsolutePath(const char* path) {
          (len > 1 && path[0] == '\\' && path[1] == '\\');  // Windows UNC path
 }
 
-char* readJsCode(JSContext* ctx, const char* relativePath) {
+char* readJsCode(JSContext* ctx, const char* moduleName) {
   if (strlen(qjsBaseFolder) == 0) {
-    logError("basePath is empty in loading js file: %s", relativePath);
-    JS_ThrowReferenceError(ctx, "basePath is empty in loading js file: %s", relativePath);
+    LOG_AND_THROW_ERROR(ctx, "basePath is empty in loading js file: %s", moduleName);
     return NULL;
   }
 
+  const char* fileName = getActualFileName(moduleName);
+  if (!fileName) {
+    LOG_AND_THROW_ERROR(ctx, "File not found: %s", moduleName);
+    return NULL;
+  }
   char fullPath[PATH_MAX];
-  if (isAbsolutePath(relativePath)) {
-    snprintf(fullPath, sizeof(fullPath), "%s", relativePath);
+  if (isAbsolutePath(fileName)) {
+    snprintf(fullPath, sizeof(fullPath), "%s", fileName);
   } else {
-    snprintf(fullPath, sizeof(fullPath), "%s/%s", qjsBaseFolder, relativePath);
+    snprintf(fullPath, sizeof(fullPath), "%s/%s", qjsBaseFolder, fileName);
   }
 
   return loadFile(fullPath);
 }
 
-static const char* getActualFileName(const char* moduleName) {
-  static char fileNameAttempt[PATH_MAX];
-  char fullPath[PATH_MAX];
-
-  const char* extensions[] = {".js", ".mjs", ".cjs"};
-  const int numExtensions = sizeof(extensions) / sizeof(extensions[0]);
-  for (int i = 0; i < numExtensions; i++) {
-    unsigned long extLen = strlen(extensions[i]);
-    if (strlen(moduleName) > extLen && strcmp(moduleName + strlen(moduleName) - extLen, extensions[i]) == 0) {
-      snprintf(fullPath, sizeof(fullPath), "%s/%s", qjsBaseFolder, moduleName);
-      // has extension and file exists, return moduleName without modification
-      return isFileExists(fullPath) ? moduleName : NULL;
-    }
-  }
-
-  // file lookup order: ./dist/module.dist.js > ./dist/module.js > ./module.dist.js > ./module.js
-  const char* filePatterns[] = {"dist/%s.dist.js", "dist/%s.js", "%s.dist.js", "%s.js"};
-  const int numPatterns = sizeof(filePatterns) / sizeof(filePatterns[0]);
-
-  for (int i = 0; i < numPatterns; i++) {
-    snprintf(fileNameAttempt, sizeof(fileNameAttempt), filePatterns[i], moduleName);
-    snprintf(fullPath, sizeof(fullPath), "%s/%s", qjsBaseFolder, fileNameAttempt);
-    if (isFileExists(fullPath)) {
-      return fileNameAttempt;
-    }
-  }
-  return NULL;
-}
-
 JSValue loadJsModule(JSContext* ctx, const char* moduleName) {
-  const char* fileName = getActualFileName(moduleName);
-  if (!fileName) {
-    return JS_ThrowReferenceError(ctx, "File not found: %s", moduleName);
-  }
-
-  char* code = readJsCode(ctx, fileName);
+  char* code = readJsCode(ctx, moduleName);
   if (!code) {
-    return JS_ThrowReferenceError(ctx, "Could not open %s", fileName);
+    LOG_AND_RETURN_ERROR(ctx, "Could not open %s", moduleName);
   }
 
   size_t codeLen = strlen(code);
   if (codeLen == 0) {
     free(code);
-    return JS_ThrowReferenceError(ctx, "Empty module content: %s", fileName);
+    LOG_AND_RETURN_ERROR(ctx, "Empty module content: %s", moduleName);
   }
 
   int flags = JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_COMPILE_ONLY;
-  JSValue funcObj = JS_Eval(ctx, code, codeLen, fileName, flags);
+  JSValue funcObj = JS_Eval(ctx, code, codeLen, moduleName, flags);
   free(code);
 
   if (JS_IsException(funcObj)) {
@@ -355,9 +362,8 @@ JSModuleDef* js_module_loader(JSContext* ctx,
     snprintf(fullPath, sizeof(fullPath), "%s/%s", qjsBaseFolder, moduleName);
   }
 
-  FILE* file = tryLoadFile(fullPath);
-  if (file) { // file exists, it's a js file outside node_modules
-    fclose(file);
+  const char* actualPath = getActualFilePath(fullPath);
+  if (actualPath) { // file exists, it's a js file outside node_modules
     JSValue funcObj = loadJsModule(ctx, moduleName);
     return (JSModuleDef*)JS_VALUE_GET_PTR(funcObj);
   }

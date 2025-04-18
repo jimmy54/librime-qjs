@@ -10,7 +10,7 @@
 #include <map>
 #include <memory>
 #include <utility>
-#include "environment.h"
+#include "types/environment.h"
 
 namespace rime {
 

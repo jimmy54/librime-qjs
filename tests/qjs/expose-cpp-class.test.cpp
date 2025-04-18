@@ -6,8 +6,7 @@
 
 #include <quickjs.h>
 
-#include "engines/js_macros.h"
-#include "engines/quickjs/quickjs_engine.h"
+#include "engines/common.h"
 
 class MyClass {
 public:
@@ -218,16 +217,6 @@ public:
 };
 
 TEST_F(QuickJSExposeClassTest, TestExposeClassToQuickJSWithEngine) {
-  auto& engine = JsEngine<JSValue>::instance();
-  engine.registerType<MyClass>();
-
-  auto result = engine.eval(SCRIPT);
-  auto str = engine.toStdString(result);
-  EXPECT_STREQ(str.c_str(), "Hello, QuickJS! Hello, Trae!");
-  engine.freeValue(result);
-}
-TEST_F(QuickJSExposeClassTest, TestRestartEngine) {
-  JsEngine<JSValue>::shutdown();
   auto& engine = JsEngine<JSValue>::instance();
   engine.registerType<MyClass>();
 

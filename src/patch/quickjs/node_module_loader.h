@@ -11,7 +11,7 @@ JSModuleDef* js_module_loader(JSContext* ctx, const char* moduleName, void* opaq
 
 JSValue loadJsModule(JSContext* ctx, const char* moduleName);
 
-char* readJsCode(JSContext* ctx, const char* relativePath);
+char* readJsCode(JSContext* ctx, const char* moduleName);
 
 char* loadFile(const char* absolutePath);
 

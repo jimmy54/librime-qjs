@@ -1,6 +1,7 @@
 #pragma once
 
 #include <quickjs.h>
+#include "types/qjs_types.h"
 
 #ifdef _ENABLE_JAVASCRIPTCORE
 

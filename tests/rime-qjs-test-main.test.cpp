@@ -7,7 +7,7 @@
 #include <filesystem>
 #include <string>
 
-#include "engines/quickjs/quickjs_engine.h"
+#include "engines/common.h"
 
 #ifdef _WIN32
 #include <windows.h>

@@ -18,10 +18,23 @@ void JscEngineImpl::setBaseFolderPath(const char* absolutePath) {
   baseFolderPath_ = absolutePath;
 }
 
+JSObjectRef JscEngineImpl::createInstanceOfModule(const char* moduleName,
+                                                  const std::vector<JSValueRef>& args) {
+  JSValueRef* exception = nullptr;
+  JSObjectRef instance = JscCodeLoader::createInstanceOfIifeBundledModule(
+      ctx_, baseFolderPath_, moduleName, args, exception);
+  if (exception != nullptr) {
+    logErrorStackTrace(exception, __FILE_NAME__, __LINE__);
+    return nullptr;
+  }
+
+  return instance;
+}
+
 JSValueRef JscEngineImpl::loadJsFile(const char* fileName) {
-  JSValueRef exception = nullptr;
+  JSValueRef* exception = nullptr;
   const auto* globalThis =
-      JscCodeLoader::loadJsModuleToGlobalThis(ctx_, baseFolderPath_, fileName, &exception);
+      JscCodeLoader::loadEsmBundledModuleToGlobalThis(ctx_, baseFolderPath_, fileName, exception);
   logErrorStackTrace(exception, __FILE_NAME__, __LINE__);
   return globalThis;
 }
@@ -29,8 +42,8 @@ JSValueRef JscEngineImpl::loadJsFile(const char* fileName) {
 JSValueRef JscEngineImpl::eval(const char* code, const char* filename) {
   JscStringRAII jsCode = code;
   JscStringRAII filenameStr = filename;
-  JSValueRef exception = nullptr;
-  JSValueRef result = JSEvaluateScript(ctx_, jsCode, nullptr, filenameStr, 0, &exception);
+  JSValueRef* exception = nullptr;
+  JSValueRef result = JSEvaluateScript(ctx_, jsCode, nullptr, filenameStr, 0, exception);
   logErrorStackTrace(exception, __FILE_NAME__, __LINE__);
   return result;
 }
@@ -84,16 +97,19 @@ JSValueRef JscEngineImpl::callFunction(JSObjectRef func,
                                        JSObjectRef thisArg,
                                        int argc,
                                        JSValueRef* argv) {
-  JSValueRef exception = nullptr;
+  JSValueRef* exception = nullptr;
   auto* thisVal = JSValueIsUndefined(ctx_, thisArg) ? getGlobalObject() : thisArg;
-  JSValueRef result = JSObjectCallAsFunction(ctx_, func, thisVal, argc, argv, &exception);
-  logErrorStackTrace(exception, __FILE_NAME__, __LINE__);
+  JSValueRef result = JSObjectCallAsFunction(ctx_, func, thisVal, argc, argv, exception);
+  if (exception != nullptr) {
+    logErrorStackTrace(exception, __FILE_NAME__, __LINE__);
+    return nullptr;
+  }
   return result;
 }
 
 JSObjectRef JscEngineImpl::newClassInstance(const JSObjectRef& clazz, int argc, JSValueRef* argv) {
-  JSValueRef exception = nullptr;
-  JSObjectRef result = JSObjectCallAsConstructor(ctx_, clazz, argc, argv, &exception);
+  JSValueRef* exception = nullptr;
+  JSObjectRef result = JSObjectCallAsConstructor(ctx_, clazz, argc, argv, exception);
   if (exception != nullptr) {
     logErrorStackTrace(exception, __FILE_NAME__, __LINE__);
     return nullptr;
@@ -135,22 +151,21 @@ JSValueRef JscEngineImpl::getJsClassHavingMethod(const JSValueRef& module,
 JSObjectRef JscEngineImpl::getMethodOfClassOrInstance(JSObjectRef jsClass,
                                                       JSObjectRef instance,
                                                       const char* methodName) {
-  JSValueRef exception = nullptr;
-  JSValueRef method = JSObjectGetProperty(ctx_, instance, JscStringRAII(methodName), &exception);
+  JSValueRef* exception = nullptr;
+  JSValueRef method = JSObjectGetProperty(ctx_, instance, JscStringRAII(methodName), exception);
   logErrorStackTrace(exception, __FILE_NAME__, __LINE__);
   return JSValueToObject(ctx_, method, nullptr);
 }
 
-void JscEngineImpl::logErrorStackTrace(const JSValueRef& exception, const char* file, int line) {
+void JscEngineImpl::logErrorStackTrace(const JSValueRef* exception, const char* file, int line) {
   if (exception == nullptr) {
     return;
   }
 
-  lastException_ = exception;
-  auto* objException = JSValueToObject(ctx_, exception, nullptr);
+  auto* objException = JSValueToObject(ctx_, *exception, nullptr);
   auto strStack = toStdString(getObjectProperty(objException, "stack"));
   google::LogMessage(file, line, google::GLOG_ERROR).stream()
-      << "[qjs] JSC exception: " << toStdString(exception) << "\n"
+      << "[qjs] JSC exception: " << toStdString(*exception) << "\n"
       << (strStack.empty() ? "No stack trace available." : strStack);
 }
 

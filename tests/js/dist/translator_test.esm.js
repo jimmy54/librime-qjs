@@ -33,6 +33,7 @@ var TestTranslator = class {
     assertEquals(env.sharedDataDir, '.')
     const config = env.engine.schema.config
     assertEquals(config.getString('greet'), 'hello from c++')
+    console.log('translator_test init done')
   }
   finalizer() {
     console.log('translator_test finit')

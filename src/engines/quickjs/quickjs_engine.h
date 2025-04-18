@@ -60,7 +60,7 @@ public:
 
   [[nodiscard]] JSValue toObject(const JSValue& value) const { return value; }
 
-  void setBaseFolderPath(const char* absolutePath) { setQjsBaseFolder(absolutePath); }
+  void setBaseFolderPath(const char* absolutePath) { impl_->setBaseFolderPath(absolutePath); }
   // NOLINTEND(readability-convert-member-functions-to-static)
 
   [[nodiscard]] JSValue newArray() const { return JS_NewArray(impl_->getContext()); }
@@ -212,6 +212,11 @@ public:
     return impl_->wrap(JsWrapper<T, JSValue>::TYPENAME, ptr.release(), "shared");
   }
 
+  [[nodiscard]] JSValue createInstanceOfModule(const char* moduleName,
+                                               std::vector<JSValue>& args,
+                                               const std::string& mainFuncName) const {
+    return impl_->createInstanceOfModule(moduleName, args, mainFuncName);
+  }
   [[nodiscard]] JSValue loadJsFile(const char* fileName) const {
     return impl_->loadJsFile(fileName);
   }

@@ -6,7 +6,6 @@
 #include <rime/schema.h>
 #include <memory>
 
-#include "engines/engine_manager.h"
 #include "environment.h"
 #include "qjs_types.h"
 #include "test_helper.hpp"
@@ -56,8 +55,7 @@ TYPED_TEST(QuickJSTypesTest, WrapUnwrapRimeTypes) {
   ASSERT_TRUE(context != nullptr);
   context->set_input("hello");
 
-  auto jsEngine = newOrShareEngine<TypeParam>();
-  registerTypesToJsEngine(jsEngine);
+  auto& jsEngine = JsEngine<TypeParam>::instance();
 
   auto env = std::make_unique<Environment>(engine.get(), "namespace");
   TypeParam environment = jsEngine.wrap(env.get());

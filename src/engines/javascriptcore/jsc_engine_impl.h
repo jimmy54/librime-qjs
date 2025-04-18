@@ -21,12 +21,11 @@ public:
   JscEngineImpl& operator=(JscEngineImpl&&) = delete;
 
   [[nodiscard]] JSGlobalContextRef getContext() const { return ctx_; }
-  [[nodiscard]] JSValueRef getLastException() const { return lastException_; }
-  void setLastException(JSValueRef exception) { lastException_ = exception; }
 
   [[nodiscard]] std::string toStdString(const JSValueRef& value) const;
 
   void setBaseFolderPath(const char* absolutePath);
+  JSObjectRef createInstanceOfModule(const char* moduleName, const std::vector<JSValueRef>& args);
   JSValueRef loadJsFile(const char* fileName);
   JSValueRef eval(const char* code, const char* filename = "<eval>");
   JSObjectRef getGlobalObject();
@@ -50,7 +49,7 @@ public:
                                          JSObjectRef instance,
                                          const char* methodName);
 
-  void logErrorStackTrace(const JSValueRef& exception,
+  void logErrorStackTrace(const JSValueRef* exception,
                           const char* file = __FILE_NAME__,
                           int line = __LINE__);
 
@@ -87,6 +86,5 @@ private:
                             JSValueRef* exception);
   JSGlobalContextRef ctx_{nullptr};
   std::string baseFolderPath_;
-  JSValueRef lastException_{nullptr};
   std::unordered_map<std::string, JSClassRef> clazzes_;
 };

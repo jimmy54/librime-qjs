@@ -1,5 +1,6 @@
 #include "engines/quickjs/quickjs_engine_impl.h"
 #include "engines/quickjs/quickjs_code_loader.h"
+#include "quickjs.h"
 
 QuickJsEngineImpl::QuickJsEngineImpl()
     : runtime_(JS_NewRuntime()), context_(JS_NewContext(runtime_)) {
@@ -47,6 +48,12 @@ JSValue QuickJsEngineImpl::getObjectProperty(const JSValue& obj, const char* pro
 int QuickJsEngineImpl::setObjectProperty(JSValue obj,
                                          const char* propertyName,
                                          const JSValue& value) const {
+  if (JS_IsUndefined(value) || JS_IsNull(value)) {
+    // calling `JS_DeleteProperty` on globalThis would crash the program as well.
+    LOG(ERROR) << "[qjs] Setting undefined or null to an object's property would crash the "
+                  "program. Aborting.";
+    return -1;
+  }
   return JS_SetPropertyStr(context_, obj, propertyName, value);
 }
 
@@ -104,6 +111,12 @@ void QuickJsEngineImpl::logErrorStackTrace(const JSValue& exception,
   JS_FreeValue(context_, exception);
 }
 
+JSValue QuickJsEngineImpl::createInstanceOfModule(const char* moduleName,
+                                                  std::vector<JSValue>& args,
+                                                  const std::string& mainFuncName) const {
+  return QuickJSCodeLoader::createInstanceOfEsmBundledModule(context_, moduleName, args,
+                                                             mainFuncName);
+}
 JSValue QuickJsEngineImpl::loadJsFile(const char* fileName) const {
   return QuickJSCodeLoader::loadJsModuleToNamespace(context_, fileName);
 }

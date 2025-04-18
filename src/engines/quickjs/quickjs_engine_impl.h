@@ -43,6 +43,10 @@ public:
                                                    JSValue instance,
                                                    const char* methodName) const;
   void logErrorStackTrace(const JSValue& exception, const char* file, int line) const;
+
+  [[nodiscard]] JSValue createInstanceOfModule(const char* moduleName,
+                                               std::vector<JSValue>& args,
+                                               const std::string& mainFuncName) const;
   [[nodiscard]] JSValue loadJsFile(const char* fileName) const;
   [[nodiscard]] JSValue eval(const char* code, const char* filename = "<eval>") const;
   [[nodiscard]] JSValue getGlobalObject() const;
@@ -74,14 +78,19 @@ public:
 
   [[nodiscard]] JSValue wrap(const char* typeName, void* ptr, const char* pointerType) const;
 
+  void setBaseFolderPath(const char* absolutePath) {
+    this->baseFolderPath_ = absolutePath;
+    LOG(INFO) << "[qjs] setting js base folder: " << absolutePath;
+    setQjsBaseFolder(absolutePath);
+  }
   static void exposeLogToJsConsole(JSContext* ctx);
 
 private:
   static JSValue jsLog(JSContext* ctx, JSValueConst thisVal, int argc, JSValueConst* argv);
   static JSValue jsError(JSContext* ctx, JSValueConst thisVal, int argc, JSValueConst* argv);
 
-  std::mutex runtimeMutex_;
   JSRuntime* runtime_;
   JSContext* context_;
   std::unordered_map<std::string, JSClassID> registeredTypes_;
+  std::string baseFolderPath_;  // absolute path to the base folder of the js files
 };

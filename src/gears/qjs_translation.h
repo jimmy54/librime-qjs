@@ -2,7 +2,7 @@
 
 #include <rime/translation.h>
 
-#include "engines/js_engine.h"
+#include "engines/common.h"
 #include "environment.h"
 
 using namespace rime;

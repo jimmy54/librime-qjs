@@ -6,7 +6,6 @@
 #include <rime/schema.h>
 
 #include <quickjs.h>
-#include "engines/engine_manager.h"
 #include "test_switch.h"
 #include "types/environment.h"
 #include "types/qjs_types.h"
@@ -46,9 +45,7 @@ TYPED_TEST(QuickJSNotifierTest, ConnectToRimeNotifier) {
     }
   )";
 
-  auto jsEngine = newOrShareEngine<TypeParam>();
-  registerTypesToJsEngine(jsEngine);
-
+  auto& jsEngine = JsEngine<TypeParam>::instance();
   auto result = jsEngine.eval(script, "<input>");
 
   the<Engine> engine(Engine::Create());

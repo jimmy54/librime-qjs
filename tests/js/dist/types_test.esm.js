@@ -100,3 +100,5 @@ function checkTrieData(trie) {
   assertEquals(prefix_results.length, 6)
 }
 globalThis.checkArgument = checkArgument
+var DummyClass = class {}
+export { DummyClass }

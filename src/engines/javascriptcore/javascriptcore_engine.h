@@ -2,39 +2,45 @@
 
 #include <JavaScriptCore/JavaScript.h>
 #include <memory>
+#include <mutex>
 
 #include "engines/javascriptcore/jsc_engine_impl.h"
 #include "engines/javascriptcore/jsc_string_raii.hpp"
 #include "engines/js_engine.h"
+#include "types/js_wrapper.h"
 
 template <>
 class JsEngine<JSValueRef> {
-  std::unique_ptr<JscEngineImpl> impl_{std::make_unique<JscEngineImpl>()};
-  inline static std::unordered_map<JSContextRef, JsEngine<JSValueRef>*> engines{};
+  inline static std::mutex instanceMutex;
+  std::shared_ptr<JscEngineImpl> impl_{std::make_shared<JscEngineImpl>()};
+
+  JsEngine<JSValueRef>() = default;
 
 public:
-  JsEngine<JSValueRef>() { engines[impl_->getContext()] = this; }
+  static JsEngine<JSValueRef>& instance() {
+    std::lock_guard<std::mutex> lock(instanceMutex);
+    static JsEngine<JSValueRef> instance;
+    return instance;
+  }
 
-  ~JsEngine<JSValueRef>() { engines.erase(impl_->getContext()); }
+  static void setup() {
+    // a new JscEngineImpl object is already created in `instance()` or `shutdown()`
+  }
+  static void shutdown() {
+    auto& sharedInstance = instance();
 
-  JsEngine(const JsEngine&) = delete;
+    std::lock_guard<std::mutex> lock(instanceMutex);
+    sharedInstance.impl_ = std::make_shared<JscEngineImpl>();
+  }
+
+  ~JsEngine<JSValueRef>() = default;
+
+  JsEngine(const JsEngine&) = default;
   JsEngine(JsEngine&&) = delete;
-  JsEngine& operator=(const JsEngine& other) {
-    if (this != &other) {
-      impl_ = std::make_unique<JscEngineImpl>(*other.impl_);
-      engines[impl_->getContext()] = this;
-    }
-    return *this;
-  };
+  JsEngine& operator=(const JsEngine& other) = delete;
   JsEngine& operator=(JsEngine&&) = delete;
 
-  static JsEngine<JSValueRef>& getEngineByContext(JSContextRef ctx) {
-    auto it = engines.find(ctx);
-    if (it == engines.end()) {
-      throw std::runtime_error("JsEngine<JSValueRef> not found");
-    }
-    return *it->second;
-  }
+  static JsEngine<JSValueRef>& getEngineByContext(JSContextRef ctx) { return instance(); }
 
   // NOLINTBEGIN(readability-convert-member-functions-to-static)
   int64_t getMemoryUsage() {
@@ -43,8 +49,8 @@ public:
   }
 
   [[nodiscard]] bool isException(const JSValueRef& value) const {
-    // the thrown exception in `callFunction` and `newClassInstance` was set to `lastException_`
-    return impl_->getLastException() != nullptr;
+    // nullptr is returned in `callFunction` and `newClassInstance` if an exception is thrown
+    return value == nullptr;
   }
 
   [[nodiscard]] JSValueRef duplicateValue(const JSValueRef& value) const {
@@ -197,10 +203,6 @@ public:
     return JSValueIsUndefined(impl_->getContext(), value);
   }
 
-  void logErrorStackTrace(const JSValueRef& exception, const char* file, int line) const {
-    impl_->logErrorStackTrace(exception, file, line);
-  }
-
   template <typename T_RIME_TYPE>
   void registerType() {
     using WRAPPER = JsWrapper<T_RIME_TYPE, JSValueRef>;
@@ -261,6 +263,12 @@ public:
   }
 
   void setBaseFolderPath(const char* absolutePath) { impl_->setBaseFolderPath(absolutePath); }
+
+  JSObjectRef createInstanceOfModule(const char* moduleName,
+                                     const std::vector<JSValueRef>& args,
+                                     const std::string& mainFuncName) {
+    return impl_->createInstanceOfModule(moduleName, args);
+  }
 
   JSValueRef loadJsFile(const char* fileName) { return impl_->loadJsFile(fileName); }
 

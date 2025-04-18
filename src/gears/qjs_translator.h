@@ -7,7 +7,7 @@
 #include <rime/context.h>
 #include <rime/translation.h>
 
-#include "engines/js_macros.h"
+#include "engines/common.h"
 #include "qjs_component.hpp"
 #include "qjs_module.h"
 

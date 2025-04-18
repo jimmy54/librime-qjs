@@ -1,5 +1,3 @@
-var __defProp = Object.defineProperty
-var __name = (target, value) => __defProp(target, 'name', { value, configurable: true })
 var menus = [
   ['\u5E2E\u52A9\u83DC\u5355', '\u2192 /help'],
   ['\u5FEB\u6377\u6307\u4EE4', '\u2192 /deploy /screenshot'],
@@ -20,9 +18,10 @@ var menus = [
     '\u62FC\u97F3\u4E0A\u5C4F',
     '\u2192 /p* \u7EC4\u5408\u952E\uFF0C\u5982`pinyin/py1`\u4E0A\u5C4F`p\u012Bn y\u012Bn`',
   ],
-  ['\u4E8C\u4E09\u5019\u9009', "\u2192 ;'\u53F7\u952E"],
-  ['\u4E0A\u4E0B\u7FFB\u9875', '\u2192 ,.\u53F7\u952E'],
-  ['\u4EE5\u8BCD\u5B9A\u5B57', '\u2192 []\u53F7\u952E'],
+  [
+    '\u5FEB\u6377\u6309\u952E',
+    "\u2192 \u4E8C\u4E09\u5019\u9009 ;' \xA7 \u4E0A\u4E0B\u7FFB\u9875 ,. \xA7 \u4EE5\u8BCD\u5B9A\u5B57 []",
+  ],
   ['\u5355\u8BCD\u5927\u5199', '\u2192 AZ \u5927\u5199\u5B57\u6BCD\u89E6\u53D1'],
   ['\u65E5\u671F\u65F6\u95F4', '\u2192 rq | sj | xq | dt | ts | nl'],
   [
@@ -30,10 +29,12 @@ var menus = [
     '\u2192 R\u5FEB\u6377\u952E\uFF0C\u5982`R666`\u5019\u9009`\u516D\u767E\u516D\u5341\u516D\u5143\u6574`',
   ],
 ]
-var _HelpMenuTranslator = class _HelpMenuTranslator {
+var HelpMenuTranslator = class {
   constructor(env) {
     console.log('help_menu.js init')
-    if (env.os.name !== 'macOS') {
+    if (env.os.name === 'macOS') {
+      menus.splice(2, 0, ['\u8BCD\u5178\u6E05\u9664', '\u2192 Fn + \u21E7 + \u232B \u7EC4\u5408\u952E'])
+    } else {
       const idx = menus.findIndex(([text, comment]) => text === '\u5FEB\u6377\u6307\u4EE4')
       menus.splice(idx, 1)
     }
@@ -53,6 +54,4 @@ var _HelpMenuTranslator = class _HelpMenuTranslator {
     return ret
   }
 }
-__name(_HelpMenuTranslator, 'HelpMenuTranslator')
-var HelpMenuTranslator = _HelpMenuTranslator
 export { HelpMenuTranslator }

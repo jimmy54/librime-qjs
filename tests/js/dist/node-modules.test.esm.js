@@ -10925,10 +10925,14 @@ assertEquals(format(today, 'yyyy-MM-dd'), '2025-03-17', 'should get correct date
 var tomorrow = addDays(today, 1)
 assertEquals(format(tomorrow, 'yyyy-MM-dd'), '2025-03-18', 'should get correct tomorrow')
 var dt = Solar.fromYmdHms(2025, 3, 17, 11, 20, 0)
+console.log(dt.toFullString())
 assertEquals(
   dt.toFullString(),
   '2025-03-17 11:20:00 \u661F\u671F\u4E00 \u53CC\u9C7C\u5EA7',
   'should get correct date time',
 )
 var expectedLunarText = `\u4E8C\u3007\u4E8C\u4E94\u5E74\u4E8C\u6708\u5341\u516B \u4E59\u5DF3(\u86C7)\u5E74 \u5DF1\u536F(\u5154)\u6708 \u4E59\u9149(\u9E21)\u65E5 \u5348(\u9A6C)\u65F6 \u7EB3\u97F3[\u8986\u706F\u706B \u57CE\u5934\u571F \u6CC9\u4E2D\u6C34 \u6768\u67F3\u6728] \u661F\u671F\u4E00 \u5317\u65B9\u7384\u6B66 \u661F\u5BBF[\u5371\u6708\u71D5](\u51F6) \u5F6D\u7956\u767E\u5FCC[\u4E59\u4E0D\u683D\u690D\u5343\u682A\u4E0D\u957F \u9149\u4E0D\u4F1A\u5BA2\u9189\u5750\u98A0\u72C2] \u559C\u795E\u65B9\u4F4D[\u4E7E](\u897F\u5317) \u9633\u8D35\u795E\u65B9\u4F4D[\u5764](\u897F\u5357) \u9634\u8D35\u795E\u65B9\u4F4D[\u574E](\u6B63\u5317) \u798F\u795E\u65B9\u4F4D[\u5764](\u897F\u5357) \u8D22\u795E\u65B9\u4F4D[\u826E](\u4E1C\u5317) \u51B2[(\u5DF1\u536F)\u5154] \u715E[\u4E1C]`
+console.log(dt.getLunar().toFullString())
 assertEquals(dt.getLunar().toFullString(), expectedLunarText, 'should get correct lunar text')
+var DummyClass = class {}
+export { DummyClass }

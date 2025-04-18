@@ -31,7 +31,7 @@ SETUP_JS_ENGINES(QuickJSTranslatorTest);
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
 TYPED_TEST(QuickJSTranslatorTest, QueryTranslation) {
-  auto jsEngine = newOrShareEngine<TypeParam>();
+  auto& jsEngine = JsEngine<TypeParam>::instance();
 
   the<Engine> engine(Engine::Create());
   ASSERT_TRUE(engine->schema() != nullptr);
@@ -81,7 +81,7 @@ TYPED_TEST(QuickJSTranslatorTest, QueryTranslation) {
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
 TYPED_TEST(QuickJSTranslatorTest, EmptyResult) {
-  auto jsEngine = newOrShareEngine<TypeParam>();
+  auto& jsEngine = JsEngine<TypeParam>::instance();
 
   the<Engine> engine(Engine::Create());
   ASSERT_TRUE(engine->schema() != nullptr);

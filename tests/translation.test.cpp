@@ -2,11 +2,9 @@
 #include <rime/candidate.h>
 #include <rime/translation.h>
 
-#include "engines/engine_manager.h"
 #include "environment.h"
 #include "fake_translation.hpp"
 #include "qjs_translation.h"
-#include "qjs_types.h"
 #include "test_switch.h"
 
 using namespace rime;
@@ -26,7 +24,7 @@ protected:
 SETUP_JS_ENGINES(QuickJSTranslationTest);
 
 TYPED_TEST(QuickJSTranslationTest, Initialize) {
-  auto jsEngine = newOrShareEngine<TypeParam>();
+  auto& jsEngine = JsEngine<TypeParam>::instance();
   auto translation = this->createMockTranslation();
   Environment env(nullptr, "test");
   auto qjsTranslation =
@@ -52,8 +50,7 @@ TYPED_TEST(QuickJSTranslationTest, FilterCandidates) {
         }
     )";
 
-  auto jsEngine = newOrShareEngine<TypeParam>();
-  registerTypesToJsEngine(jsEngine);
+  auto& jsEngine = JsEngine<TypeParam>::instance();
   auto result = jsEngine.eval(jsCode, "<input>");
   auto global = jsEngine.getGlobalObject();
   auto filterFunc = jsEngine.getObjectProperty(jsEngine.toObject(global), "filterCandidates");
@@ -77,7 +74,7 @@ TYPED_TEST(QuickJSTranslationTest, FilterCandidates) {
 }
 
 TYPED_TEST(QuickJSTranslationTest, EmptyTranslation) {
-  auto jsEngine = newOrShareEngine<TypeParam>();
+  auto& jsEngine = JsEngine<TypeParam>::instance();
   auto translation = New<FakeTranslation>();
   Environment env(nullptr, "test");
   auto qjsTranslation =
@@ -88,9 +85,7 @@ TYPED_TEST(QuickJSTranslationTest, EmptyTranslation) {
 }
 
 TYPED_TEST(QuickJSTranslationTest, NoReturnValueShouldNotCrash) {
-  auto jsEngine = newOrShareEngine<TypeParam>();
-  registerTypesToJsEngine(jsEngine);
-
+  auto& jsEngine = JsEngine<TypeParam>::instance();
   auto translation = this->createMockTranslation();
 
   const char* jsCode = "function noReturn() { }";

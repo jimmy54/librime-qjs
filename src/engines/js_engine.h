@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <string>
+#include <vector>
 
 #include "engines/js_exception.h"
 #include "engines/type_map.h"
@@ -20,6 +21,9 @@ public:
   // return the memory usaged by the js engine in bytes, -1 if not available
   int64_t getMemoryUsage();
 
+  T_JS_OBJECT createInstanceOfModule(const char* moduleName,
+                                     std::vector<T_JS_VALUE>& args,
+                                     const std::string& mainFuncName);
   T_JS_VALUE loadJsFile(const char* fileName);
   T_JS_VALUE getJsClassHavingMethod(const T_JS_VALUE& container, const char* methodName);
   T_JS_VALUE getMethodOfClassOrInstance(T_JS_VALUE jsClass,
@@ -73,10 +77,6 @@ public:
   bool isUndefined(const T_JS_VALUE& value);
   bool isException(const T_JS_VALUE& value);
   T_JS_OBJECT throwError(JsErrorType errorType, const std::string& message);
-
-  void logErrorStackTrace(const T_JS_OBJECT& exception,
-                          const char* file = __FILE_NAME__,
-                          int line = __LINE__);
 
   T_JS_VALUE duplicateValue(const T_JS_VALUE& value);
 

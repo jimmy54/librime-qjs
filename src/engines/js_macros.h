@@ -2,7 +2,6 @@
 
 #include <quickjs.h>
 
-#include "engines/engine_manager.h"  // IWYU pragma: export
 #include "engines/for_each_macros.h"
 #include "engines/quickjs/quickjs_engine.h"  // IWYU pragma: export
 

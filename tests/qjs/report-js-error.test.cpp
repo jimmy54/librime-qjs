@@ -4,7 +4,6 @@
 #include <string>
 
 #include "../test_switch.h"
-#include "engines/engine_manager.h"
 
 std::string trim(const std::string& str) {
   const auto start = str.find_first_not_of(" \t\n\r");
@@ -22,7 +21,7 @@ class QuickJSErrorTest : public ::testing::Test {};
 SETUP_JS_ENGINES(QuickJSErrorTest);
 
 TYPED_TEST(QuickJSErrorTest, TestJsRuntimeError) {
-  auto jsEngine = newOrShareEngine<JSValue>();
+  auto jsEngine = JsEngine<JSValue>::instance();
   auto module = jsEngine.loadJsFile("runtime-error.js");
   auto globalObj = jsEngine.getGlobalObject();
   auto func = jsEngine.getObjectProperty(globalObj, "funcWithRuntimeError");

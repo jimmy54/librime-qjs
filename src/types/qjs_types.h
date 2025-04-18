@@ -26,10 +26,6 @@ void registerTypesToJsEngine(JsEngine<T_JS_VALUE>& engine) {
   DLOG(INFO) << "[qjs] registering rime types to the " << TypeMap<T_JS_VALUE>::engineName
              << " engine...";
 
-  std::filesystem::path path(rime_get_api()->get_user_data_dir());
-  path.append("js");
-  engine.setBaseFolderPath(path.generic_string().c_str());
-
   // expose all types
   engine.template registerType<rime::Candidate>();
   engine.template registerType<rime::Trie>();

@@ -2,9 +2,10 @@
 
 #include <glog/logging.h>
 #include <string>
+#include <vector>
 
-#include "engines/engine_manager.h"
-#include "qjs_types.h"
+#include "engines/common.h"
+#include "types/environment.h"
 
 template <typename T_JS_VALUE>
 class QjsModule {
@@ -14,47 +15,21 @@ protected:
   [[nodiscard]] JsEngine<T_JS_VALUE>* getJsEngine() { return &jsEngine_; }
 
   QjsModule(const std::string& nameSpace, Environment* environment, const char* mainFuncName)
-      : namespace_(nameSpace), jsEngine_(newOrShareEngine<T_JS_VALUE>()) {
-    // Each module requires its own JavaScriptCore context to prevent
-    // naming conflicts when loading multiple JavaScript files.
-    // As a result, we must register types for each new engine instance.
-    registerTypesToJsEngine(jsEngine_);
-
-    // gets a module for quickjs, exception if failed
-    // gets globalThis for javascriptcore, nullptr if failed
-    T_JS_VALUE container = jsEngine_.loadJsFile(nameSpace.c_str());
-    if (!jsEngine_.isObject(container)) {
-      jsEngine_.freeValue(container);
-      LOG(ERROR) << "[qjs] Failed to load plugin: " << mainFuncName << '@' << nameSpace;
-      return;
-    }
-
-    T_JS_VALUE jsClass = jsEngine_.getJsClassHavingMethod(container, mainFuncName);
-    if (!jsEngine_.isObject(jsClass)) {
-      jsEngine_.freeValue(jsClass);
-      LOG(ERROR) << "[qjs] No exported class having `" << mainFuncName << "` function in "
-                 << nameSpace;
-      return;
-    }
-
-    auto objClass = jsEngine_.toObject(jsClass);
+      : namespace_(nameSpace), jsEngine_(JsEngine<T_JS_VALUE>::instance()) {
     auto jsEnvironment = jsEngine_.wrap(environment);
-    T_JS_VALUE args[] = {jsEnvironment};
-    instance_ = jsEngine_.newClassInstance(objClass, 1, static_cast<T_JS_VALUE*>(args));
-    if (jsEngine_.isException(instance_)) {
+    std::vector<T_JS_VALUE> args = {jsEnvironment};
+    instance_ = jsEngine_.createInstanceOfModule(namespace_.c_str(), args, mainFuncName);
+    jsEngine_.freeValue(jsEnvironment);
+
+    if (!jsEngine_.isObject(instance_)) {
+      jsEngine_.freeValue(instance_);
       LOG(ERROR) << "[qjs] Error creating an instance of the exported class in " << nameSpace;
-      jsEngine_.logErrorStackTrace(instance_, __FILE_NAME__, __LINE__);
-      jsEngine_.freeValue(jsClass, jsEnvironment);
       return;
     }
-    DLOG(INFO) << "[qjs] constructor function executed successfully in " << nameSpace;
 
-    mainFunc_ =
-        jsEngine_.toObject(jsEngine_.getMethodOfClassOrInstance(objClass, instance_, mainFuncName));
-    finalizer_ =
-        jsEngine_.toObject(jsEngine_.getMethodOfClassOrInstance(objClass, instance_, "finalizer"));
+    mainFunc_ = jsEngine_.toObject(jsEngine_.getObjectProperty(instance_, mainFuncName));
+    finalizer_ = jsEngine_.toObject(jsEngine_.getObjectProperty(instance_, "finalizer"));
 
-    jsEngine_.freeValue(container, jsClass, jsEnvironment);
     jsEngine_.protectFromGC(instance_, mainFunc_, finalizer_);
 
     isLoaded_ = true;
@@ -88,7 +63,7 @@ private:
 
   bool isLoaded_ = false;
 
-  JsEngine<T_JS_VALUE> jsEngine_;
+  JsEngine<T_JS_VALUE>& jsEngine_;
 
   T_JS_OBJECT instance_;
   T_JS_OBJECT mainFunc_;

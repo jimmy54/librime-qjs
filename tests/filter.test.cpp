@@ -14,7 +14,7 @@ using namespace rime;
 
 template <typename T>
 class QuickJSFilterTest : public ::testing::Test {
-protected:
+public:
   static an<Translation> createMockTranslation() {
     auto translation = New<FakeTranslation>();
     translation->append(New<SimpleCandidate>("mock", 0, 1, "text1", "comment1"));
@@ -26,8 +26,8 @@ protected:
 
 SETUP_JS_ENGINES(QuickJSFilterTest);
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables, readability-function-cognitive-complexity)
-TYPED_TEST(QuickJSFilterTest, ApplyFilter) {
+template <typename T>
+static void testFilter() {
   the<Engine> engine(Engine::Create());
   ASSERT_TRUE(engine->schema() != nullptr);
 
@@ -38,8 +38,8 @@ TYPED_TEST(QuickJSFilterTest, ApplyFilter) {
 
   Ticket ticket(engine.get(), "filter", "qjs_filter@filter_test");
   auto env = std::make_unique<Environment>(engine.get(), "filter_test");
-  auto filter = New<QuickJSFilter<TypeParam>>(ticket, env.get());
-  auto translation = this->createMockTranslation();
+  auto filter = New<QuickJSFilter<T>>(ticket, env.get());
+  auto translation = QuickJSFilterTest<T>::createMockTranslation();
   auto filtered = filter->apply(translation, env.get());
   ASSERT_TRUE(filtered != nullptr);
 
@@ -52,4 +52,21 @@ TYPED_TEST(QuickJSFilterTest, ApplyFilter) {
   candidate = filtered->Peek();
   ASSERT_TRUE(candidate == nullptr);
   ASSERT_FALSE(filtered->Next());
+}
+
+TYPED_TEST(QuickJSFilterTest, ApplyFilter) {
+  testFilter<TypeParam>();
+}
+
+TYPED_TEST(QuickJSFilterTest, TestRestartEngine) {
+  JsEngine<TypeParam>::shutdown();
+
+  std::filesystem::path path(rime_get_api()->get_user_data_dir());
+  path.append("js");
+
+  auto& engine = JsEngine<TypeParam>::instance();
+  registerTypesToJsEngine(engine);
+  engine.setBaseFolderPath(path.generic_string().c_str());
+
+  testFilter<TypeParam>();
 }
