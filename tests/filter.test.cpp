@@ -27,6 +27,7 @@ public:
 SETUP_JS_ENGINES(QuickJSFilterTest);
 
 template <typename T>
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 static void testFilter() {
   the<Engine> engine(Engine::Create());
   ASSERT_TRUE(engine->schema() != nullptr);

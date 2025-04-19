@@ -15,19 +15,21 @@
 #include "engines/jscode_utils.hpp"
 #include "patch/quickjs/node_module_loader.h"
 
-static void logJsError(JSContext* ctx, const char* prefix = "") {
+void QuickJSCodeLoader::logJsError(JSContext* ctx, const char* prefix, const char* file, int line) {
   JSValue exception = JS_GetException(ctx);
   const char* message = JS_ToCString(ctx, exception);
-  LOG(ERROR) << "[qjs]" << prefix << ": " << message;
+  google::LogMessage(file, line, google::GLOG_ERROR).stream()
+      << "[qjs]" << prefix << ' ' << message;
   JS_FreeCString(ctx, message);  // Free the C string
 
   JSValue stack = JS_GetPropertyStr(ctx, exception, "stack");
   const char* stackTrace = JS_ToCString(ctx, stack);
   if (stackTrace != nullptr && *stackTrace != '\0') {
-    LOG(ERROR) << "[qjs] JS stack trace: " << stackTrace;
+    google::LogMessage(file, line, google::GLOG_ERROR).stream()
+        << "[qjs] JS stack trace: " << stackTrace;
     JS_FreeCString(ctx, stackTrace);  // Free the C string
   } else {
-    LOG(ERROR) << "[qjs] JS stack trace is null.";
+    google::LogMessage(file, line, google::GLOG_ERROR).stream() << "[qjs] JS stack trace is null.";
   }
 
   JS_FreeValue(ctx, stack);
@@ -37,14 +39,14 @@ static void logJsError(JSContext* ctx, const char* prefix = "") {
 JSValue QuickJSCodeLoader::loadJsModuleToNamespace(JSContext* ctx, const char* moduleName) {
   JSValue funcObj = loadJsModule(ctx, moduleName);
   if (JS_IsException(funcObj)) {
-    logJsError(ctx, "Failed to load js module");
+    logJsError(ctx, "Failed to load js module:");
     return funcObj;
   }
 
   auto* md = reinterpret_cast<JSModuleDef*>(JS_VALUE_GET_PTR(funcObj));
   JSValue evalResult = JS_EvalFunction(ctx, funcObj);
   if (JS_IsException(evalResult)) {
-    logJsError(ctx, "Failed to evaluate the module");
+    logJsError(ctx, "Failed to evaluate the module:");
     return evalResult;
   }
 
@@ -66,7 +68,7 @@ JSValue QuickJSCodeLoader::createInstanceOfEsmBundledModule(JSContext* ctx,
                                                             const std::string& mainFuncName) {
   auto module = loadJsModuleToNamespace(ctx, moduleName.c_str());
   if (JS_IsException(module)) {
-    logJsError(ctx, "Failed to load js module");
+    logJsError(ctx, "Failed to load js module:");
     return module;
   }
 

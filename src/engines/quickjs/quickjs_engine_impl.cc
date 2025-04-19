@@ -93,22 +93,7 @@ JSValue QuickJsEngineImpl::getMethodOfClassOrInstance(JSValue jsClass,
 void QuickJsEngineImpl::logErrorStackTrace(const JSValue& exception,
                                            const char* file,
                                            int line) const {
-  JSValue actualException = JS_GetException(context_);
-  std::string message = toStdString(actualException);
-  google::LogMessage(file, line, google::GLOG_ERROR).stream() << "[qjs] " << message;
-
-  JSValue stack = JS_GetPropertyStr(context_, actualException, "stack");
-  std::string stackTrace = toStdString(stack);
-  if (stackTrace.empty()) {
-    google::LogMessage(file, line, google::GLOG_ERROR).stream()
-        << "[qjs] " << "\t\tJS stack trace is null.";
-  } else {
-    google::LogMessage(file, line, google::GLOG_ERROR).stream()
-        << "[qjs] " << "\t\tJS stack trace: " << stackTrace;
-  }
-
-  JS_FreeValue(context_, stack);
-  JS_FreeValue(context_, exception);
+  QuickJSCodeLoader::logJsError(context_, "", file, line);
 }
 
 JSValue QuickJsEngineImpl::createInstanceOfModule(const char* moduleName,

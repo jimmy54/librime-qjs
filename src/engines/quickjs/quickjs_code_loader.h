@@ -23,4 +23,8 @@ public:
                                                 JSValue moduleObj,
                                                 const char* className);
   static JSValue getMethodByNameInClass(JSContext* ctx, JSValue classObj, const char* methodName);
+  static void logJsError(JSContext* ctx,
+                         const char* prefix = ": ",
+                         const char* file = __FILE__,
+                         int line = __LINE__);
 };

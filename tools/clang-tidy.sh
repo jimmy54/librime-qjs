@@ -22,8 +22,8 @@ options="-p ${root}/build \
     --system-headers=0 \
     --use-color \
     -extra-arg=-I${root}/src \
+    -extra-arg=-I${root}/src/engines \
     -extra-arg=-I${root}/src/gears \
-    -extra-arg=-I${root}/src/helpers \
     -extra-arg=-I${root}/src/types \
     -extra-arg=-I${root}/src/misc \
     -extra-arg=-I${root}/src/patch/quickjs \
