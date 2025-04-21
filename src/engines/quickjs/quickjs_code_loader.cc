@@ -103,7 +103,7 @@ JSValue QuickJSCodeLoader::createInstanceOfEsmBundledModule(JSContext* ctx,
     return JS_ThrowPlainError(ctx, "%s", message.c_str());
   }
 
-  LOG(INFO) << "[qjs] " << "Created an instance of " << moduleName;
+  DLOG(INFO) << "[qjs] Created an instance of " << moduleName;
   return instance;
 }
 
@@ -240,7 +240,6 @@ JSValue QuickJSCodeLoader::getExportedClassHavingMethodNameInModule(JSContext* c
     for (uint32_t i = 0; i < propCount; i++) {
       JSValue propVal = JS_GetProperty(ctx, moduleObj, props[i].atom);
       const char* propName = JS_AtomToCString(ctx, props[i].atom);
-      LOG(INFO) << "[qjs] " << propName << " " << JS_IsObject(propVal);
 
       bool found = false;
       if (JS_IsObject(propVal)) {

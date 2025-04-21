@@ -33,7 +33,8 @@ public:
       if constexpr (std::is_same_v<T_JS_VALUE, JSValue>) {
         engine = "qjs";
       }
-      LOG(INFO) << "[benchmark] all " << engine << " filters run for " << std::setw(3)
+      constexpr int PADDING = 3;
+      LOG(INFO) << "[benchmark] all " << engine << " filters run for " << std::setw(PADDING)
                 << duration.count()
                 << " ms, with input = " << environment->getEngine()->context()->input();
     }

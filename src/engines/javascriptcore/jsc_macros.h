@@ -4,6 +4,7 @@
 #include <JavaScriptCore/JavaScriptCore.h>
 #include "engines/javascriptcore/javascriptcore_engine.h"  // IWYU pragma: export
 
+// NOLINTBEGIN(cppcoreguidelines-macro-usage) function-like macro 'EXPORT_CLASS_IMPL' used; consider a 'constexpr' template function
 #define DEFINE_GETTER_IMPL(T_RIME_TYPE, propertieyName, statement, unwrap)                       \
                                                                                                  \
   DEFINE_GETTER_IMPL_QJS(T_RIME_TYPE, propertieyName, statement, unwrap);                        \
@@ -123,7 +124,6 @@
   WITHOUT_FINALIZER_QJS;  \
   inline static typename TypeMap<JSValueRef>::FinalizerFunctionPionterType finalizerJsc = nullptr;
 
-// NOLINTBEGIN(cppcoreguidelines-macro-usage) variadic macro 'WITH_PROPERTIES' used; consider using a 'constexpr' variadic template function
 #define DEFINE_PROPERTY_JSC(name) \
   {#name, get_##name##Jsc, set_##name##Jsc, kJSPropertyAttributeNone},
 

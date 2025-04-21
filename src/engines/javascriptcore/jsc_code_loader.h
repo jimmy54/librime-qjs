@@ -33,6 +33,5 @@ private:
   static std::pair<std::string, std::filesystem::path> loadModuleSource(
       JSContextRef ctx,
       const std::string& baseFolderPath,
-      const std::string& moduleName,
-      JSValueRef* exception);
+      const std::string& moduleName);
 };

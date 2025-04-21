@@ -19,10 +19,10 @@ static void replaceNewClassInstanceStatementInPlace(std::string& source,
     lastMatch = it;
   }
   if (lastMatch == std::sregex_iterator()) {
-    LOG(ERROR) << "[jsc] " << "replaceNewClassInstanceStatementInPlace: no match found";
+    LOG(ERROR) << "[jsc] replaceNewClassInstanceStatementInPlace: no match found";
     return;
   }
-  LOG(INFO) << "[jsc] " << "found class: " << lastMatch->str(1);
+  DLOG(INFO) << "[jsc] found class: " << lastMatch->str(1);
 
   std::string className = lastMatch->str(1);
   static int classIndex = 0;

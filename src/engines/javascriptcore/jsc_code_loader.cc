@@ -13,8 +13,7 @@
 std::pair<std::string, std::filesystem::path> JscCodeLoader::loadModuleSource(
     JSContextRef ctx,
     const std::string& baseFolderPath,
-    const std::string& moduleName,
-    JSValueRef* exception) {
+    const std::string& moduleName) {
   std::string possibleFileNames[] = {"dist/" + moduleName + ".iife.js",
                                      "dist/" + moduleName + ".js", moduleName + ".iife.js",
                                      moduleName + ".js"};
@@ -32,10 +31,6 @@ std::pair<std::string, std::filesystem::path> JscCodeLoader::loadModuleSource(
     return {source, filePath};
   }
 
-  std::string message = "Failed to open file for module: " + moduleName;
-  LOG(ERROR) << "[jsc] " << message;
-  JSValueRef err = JSValueMakeString(ctx, JscStringRAII(message.c_str()));
-  exception = &err;
   return {"", std::filesystem::path()};
 }
 
@@ -44,8 +39,11 @@ JSObjectRef JscCodeLoader::createInstanceOfIifeBundledModule(JSContextRef ctx,
                                                              const std::string& moduleName,
                                                              const std::vector<JSValueRef>& args,
                                                              JSValueRef* exception) {
-  auto [source, filePath] = loadModuleSource(ctx, baseFolderPath, moduleName, exception);
+  auto [source, filePath] = loadModuleSource(ctx, baseFolderPath, moduleName);
   if (source.empty()) {
+    std::string message = "Failed to open file for module: " + moduleName;
+    JSValueRef err = JSValueMakeString(ctx, JscStringRAII(message.c_str()));
+    exception = &err;
     return nullptr;
   }
 
@@ -86,8 +84,11 @@ JSValueRef JscCodeLoader::loadEsmBundledModuleToGlobalThis(JSContextRef ctx,
                                                            const std::string& baseFolderPath,
                                                            const std::string& moduleName,
                                                            JSValueRef* exception) {
-  auto [source, filePath] = loadModuleSource(ctx, baseFolderPath, moduleName, exception);
+  auto [source, filePath] = loadModuleSource(ctx, baseFolderPath, moduleName);
   if (source.empty()) {
+    std::string message = "Failed to open file for module: " + moduleName;
+    JSValueRef err = JSValueMakeString(ctx, JscStringRAII(message.c_str()));
+    exception = &err;
     return nullptr;
   }
 

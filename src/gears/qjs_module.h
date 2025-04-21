@@ -36,6 +36,7 @@ protected:
     jsEngine.protectFromGC(instance_, mainFunc_, finalizer_);
 
     isLoaded_ = true;
+    LOG(INFO) << "[qjs] created an instance of the exported class in " << nameSpace;
   }
 
   ~QjsModule() {
