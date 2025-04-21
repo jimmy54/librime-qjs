@@ -16,6 +16,7 @@ Experience a vast JavaScript plugin ecosystem for the Rime Input Method Engine, 
   - 💪 Enjoy the latest ECMAScript features: regular expressions, Unicode, ESM, big numbers, and more!
   - 🚄 Blazing-fast performance: all plugins respond within milliseconds.
   - 🪶 Incredibly small memory footprint: <20MB!
+  - 🍎 Exponential speed improvements delivered by JavaScriptCore on macOS/iOS!
 - 📚 Custom-built Trie structure for large dictionaries.
   - 💥 Lightning-fast dictionary loading: 110,000-entry [Chinese-English dictionary](https://www.mdbg.net/chinese/dictionary?page=cc-cedict) loads in just 20ms after binary conversion.
   - 🎯 Swift exact lookups: finding English definitions for 200 Chinese words in under 5ms.
@@ -27,17 +28,9 @@ Experience a vast JavaScript plugin ecosystem for the Rime Input Method Engine, 
   - ✅ Every Rime API thoroughly tested with [C++ tests](./tests/).
   - 🧪 JavaScript plugins? Test freely with qjs/nodejs/bun/deno using our [test suite](https://github.com/HuangJian/rime-frost/tree/hj/js/tests).
 
-## TODO
-
-- [ ] More JavaScript Engine Support (PR Welcome)
-  - [ ] JavaScriptCore on macOS/iOS
-    - Built-in on macOS/iOS systems
-    - Most performant JavaScript engine
-  - [ ] V8 engine support via nodejs/deno
-
-## [JavaScript Plugin Development Guild](./plugin-dev.en.md)
-
-## libRime-qjs Development
-
-- [build on macOS](./build-macos.md)
-- [build on Linux](./build-linux.md)
+## Documentation
+- [JavaScript Plugin Development Guide@quickjs](./doc/plugin-dev.en.md)
+- [JavaScript Plugin Development Guide@javascriptcore](./doc/plugin-dev-with-jsc.md)
+- [libRime-qjs Development Guide@macOS](./doc/build-macos.md)
+- [libRime-qjs Development Guide@Windows](./doc/build-windows.md)
+- [libRime-qjs Development Guide@Linux](./doc/build-linux.md)

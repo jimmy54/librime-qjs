@@ -16,6 +16,7 @@
   - 💪 畅享最新 ECMAScript 特性：正则表达式、Unicode、ESM、big number，应有尽有！
   - 🚄 运行速度快得惊人：所有插件均毫秒级响应。
   - 🪶 内存占用小得不可思议：<20MB！
+  - 🍎 macOS/iOS 尊享极致性能：脚本引擎升级为 JavaScriptCore，速度翻番再翻番！
 - 📚 为大型词典量身打造的 Trie 结构。
   - 💥 词典加载快如闪电：11 万词条的[汉译英词典](https://www.mdbg.net/chinese/dictionary?page=cc-cedict)，转为二进制格式后，加载完成仅需 20ms。
   - 🎯 精确查找速如箭矢：11 万词条的汉译英词典，精确查找 200 个汉语词语的英文释义不到 5ms。
@@ -27,18 +28,9 @@
   - ✅ 每个 Rime API 都经过严格的 [C++ 测试](./tests/)。
   - 🧪 JavaScript 插件？随心所欲地用 qjs/nodejs/bun/deno [执行测试](https://github.com/HuangJian/rime-frost/tree/hj/js/tests)。
 
-## TODO
-
-- [ ] 更多 JavaScript 引擎支持（PR Welcome）
-  - [ ] JavaScriptCore on macOS/iOS
-    - macOS/iOS 系统内置
-    - 性能最优的 JavaScript 引擎
-  - [ ] 基于已安装的 nodejs/deno 使用 V8 引擎
-
-## [JavaScript 插件开发指南](./doc/plugin-dev.cn.md)
-
-
-## libRime-qjs 开发说明
-
-- [build on macOS](./doc/build-macos.md)
-- [build on Linux](./doc/build-linux.md)
+## 文档
+- [JavaScript 插件开发指南@quickjs](./doc/plugin-dev.cn.md)
+- [JavaScript 插件开发指南@javascriptcore](./doc/plugin-dev-with-jsc.md)
+- [libRime-qjs 开发说明@macOS](./doc/build-macos.md)
+- [libRime-qjs 开发说明@Windows](./doc/build-windows.md)
+- [libRime-qjs 开发说明@Linux](./doc/build-linux.md)
