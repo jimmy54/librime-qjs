@@ -17,6 +17,12 @@
 
 void QuickJSCodeLoader::logJsError(JSContext* ctx, const char* prefix, const char* file, int line) {
   JSValue exception = JS_GetException(ctx);
+  if (JS_IsUninitialized(exception)) {
+    google::LogMessage(file, line, google::GLOG_ERROR).stream()
+        << "[qjs] the latest exception is already processed.";
+    return;
+  }
+
   const char* message = JS_ToCString(ctx, exception);
   google::LogMessage(file, line, google::GLOG_ERROR).stream()
       << "[qjs]" << prefix << ' ' << message;
@@ -39,14 +45,14 @@ void QuickJSCodeLoader::logJsError(JSContext* ctx, const char* prefix, const cha
 JSValue QuickJSCodeLoader::loadJsModuleToNamespace(JSContext* ctx, const char* moduleName) {
   JSValue funcObj = loadJsModule(ctx, moduleName);
   if (JS_IsException(funcObj)) {
-    logJsError(ctx, "Failed to load js module:");
+    logJsError(ctx, "Failed to load js module:", __FILE__, __LINE__);
     return funcObj;
   }
 
   auto* md = reinterpret_cast<JSModuleDef*>(JS_VALUE_GET_PTR(funcObj));
   JSValue evalResult = JS_EvalFunction(ctx, funcObj);
   if (JS_IsException(evalResult)) {
-    logJsError(ctx, "Failed to evaluate the module:");
+    logJsError(ctx, "Failed to evaluate the module:", __FILE__, __LINE__);
     return evalResult;
   }
 
@@ -68,7 +74,7 @@ JSValue QuickJSCodeLoader::createInstanceOfEsmBundledModule(JSContext* ctx,
                                                             const std::string& mainFuncName) {
   auto module = loadJsModuleToNamespace(ctx, moduleName.c_str());
   if (JS_IsException(module)) {
-    logJsError(ctx, "Failed to load js module:");
+    logJsError(ctx, "Failed to load js module:", __FILE__, __LINE__);
     return module;
   }
 
@@ -79,7 +85,7 @@ JSValue QuickJSCodeLoader::createInstanceOfEsmBundledModule(JSContext* ctx,
     JS_FreeValue(ctx, jsClass);
     std::string message =
         "No exported class having a `" + mainFuncName + "` function in " + moduleName;
-    logJsError(ctx, message.c_str());
+    logJsError(ctx, message.c_str(), __FILE__, __LINE__);
     return JS_ThrowPlainError(ctx, "%s", message.c_str());
   }
 
@@ -88,7 +94,7 @@ JSValue QuickJSCodeLoader::createInstanceOfEsmBundledModule(JSContext* ctx,
     JS_FreeValue(ctx, jsClass);
     JS_FreeValue(ctx, constructor);
     std::string message = "No `constructor` function in " + moduleName;
-    logJsError(ctx, message.c_str());
+    logJsError(ctx, message.c_str(), __FILE__, __LINE__);
     return JS_ThrowPlainError(ctx, "%s", message.c_str());
   }
 
@@ -99,7 +105,7 @@ JSValue QuickJSCodeLoader::createInstanceOfEsmBundledModule(JSContext* ctx,
 
   if (JS_IsException(instance)) {
     std::string message = "Failed to create an instance of " + moduleName;
-    logJsError(ctx, message.c_str());
+    logJsError(ctx, message.c_str(), __FILE__, __LINE__);
     return JS_ThrowPlainError(ctx, "%s", message.c_str());
   }
 
@@ -171,7 +177,7 @@ JSValue QuickJSCodeLoader::createInstanceOfIifeBundledModule(JSContext* ctx,
         JS_Eval(ctx, source.c_str(), source.size(), moduleName.c_str(), JS_EVAL_TYPE_MODULE);
     if (JS_IsException(evalResult)) {
       std::string message = "Failed to evaluate script: " + fileName;
-      logJsError(ctx, message.c_str());
+      logJsError(ctx, message.c_str(), __FILE__, __LINE__);
       return evalResult;
     }
 
