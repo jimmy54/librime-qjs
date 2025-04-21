@@ -16,13 +16,13 @@
 #include "patch/quickjs/node_module_loader.h"
 
 void QuickJSCodeLoader::logJsError(JSContext* ctx, const char* prefix, const char* file, int line) {
-  JSValue exception = JS_GetException(ctx);
-  if (JS_IsUninitialized(exception)) {
+  if (!JS_HasException(ctx)) {
     google::LogMessage(file, line, google::GLOG_ERROR).stream()
-        << "[qjs] the latest exception is already processed.";
+        << "[qjs] the latest exception might be already processed.";
     return;
   }
 
+  JSValue exception = JS_GetException(ctx);
   const char* message = JS_ToCString(ctx, exception);
   google::LogMessage(file, line, google::GLOG_ERROR).stream()
       << "[qjs]" << prefix << ' ' << message;
