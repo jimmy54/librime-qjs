@@ -66,7 +66,7 @@ TYPED_TEST(QuickJSFilterTest, TestRestartEngine) {
   path.append("js");
 
   auto& engine = JsEngine<TypeParam>::instance();
-  registerTypesToJsEngine(engine);
+  registerTypesToJsEngine<TypeParam>();
   engine.setBaseFolderPath(path.generic_string().c_str());
 
   testFilter<TypeParam>();

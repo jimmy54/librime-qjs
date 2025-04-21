@@ -4,53 +4,57 @@
 #include <string>
 #include <vector>
 
-#include "engines/common.h"
-#include "types/environment.h"
+#include "types/qjs_types.h"
 
 template <typename T_JS_VALUE>
 class QjsModule {
   using T_JS_OBJECT = typename TypeMap<T_JS_VALUE>::ObjectType;
 
 protected:
-  [[nodiscard]] JsEngine<T_JS_VALUE>* getJsEngine() { return &jsEngine_; }
-
   QjsModule(const std::string& nameSpace, Environment* environment, const char* mainFuncName)
-      : namespace_(nameSpace), jsEngine_(JsEngine<T_JS_VALUE>::instance()) {
-    auto jsEnvironment = jsEngine_.wrap(environment);
-    std::vector<T_JS_VALUE> args = {jsEnvironment};
-    instance_ = jsEngine_.createInstanceOfModule(namespace_.c_str(), args, mainFuncName);
-    jsEngine_.freeValue(jsEnvironment);
+      : namespace_(nameSpace) {
+    registerTypesToJsEngine<T_JS_VALUE>();
+    std::filesystem::path path(rime_get_api()->get_user_data_dir());
+    path.append("js");
+    auto& jsEngine = JsEngine<T_JS_VALUE>::instance();
+    jsEngine.setBaseFolderPath(path.generic_string().c_str());
 
-    if (!jsEngine_.isObject(instance_)) {
-      jsEngine_.freeValue(instance_);
+    auto jsEnvironment = jsEngine.wrap(environment);
+    std::vector<T_JS_VALUE> args = {jsEnvironment};
+    instance_ = jsEngine.createInstanceOfModule(namespace_.c_str(), args, mainFuncName);
+    jsEngine.freeValue(jsEnvironment);
+
+    if (!jsEngine.isObject(instance_)) {
+      jsEngine.freeValue(instance_);
       LOG(ERROR) << "[qjs] Error creating an instance of the exported class in " << nameSpace;
       return;
     }
 
-    mainFunc_ = jsEngine_.toObject(jsEngine_.getObjectProperty(instance_, mainFuncName));
-    finalizer_ = jsEngine_.toObject(jsEngine_.getObjectProperty(instance_, "finalizer"));
+    mainFunc_ = jsEngine.toObject(jsEngine.getObjectProperty(instance_, mainFuncName));
+    finalizer_ = jsEngine.toObject(jsEngine.getObjectProperty(instance_, "finalizer"));
 
-    jsEngine_.protectFromGC(instance_, mainFunc_, finalizer_);
+    jsEngine.protectFromGC(instance_, mainFunc_, finalizer_);
 
     isLoaded_ = true;
   }
 
   ~QjsModule() {
-    if (jsEngine_.isUndefined(finalizer_)) {
+    auto& jsEngine = JsEngine<T_JS_VALUE>::instance();
+    if (jsEngine.isUndefined(finalizer_)) {
       DLOG(INFO) << "[qjs] ~" << namespace_ << " no `finalizer` function exported.";
     } else if (isLoaded_) {
       DLOG(INFO) << "[qjs] running the finalizer function of " << namespace_;
-      T_JS_VALUE finalizerResult = jsEngine_.callFunction(finalizer_, instance_, 0, nullptr);
-      if (jsEngine_.isException(finalizerResult)) {
+      T_JS_VALUE finalizerResult = jsEngine.callFunction(finalizer_, instance_, 0, nullptr);
+      if (jsEngine.isException(finalizerResult)) {
         LOG(ERROR) << "[qjs] ~" << namespace_ << " Error running the finalizer function.";
       }
-      jsEngine_.freeValue(finalizerResult);
+      jsEngine.freeValue(finalizerResult);
     }
 
     if (isLoaded_) {
-      jsEngine_.unprotectFromGC(instance_, mainFunc_, finalizer_);
+      jsEngine.unprotectFromGC(instance_, mainFunc_, finalizer_);
     }
-    jsEngine_.freeValue(instance_, mainFunc_, finalizer_);
+    jsEngine.freeValue(instance_, mainFunc_, finalizer_);
   }
 
   [[nodiscard]] bool isLoaded() const { return isLoaded_; }
@@ -62,8 +66,6 @@ private:
   const std::string namespace_;
 
   bool isLoaded_ = false;
-
-  JsEngine<T_JS_VALUE>& jsEngine_;
 
   T_JS_OBJECT instance_;
   T_JS_OBJECT mainFunc_;

@@ -28,7 +28,7 @@ TYPED_TEST(QuickJSTranslationTest, Initialize) {
   auto translation = this->createMockTranslation();
   Environment env(nullptr, "test");
   auto qjsTranslation =
-      New<QuickJSTranslation<TypeParam>>(translation, &jsEngine, TypeParam(), TypeParam(), &env);
+      New<QuickJSTranslation<TypeParam>>(translation, TypeParam(), TypeParam(), &env);
   EXPECT_TRUE(qjsTranslation->exhausted());
   EXPECT_FALSE(qjsTranslation->Next());
   EXPECT_EQ(qjsTranslation->Peek(), nullptr);
@@ -57,7 +57,7 @@ TYPED_TEST(QuickJSTranslationTest, FilterCandidates) {
 
   Environment env(nullptr, "test");
   auto qjsTranslation =
-      New<QuickJSTranslation<TypeParam>>(translation, &jsEngine, TypeParam(), filterFunc, &env);
+      New<QuickJSTranslation<TypeParam>>(translation, TypeParam(), filterFunc, &env);
   auto candidate = qjsTranslation->Peek();
 
   ASSERT_TRUE(candidate != nullptr);
@@ -78,7 +78,7 @@ TYPED_TEST(QuickJSTranslationTest, EmptyTranslation) {
   auto translation = New<FakeTranslation>();
   Environment env(nullptr, "test");
   auto qjsTranslation =
-      New<QuickJSTranslation<TypeParam>>(translation, &jsEngine, TypeParam(), TypeParam(), &env);
+      New<QuickJSTranslation<TypeParam>>(translation, TypeParam(), TypeParam(), &env);
   EXPECT_TRUE(qjsTranslation->exhausted());
   EXPECT_FALSE(qjsTranslation->Next());
   EXPECT_EQ(qjsTranslation->Peek(), nullptr);
@@ -95,7 +95,7 @@ TYPED_TEST(QuickJSTranslationTest, NoReturnValueShouldNotCrash) {
 
   Environment env(nullptr, "test");
   auto qjsTranslation =
-      New<QuickJSTranslation<TypeParam>>(translation, &jsEngine, TypeParam(), filterFunc, &env);
+      New<QuickJSTranslation<TypeParam>>(translation, TypeParam(), filterFunc, &env);
   EXPECT_TRUE(qjsTranslation->exhausted());
   EXPECT_FALSE(qjsTranslation->Next());
   EXPECT_EQ(qjsTranslation->Peek(), nullptr);

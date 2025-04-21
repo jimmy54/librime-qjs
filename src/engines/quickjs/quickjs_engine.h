@@ -12,15 +12,16 @@
 template <>
 class JsEngine<JSValue> {
   inline static std::mutex instanceMutex;
+  inline static bool isInitialized = false;
 
-  std::shared_ptr<QuickJsEngineImpl> impl_{std::make_shared<QuickJsEngineImpl>()};
+  std::unique_ptr<QuickJsEngineImpl> impl_{std::make_unique<QuickJsEngineImpl>()};
 
-  JsEngine() = default;
+  JsEngine() { isInitialized = true; };
 
 public:
   ~JsEngine() = default;
 
-  JsEngine(const JsEngine& other) = default;
+  JsEngine(const JsEngine& other) = delete;
   JsEngine(JsEngine&&) = delete;
   JsEngine& operator=(const JsEngine& other) = delete;
   JsEngine& operator=(JsEngine&&) = delete;
@@ -34,13 +35,17 @@ public:
   static JsEngine<JSValue>& getEngineByContext(JSContext* ctx) { return instance(); }
 
   static void setup() {
-    // a new QuickJsEngineImpl object is already created in `instance()` or `shutdown()`
+    // the QuickJsEngineImpl object would be created in `instance()` or `shutdown()`
   }
   static void shutdown() {
+    if (!isInitialized) {
+      return;
+    }
+
     auto& sharedInstance = instance();
 
     std::lock_guard<std::mutex> lock(instanceMutex);
-    sharedInstance.impl_ = std::make_shared<QuickJsEngineImpl>();
+    sharedInstance.impl_ = std::make_unique<QuickJsEngineImpl>();
   }
 
   [[nodiscard]] int64_t getMemoryUsage() const { return impl_->getMemoryUsage(); }

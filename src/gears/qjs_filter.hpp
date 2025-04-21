@@ -42,8 +42,8 @@ public:
       return translation;
     }
 
-    return std::make_shared<QuickJSTranslation<T_JS_VALUE>>(
-        translation, this->getJsEngine(), this->getInstance(), this->getMainFunc(), environment);
+    return std::make_shared<QuickJSTranslation<T_JS_VALUE>>(translation, this->getInstance(),
+                                                            this->getMainFunc(), environment);
   }
 };
 

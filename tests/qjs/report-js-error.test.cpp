@@ -21,7 +21,7 @@ class QuickJSErrorTest : public ::testing::Test {};
 SETUP_JS_ENGINES(QuickJSErrorTest);
 
 TYPED_TEST(QuickJSErrorTest, TestJsRuntimeError) {
-  auto jsEngine = JsEngine<JSValue>::instance();
+  auto& jsEngine = JsEngine<JSValue>::instance();
   auto module = jsEngine.loadJsFile("runtime-error.js");
   auto globalObj = jsEngine.getGlobalObject();
   auto func = jsEngine.getObjectProperty(globalObj, "funcWithRuntimeError");

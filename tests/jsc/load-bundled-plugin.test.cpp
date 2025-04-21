@@ -3,31 +3,19 @@
 #include <rime/context.h>
 #include <rime/engine.h>
 #include <rime/gear/translator_commons.h>
-#include <filesystem>
 #include <string>
 #include <vector>
 
 #include "../fake_translation.hpp"
+#include "engines/common.h"
 #include "qjs_translation.h"
 #include "types/qjs_types.h"
 
-class JscLoadBundledPluginTest : public testing::Test {
-protected:
-  void SetUp() override {
-    std::filesystem::path path = __FILE__;
-    path = path.parent_path().parent_path() / "js";
-    engine_.setBaseFolderPath(path.generic_string().c_str());
-  }
-
-  JsEngine<JSValueRef>& getEngine() { return engine_; }
-
-private:
-  JsEngine<JSValueRef>& engine_ = JsEngine<JSValueRef>::instance();
-};
+class JscLoadBundledPluginTest : public testing::Test {};
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
 TEST_F(JscLoadBundledPluginTest, RunEsmBundledTranslator) {
-  auto& engine = getEngine();
+  auto& engine = JsEngine<JSValueRef>::instance();
 
   const auto* container = engine.loadJsFile("help_menu.esm");
   EXPECT_TRUE(engine.isObject(container)) << "JavaScript evaluation failed";
@@ -61,7 +49,7 @@ TEST_F(JscLoadBundledPluginTest, RunEsmBundledTranslator) {
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
 TEST_F(JscLoadBundledPluginTest, RunEsmBundledFilter) {
-  auto& engine = getEngine();
+  auto& engine = JsEngine<JSValueRef>::instance();
 
   // load the esm format bundled file
   const auto* container = engine.loadJsFile("sort_by_pinyin.esm");
@@ -106,7 +94,7 @@ TEST_F(JscLoadBundledPluginTest, RunEsmBundledFilter) {
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
 TEST_F(JscLoadBundledPluginTest, FilterTranslationWithJavaScriptCore) {
-  auto& engine = getEngine();
+  auto& engine = JsEngine<JSValueRef>::instance();
 
   const auto* container = engine.loadJsFile("sort_by_pinyin");
   EXPECT_TRUE(engine.isObject(container)) << "JavaScript evaluation failed";
@@ -130,8 +118,7 @@ TEST_F(JscLoadBundledPluginTest, FilterTranslationWithJavaScriptCore) {
   JSValueRef filterMethod = engine.getObjectProperty(instance, "filter");
   EXPECT_TRUE(engine.isFunction(filterMethod));
 
-  QuickJSTranslation<JSValueRef> translation(fakeTranslation, &engine, instance, filterMethod,
-                                             env.get());
+  QuickJSTranslation<JSValueRef> translation(fakeTranslation, instance, filterMethod, env.get());
 
   EXPECT_FALSE(translation.exhausted());
   EXPECT_TRUE(translation.Next());
@@ -140,7 +127,7 @@ TEST_F(JscLoadBundledPluginTest, FilterTranslationWithJavaScriptCore) {
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
 TEST_F(JscLoadBundledPluginTest, RunIifeBundledFilter) {
-  auto& engine = getEngine();
+  auto& engine = JsEngine<JSValueRef>::instance();
 
   the<Engine> rimeEngine(Engine::Create());
   rimeEngine->context()->set_input("pinyin");
@@ -159,8 +146,7 @@ TEST_F(JscLoadBundledPluginTest, RunIifeBundledFilter) {
   fakeTranslation->append(New<SimpleCandidate>("user_phrase", 0, 1, "text4", ""));
   fakeTranslation->append(New<SimpleCandidate>("user_phrase", 0, 1, "text5"));
 
-  QuickJSTranslation<JSValueRef> translation(fakeTranslation, &engine, instance, filterMethod,
-                                             env.get());
+  QuickJSTranslation<JSValueRef> translation(fakeTranslation, instance, filterMethod, env.get());
 
   EXPECT_FALSE(translation.exhausted());
   EXPECT_TRUE(translation.Next());

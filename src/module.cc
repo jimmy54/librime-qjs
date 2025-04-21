@@ -10,19 +10,16 @@
 #include "qjs_filter.hpp"
 #include "qjs_processor.h"
 #include "qjs_translator.h"
-#include "types/qjs_types.h"
 
 using namespace rime;
 
 template <typename T>
-static void setupJsEngine(Registry& r, const std::string& prefix, const std::string& jsFolderPath) {
+static void setupJsEngine(Registry& r, const std::string& prefix) {
   r.Register(prefix + "_processor", new QuickJSComponent<QuickJSProcessor<T>, Processor, T>());
   r.Register(prefix + "_filter", new QuickJSComponent<QuickJSFilter<T>, Filter, T>());
   r.Register(prefix + "_translator", new QuickJSComponent<QuickJSTranslator<T>, Translator, T>());
 
-  auto& qjsEngine = JsEngine<T>::instance();
-  registerTypesToJsEngine(qjsEngine);
-  qjsEngine.setBaseFolderPath(jsFolderPath.c_str());
+  JsEngine<T>::setup();
 }
 
 // NOLINTBEGIN(readability-identifier-naming)
@@ -30,17 +27,13 @@ static void rime_qjs_initialize() {
   LOG(INFO) << "[qjs] registering components from module 'qjs'.";
   Registry& r = Registry::instance();
 
-  std::filesystem::path path(rime_get_api()->get_user_data_dir());
-  path.append("js");
-  std::string jsFolderPath = path.generic_string();
-
-  setupJsEngine<JSValue>(r, "qjs", jsFolderPath);
+  setupJsEngine<JSValue>(r, "qjs");
 
 #ifdef _ENABLE_JAVASCRIPTCORE
-  setupJsEngine<JSValueRef>(r, "jsc", jsFolderPath);
+  setupJsEngine<JSValueRef>(r, "jsc");
 #else
   // fallback to the quickjs implementation, to share the same Rime schemas across platforms
-  setupJsEngine<JSValue>(r, "jsc", jsFolderPath);
+  setupJsEngine<JSValue>(r, "jsc");
 #endif
 }
 

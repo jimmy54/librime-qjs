@@ -11,8 +11,9 @@
 
 template <>
 class JsEngine<JSValueRef> {
+  inline static bool isInitialized = false;
   inline static std::mutex instanceMutex;
-  std::shared_ptr<JscEngineImpl> impl_{std::make_shared<JscEngineImpl>()};
+  std::unique_ptr<JscEngineImpl> impl_{std::make_unique<JscEngineImpl>()};
 
   JsEngine<JSValueRef>() = default;
 
@@ -24,18 +25,40 @@ public:
   }
 
   static void setup() {
-    // a new JscEngineImpl object is already created in `instance()` or `shutdown()`
+    // the options could be found with the command: `jsc -options`
+    setenv("JSC_dumpOptions", "1", 1);  // Logs Overridden JSC runtime options at startup
+    setenv("JSC_useConcurrentJIT", "true",
+           1);  // allows the DFG / FTL compilation in threads other than the executing JS thread
+
+    // options for DFG optimization
+    setenv("JSC_useDFGJIT", "true", 1);
+    setenv("JSC_thresholdForJITSoon", "1", 1);
+    setenv("JSC_thresholdForJITAfterWarmUp", "1", 1);
+    setenv("JSC_thresholdForOptimizeAfterWarmUp", "1", 1);
+    setenv("JSC_thresholdForOptimizeAfterLongWarmUp", "1", 1);
+    setenv("JSC_thresholdForOptimizeSoon", "1", 1);
+    // setenv("JSC_reportDFGCompileTimes", "true", 1);
+
+    // options for FTL optimization
+    setenv("JSC_useFTLJIT", "true", 1);
+    setenv("JSC_thresholdForFTLOptimizeAfterWarmUp", "1", 1);
+    setenv("JSC_thresholdForFTLOptimizeSoon", "1", 1);
+    setenv("JSC_reportFTLCompileTimes", "true", 1);
   }
+
   static void shutdown() {
+    if (!isInitialized) {
+      return;
+    }
     auto& sharedInstance = instance();
 
     std::lock_guard<std::mutex> lock(instanceMutex);
-    sharedInstance.impl_ = std::make_shared<JscEngineImpl>();
+    sharedInstance.impl_ = std::make_unique<JscEngineImpl>();
   }
 
   ~JsEngine<JSValueRef>() = default;
 
-  JsEngine(const JsEngine&) = default;
+  JsEngine(const JsEngine&) = delete;
   JsEngine(JsEngine&&) = delete;
   JsEngine& operator=(const JsEngine& other) = delete;
   JsEngine& operator=(JsEngine&&) = delete;

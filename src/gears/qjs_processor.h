@@ -18,20 +18,20 @@ public:
       return rime::kNoop;
     }
 
-    auto* engine = this->getJsEngine();
+    auto& engine = JsEngine<T_JS_VALUE>::instance();
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
-    T_JS_VALUE jsKeyEvt = engine->wrap(const_cast<rime::KeyEvent*>(&keyEvent));
-    auto jsEnvironment = engine->wrap(environment);
+    T_JS_VALUE jsKeyEvt = engine.wrap(const_cast<rime::KeyEvent*>(&keyEvent));
+    auto jsEnvironment = engine.wrap(environment);
     T_JS_VALUE args[] = {jsKeyEvt, jsEnvironment};
-    T_JS_VALUE jsResult = engine->callFunction(this->getMainFunc(), this->getInstance(), 2, args);
-    engine->freeValue(jsKeyEvt, jsEnvironment);
+    T_JS_VALUE jsResult = engine.callFunction(this->getMainFunc(), this->getInstance(), 2, args);
+    engine.freeValue(jsKeyEvt, jsEnvironment);
 
-    if (engine->isException(jsResult)) {
+    if (engine.isException(jsResult)) {
       return rime::kNoop;
     }
 
-    std::string result = engine->toStdString(jsResult);
-    engine->freeValue(jsResult);
+    std::string result = engine.toStdString(jsResult);
+    engine.freeValue(jsResult);
 
     if (result == "kNoop") {
       return rime::kNoop;

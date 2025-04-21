@@ -27,33 +27,33 @@ public:
       return translation;
     }
 
-    auto* engine = this->getJsEngine();
-    T_JS_VALUE jsInput = engine->toJsString(input.c_str());
+    auto& engine = JsEngine<T_JS_VALUE>::instance();
+    T_JS_VALUE jsInput = engine.toJsString(input.c_str());
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
-    T_JS_VALUE jsSegment = engine->wrap(const_cast<Segment*>(&segment));
-    auto jsEnvironment = engine->wrap(environment);
+    T_JS_VALUE jsSegment = engine.wrap(const_cast<Segment*>(&segment));
+    auto jsEnvironment = engine.wrap(environment);
     T_JS_VALUE args[] = {jsInput, jsSegment, jsEnvironment};
     T_JS_VALUE resultArray =
-        engine->callFunction(this->getMainFunc(), this->getInstance(), countof(args), args);
-    engine->freeValue(jsInput, jsSegment, jsEnvironment);
-    if (!engine->isArray(resultArray)) {
+        engine.callFunction(this->getMainFunc(), this->getInstance(), countof(args), args);
+    engine.freeValue(jsInput, jsSegment, jsEnvironment);
+    if (!engine.isArray(resultArray)) {
       LOG(ERROR) << "[qjs] A candidate array should be returned by `translate` of the plugin: "
                  << this->getNamespace();
       return translation;
     }
 
-    size_t length = engine->getArrayLength(resultArray);
+    size_t length = engine.getArrayLength(resultArray);
     for (uint32_t i = 0; i < length; i++) {
-      T_JS_VALUE item = engine->getArrayItem(resultArray, i);
-      if (an<Candidate> candidate = engine->template unwrapShared<Candidate>(item)) {
+      T_JS_VALUE item = engine.getArrayItem(resultArray, i);
+      if (an<Candidate> candidate = engine.template unwrapShared<Candidate>(item)) {
         translation->Append(candidate);
       } else {
         LOG(ERROR) << "[qjs] Failed to unwrap candidate at index " << i;
       }
-      engine->freeValue(item);
+      engine.freeValue(item);
     }
 
-    engine->freeValue(resultArray);
+    engine.freeValue(resultArray);
     return translation;
   }
 };
