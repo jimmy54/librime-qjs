@@ -18,9 +18,36 @@ class QuickJSFilter : public QjsModule<T_JS_VALUE> {
   inline static std::chrono::time_point<std::chrono::steady_clock, std::chrono::nanoseconds>
       beginClock = std::chrono::steady_clock::now();
 
+  typename TypeMap<T_JS_VALUE>::ObjectType funcIsApplicable_;
+
 public:
+  QuickJSFilter(const QuickJSFilter&) = delete;
+  QuickJSFilter(QuickJSFilter&&) = delete;
+  QuickJSFilter& operator=(const QuickJSFilter&) = delete;
+  QuickJSFilter& operator=(QuickJSFilter&&) = delete;
+
   explicit QuickJSFilter(const rime::Ticket& ticket, Environment* environment)
-      : QjsModule<T_JS_VALUE>(ticket.name_space, environment, "filter") {}
+      : QjsModule<T_JS_VALUE>(ticket.name_space, environment, "filter") {
+    if (!this->isLoaded()) {
+      return;
+    }
+    auto& jsEngine = JsEngine<T_JS_VALUE>::instance();
+    funcIsApplicable_ =
+        jsEngine.toObject(jsEngine.getObjectProperty(this->getInstance(), "isApplicable"));
+    jsEngine.protectFromGC(funcIsApplicable_);
+  }
+
+  ~QuickJSFilter() {
+    if (!this->isLoaded()) {
+      return;
+    }
+
+    auto& jsEngine = JsEngine<T_JS_VALUE>::instance();
+    if (jsEngine.isFunction(funcIsApplicable_)) {
+      jsEngine.unprotectFromGC(funcIsApplicable_);
+      jsEngine.freeValue(funcIsApplicable_);
+    }
+  }
 
   std::shared_ptr<rime::Translation> apply(std::shared_ptr<rime::Translation> translation,
                                            Environment* environment) {
@@ -41,6 +68,18 @@ public:
 
     if (!this->isLoaded()) {
       return translation;
+    }
+
+    auto& jsEngine = JsEngine<T_JS_VALUE>::instance();
+    if (jsEngine.isFunction(funcIsApplicable_)) {
+      auto jsEvn = jsEngine.wrap(environment);
+      T_JS_VALUE args[1] = {jsEvn};
+      auto result = jsEngine.callFunction(funcIsApplicable_, this->getInstance(), 1, args);
+      bool isApplicable = jsEngine.isBool(result) && jsEngine.toBool(result);
+      jsEngine.freeValue(jsEvn, result);
+      if (!isApplicable) {
+        return translation;
+      }
     }
 
     return std::make_shared<QuickJSTranslation<T_JS_VALUE>>(translation, this->getInstance(),

@@ -59,6 +59,7 @@ public:
 
   [[nodiscard]] bool isArray(const JSValue& value) const { return JS_IsArray(value); }
   [[nodiscard]] bool isObject(const JSValue& value) const { return JS_IsObject(value); }
+  [[nodiscard]] bool isBool(const JSValue& value) const { return JS_IsBool(value); }
   [[nodiscard]] bool isNull(const JSValue& value) const { return JS_IsNull(value); }
   [[nodiscard]] bool isUndefined(const JSValue& value) const { return JS_IsUndefined(value); }
   [[nodiscard]] bool isException(const JSValue& value) const { return JS_IsException(value); }

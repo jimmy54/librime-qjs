@@ -73,6 +73,7 @@ public:
   bool isFunction(const T_JS_VALUE& value);
   bool isArray(const T_JS_VALUE& value);
   bool isObject(const T_JS_VALUE& value);
+  bool isBool(const T_JS_VALUE& value);
   bool isNull(const T_JS_VALUE& value);
   bool isUndefined(const T_JS_VALUE& value);
   bool isException(const T_JS_VALUE& value);

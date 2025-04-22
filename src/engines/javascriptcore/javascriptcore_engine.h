@@ -218,6 +218,10 @@ public:
     return value != nullptr && JSValueIsObject(impl_->getContext(), value);
   }
 
+  [[nodiscard]] bool isBool(const JSValueRef& value) const {
+    return JSValueIsBoolean(impl_->getContext(), value);
+  }
+
   [[nodiscard]] bool isNull(const JSValueRef& value) const {
     return JSValueIsNull(impl_->getContext(), value);
   }

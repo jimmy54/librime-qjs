@@ -80,7 +80,6 @@ public:
 
   void setBaseFolderPath(const char* absolutePath) {
     this->baseFolderPath_ = absolutePath;
-    LOG(INFO) << "[qjs] setting js base folder: " << absolutePath;
     setQjsBaseFolder(absolutePath);
   }
   static void exposeLogToJsConsole(JSContext* ctx);

@@ -28,20 +28,21 @@ SETUP_JS_ENGINES(QuickJSFilterTest);
 
 template <typename T>
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
-static void testFilter() {
+static std::shared_ptr<rime::Translation> doFilterInJs(const std::string& nameSpace) {
   the<Engine> engine(Engine::Create());
-  ASSERT_TRUE(engine->schema() != nullptr);
 
   auto* config = engine->schema()->config();
-  ASSERT_TRUE(config != nullptr);
   config->SetString("greet", "hello from c++");
   config->SetString("expectingText", "text2");
 
-  Ticket ticket(engine.get(), "filter", "qjs_filter@filter_test");
-  auto env = std::make_unique<Environment>(engine.get(), "filter_test");
+  Ticket ticket(engine.get(), "filter", std::string("qjs_filter@") + nameSpace);
+  auto env = std::make_unique<Environment>(engine.get(), nameSpace);
   auto filter = New<QuickJSFilter<T>>(ticket, env.get());
   auto translation = QuickJSFilterTest<T>::createMockTranslation();
-  auto filtered = filter->apply(translation, env.get());
+  return filter->apply(translation, env.get());
+}
+
+static void checkFilteredValues(const std::shared_ptr<rime::Translation>& filtered) {
   ASSERT_TRUE(filtered != nullptr);
 
   auto candidate = filtered->Peek();
@@ -56,7 +57,8 @@ static void testFilter() {
 }
 
 TYPED_TEST(QuickJSFilterTest, ApplyFilter) {
-  testFilter<TypeParam>();
+  auto filtered = doFilterInJs<TypeParam>("filter_test");
+  checkFilteredValues(filtered);
 }
 
 TYPED_TEST(QuickJSFilterTest, TestRestartEngine) {
@@ -69,5 +71,19 @@ TYPED_TEST(QuickJSFilterTest, TestRestartEngine) {
   registerTypesToJsEngine<TypeParam>();
   engine.setBaseFolderPath(path.generic_string().c_str());
 
-  testFilter<TypeParam>();
+  auto filtered = doFilterInJs<TypeParam>("filter_test");
+  checkFilteredValues(filtered);
+}
+
+TYPED_TEST(QuickJSFilterTest, CheckAppblicable) {
+  auto source = QuickJSFilterTest<TypeParam>::createMockTranslation();
+  auto filtered = doFilterInJs<TypeParam>("filter_is_applicable");
+
+  while (!source->exhausted()) {
+    ASSERT_FALSE(filtered->exhausted());
+    ASSERT_STREQ(filtered->Peek()->text().c_str(), source->Peek()->text().c_str());
+    source->Next();
+    filtered->Next();
+  }
+  ASSERT_TRUE(filtered->exhausted());
 }
