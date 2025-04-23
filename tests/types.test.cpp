@@ -62,12 +62,10 @@ TYPED_TEST(QuickJSTypesTest, WrapUnwrapRimeTypes) {
 
   auto folderPath = getFolderPath(__FILE__);
   auto jsEnvironment = jsEngine.toObject(environment);
-  jsEngine.setObjectProperty(jsEnvironment, "currentFolder",
-                             jsEngine.toJsString(folderPath.c_str()));
+  jsEngine.setObjectProperty(jsEnvironment, "currentFolder", jsEngine.wrap(folderPath));
 
-  auto candidate = New<SimpleCandidate>("mock", 0, 1, "text", "comment");
-  jsEngine.setObjectProperty(jsEnvironment, "candidate",
-                             jsEngine.template wrapShared<Candidate>(candidate));
+  an<Candidate> candidate = New<SimpleCandidate>("mock", 0, 1, "text", "comment");
+  jsEngine.setObjectProperty(jsEnvironment, "candidate", jsEngine.wrap(candidate));
 
   auto result = jsEngine.loadJsFile("types_test");
   auto global = jsEngine.getGlobalObject();
@@ -80,7 +78,7 @@ TYPED_TEST(QuickJSTypesTest, WrapUnwrapRimeTypes) {
   ASSERT_EQ(retEngine, engine.get());
   ASSERT_EQ(retEngine->schema()->schema_name(), engine->schema()->schema_name());
   auto retJsCandidate = jsEngine.getObjectProperty(jsEngine.toObject(retValue), "candidate");
-  an<Candidate> retCandidate = jsEngine.template unwrapShared<Candidate>(retJsCandidate);
+  an<Candidate> retCandidate = jsEngine.template unwrap<Candidate>(retJsCandidate);
   ASSERT_EQ(retCandidate->text(), "new text");
   ASSERT_EQ(retCandidate.get(), candidate.get());
 
@@ -94,7 +92,7 @@ TYPED_TEST(QuickJSTypesTest, WrapUnwrapRimeTypes) {
 
   // js code: env.newCandidate = new Candidate('js', 32, 100, 'the text', 'the comment', 888)
   auto retJsNewCandidate = jsEngine.getObjectProperty(jsEngine.toObject(retValue), "newCandidate");
-  auto newCandidate = jsEngine.template unwrapShared<Candidate>(retJsNewCandidate);
+  auto newCandidate = jsEngine.template unwrap<Candidate>(retJsNewCandidate);
   ASSERT_EQ(newCandidate->type(), "js");
   ASSERT_EQ(newCandidate->start(), 32);
   ASSERT_EQ(newCandidate->end(), 100);

@@ -9,17 +9,17 @@ using NotifierConnection = rime::connection;
 
 constexpr const char* JS_LISTENER_PROPERTY_NAME = "jsListenerFunc";
 
-template <typename T_JS_VALUE>
-class JsWrapper<NotifierConnection, T_JS_VALUE> {
+template <>
+class JsWrapper<NotifierConnection> {
   DEFINE_CFUNCTION(disconnect, {
-    auto obj = engine.unwrapShared<NotifierConnection>(thisVal);
+    auto obj = engine.unwrap<NotifierConnection>(thisVal);
     obj->disconnect();
     auto jsListenerFunc = engine.getObjectProperty(thisVal, JS_LISTENER_PROPERTY_NAME);
     engine.freeValue(jsListenerFunc);
     return engine.undefined();
   })
 
-  DEFINE_GETTER_2(NotifierConnection, isConnected, engine.toJsBool(obj->connected()))
+  DEFINE_GETTER(NotifierConnection, isConnected, obj->connected())
 
 public:
   EXPORT_CLASS_WITH_SHARED_POINTER(NotifierConnection,

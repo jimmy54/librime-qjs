@@ -4,11 +4,11 @@
 #include "js_wrapper.h"
 #include "misc/system_info.hpp"
 
-template <typename T_JS_VALUE>
-class JsWrapper<SystemInfo, T_JS_VALUE> {
-  DEFINE_GETTER(SystemInfo, name, engine.toJsString(obj->getOSName()));
-  DEFINE_GETTER(SystemInfo, version, engine.toJsString(obj->getOSVersion()));
-  DEFINE_GETTER(SystemInfo, architecture, engine.toJsString(obj->getArchitecture()));
+template <>
+class JsWrapper<SystemInfo> {
+  DEFINE_GETTER(SystemInfo, name, obj->getOSName());
+  DEFINE_GETTER(SystemInfo, version, obj->getOSVersion());
+  DEFINE_GETTER(SystemInfo, architecture, obj->getArchitecture());
 
 public:
   EXPORT_CLASS_WITH_RAW_POINTER(SystemInfo,

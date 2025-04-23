@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include <memory>
 #include <sstream>
 #include <string>
 #include <utility>
@@ -188,24 +189,24 @@ TEST_F(QuickJSExposeClassTest, TestExposeClassToQuickJS) {
   JS_FreeValue(ctx, result);
 }
 
-template <typename T_JS_VALUE>
-class JsWrapper<MyClass, T_JS_VALUE> {
+template <>
+class JsWrapper<MyClass> {
   DEFINE_CFUNCTION_ARGC(sayHello, 0, {
-    auto obj = engine.unwrapShared<MyClass>(thisVal);
-    return engine.toJsString(obj->sayHello());
+    auto obj = engine.unwrap<MyClass>(thisVal);
+    return engine.wrap(obj->sayHello());
   });
   DEFINE_CFUNCTION_ARGC(getName, 0, {
-    auto obj = engine.unwrapShared<MyClass>(thisVal);
-    return engine.toJsString(obj->getName());
+    auto obj = engine.unwrap<MyClass>(thisVal);
+    return engine.wrap(obj->getName());
   });
   DEFINE_CFUNCTION_ARGC(setName, 1, {
-    auto obj = engine.unwrapShared<MyClass>(thisVal);
+    auto obj = engine.unwrap<MyClass>(thisVal);
     obj->setName(engine.toStdString(argv[0]));
     return engine.undefined();
   });
   DEFINE_CFUNCTION_ARGC(makeMyClass, 1, {
     auto name = engine.toStdString(argv[0]);
-    return engine.wrapShared<MyClass>(std::make_shared<MyClass>(name));
+    return engine.wrap(std::make_shared<MyClass>(name));
   });
 
 public:

@@ -24,8 +24,7 @@
 template <typename T_JS_VALUE>
 void registerTypesToJsEngine() {
   JsEngine<T_JS_VALUE>& engine = JsEngine<T_JS_VALUE>::instance();
-  DLOG(INFO) << "[qjs] registering rime types to the " << TypeMap<T_JS_VALUE>::engineName
-             << " engine...";
+  DLOG(INFO) << "[qjs] registering rime types to the " << engine.engineName << " engine...";
 
   // expose all types
   engine.template registerType<rime::Candidate>();

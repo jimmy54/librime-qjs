@@ -8,14 +8,14 @@
 #ifdef _ENABLE_JAVASCRIPTCORE
 #include "engines/javascriptcore/jsc_macros.h"
 #else
-#define DEFINE_GETTER_IMPL(T_RIME_TYPE, propertieyName, statement, unwrap) \
-  DEFINE_GETTER_IMPL_QJS(T_RIME_TYPE, propertieyName, statement, unwrap)
+#define DEFINE_GETTER(T_RIME_TYPE, propertieyName, statement) \
+  DEFINE_GETTER_IMPL_QJS(T_RIME_TYPE, propertieyName, statement)
 
-#define DEFINE_STRING_SETTER_IMPL(T_RIME_TYPE, name, assignment, unwrap) \
-  DEFINE_STRING_SETTER_IMPL_QJS(T_RIME_TYPE, name, assignment, unwrap)
+#define DEFINE_STRING_SETTER(T_RIME_TYPE, name, assignment) \
+  DEFINE_STRING_SETTER_IMPL_QJS(T_RIME_TYPE, name, assignment)
 
-#define DEFINE_SETTER_IMPL(T_RIME_TYPE, jsName, converter, assignment, unwrap) \
-  DEFINE_SETTER_IMPL_QJS(T_RIME_TYPE, jsName, converter, assignment, unwrap)
+#define DEFINE_SETTER(T_RIME_TYPE, jsName, converter, assignment) \
+  DEFINE_SETTER_IMPL_QJS(T_RIME_TYPE, jsName, converter, assignment)
 
 #define DEFINE_CFUNCTION(funcName, funcBody) DEFINE_CFUNCTION_QJS(funcName, funcBody)
 
@@ -48,35 +48,20 @@ constexpr std::size_t countof(const T (& /*unused*/)[N]) noexcept {
 
 // NOLINTBEGIN(cppcoreguidelines-macro-usage) function-like macro 'DEFINE_GETTER' used; consider a 'constexpr' template function
 // =============== GETTER ===============
-#define DEFINE_GETTER(T_RIME_TYPE, propertieyName, statement) \
-  DEFINE_GETTER_IMPL(T_RIME_TYPE, propertieyName, statement, engine.unwrap<T_RIME_TYPE>(thisVal))
-
-#define DEFINE_GETTER_2(T_RIME_TYPE, propertieyName, statement) \
-  DEFINE_GETTER_IMPL(T_RIME_TYPE, propertieyName, statement,    \
-                     engine.unwrapShared<T_RIME_TYPE>(thisVal))
-
-#define DEFINE_GETTER_IMPL_QJS(T_RIME_TYPE, propertieyName, statement, unwrap) \
-  static JSValue get_##propertieyName(JSContext* ctx, JSValueConst thisVal) {  \
-    auto& engine = JsEngine<JSValue>::instance();                              \
-    if (auto obj = (unwrap)) {                                                 \
-      return statement;                                                        \
-    }                                                                          \
-    return JS_UNDEFINED;                                                       \
+#define DEFINE_GETTER_IMPL_QJS(T_RIME_TYPE, propertieyName, statement)        \
+  static JSValue get_##propertieyName(JSContext* ctx, JSValueConst thisVal) { \
+    auto& engine = JsEngine<JSValue>::instance();                             \
+    if (auto obj = engine.unwrap<T_RIME_TYPE>(thisVal)) {                     \
+      return engine.wrap(statement);                                          \
+    }                                                                         \
+    return JS_UNDEFINED;                                                      \
   }
 
 // =============== SETTER ===============
-
-#define DEFINE_STRING_SETTER(T_RIME_TYPE, name, assignment) \
-  DEFINE_STRING_SETTER_IMPL(T_RIME_TYPE, name, assignment, engine.unwrap<T_RIME_TYPE>(thisVal))
-
-#define DEFINE_STRING_SETTER_2(T_RIME_TYPE, name, assignment) \
-  DEFINE_STRING_SETTER_IMPL(T_RIME_TYPE, name, assignment,    \
-                            engine.unwrapShared<T_RIME_TYPE>(thisVal))
-
-#define DEFINE_STRING_SETTER_IMPL_QJS(T_RIME_TYPE, name, assignment, unwrap)     \
+#define DEFINE_STRING_SETTER_IMPL_QJS(T_RIME_TYPE, name, assignment)             \
   static JSValue set_##name(JSContext* ctx, JSValueConst thisVal, JSValue val) { \
     auto& engine = JsEngine<JSValue>::instance();                                \
-    if (auto obj = (unwrap)) {                                                   \
+    if (auto obj = engine.unwrap<T_RIME_TYPE>(thisVal)) {                        \
       auto str = engine.toStdString(val);                                        \
       if (!str.empty()) {                                                        \
         assignment;                                                              \
@@ -89,18 +74,10 @@ constexpr std::size_t countof(const T (& /*unused*/)[N]) noexcept {
     return JS_ThrowTypeError(ctx, format, #T_RIME_TYPE);                         \
   }
 
-#define DEFINE_SETTER(T_RIME_TYPE, jsName, converter, assignment) \
-  DEFINE_SETTER_IMPL(T_RIME_TYPE, jsName, converter, assignment,  \
-                     engine.unwrap<T_RIME_TYPE>(thisVal))
-
-#define DEFINE_SETTER_2(T_RIME_TYPE, jsName, converter, assignment) \
-  DEFINE_SETTER_IMPL(T_RIME_TYPE, jsName, converter, assignment,    \
-                     engine.unwrapShared<T_RIME_TYPE>(thisVal))
-
-#define DEFINE_SETTER_IMPL_QJS(T_RIME_TYPE, jsName, converter, assignment, unwrap) \
+#define DEFINE_SETTER_IMPL_QJS(T_RIME_TYPE, jsName, converter, assignment)         \
   static JSValue set_##jsName(JSContext* ctx, JSValueConst thisVal, JSValue val) { \
     auto& engine = JsEngine<JSValue>::instance();                                  \
-    if (auto obj = (unwrap)) {                                                     \
+    if (auto obj = engine.unwrap<T_RIME_TYPE>(thisVal)) {                          \
       auto value = converter(val);                                                 \
       assignment;                                                                  \
       return JS_UNDEFINED;                                                         \
@@ -157,10 +134,12 @@ constexpr std::size_t countof(const T (& /*unused*/)[N]) noexcept {
   block4;
 
 #define EXPORT_CLASS_WITH_RAW_POINTER(className, block1, block2, block3, block4)                \
+  using T_UNWRAP_TYPE = raw_ptr_type<className>::type;                                          \
   EXPORT_CLASS_IMPL(className, EXPAND(block1), EXPAND(block2), EXPAND(block3), EXPAND(block4)); \
   WITHOUT_FINALIZER;  // the attached raw pointer is passed from Rime, should not free it in qjs
 
 #define EXPORT_CLASS_WITH_SHARED_POINTER(className, block1, block2, block3, block4)             \
+  using T_UNWRAP_TYPE = std::shared_ptr<className>;                                             \
   EXPORT_CLASS_IMPL(className, EXPAND(block1), EXPAND(block2), EXPAND(block3), EXPAND(block4)); \
   WITH_FINALIZER;  // the attached shared pointer's reference count should be decremented when the js object is freed
 

@@ -1,4 +1,4 @@
 #pragma once
 
-template <typename T_RIME_TYPE, typename T_JS_VALUE>
+template <typename T_RIME_TYPE>
 class JsWrapper {};

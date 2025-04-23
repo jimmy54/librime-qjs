@@ -10,8 +10,8 @@
 using Notifier = rime::signal<void(rime::Context*)>;
 using NotifierConnection = rime::connection;
 
-template <typename T_JS_VALUE>
-class JsWrapper<Notifier, T_JS_VALUE> {
+template <>
+class JsWrapper<Notifier> {
   template <typename T>  // <-- make it a template function to satisfy the clang compiler
   static void handleNotification(JsEngine<T>& engine, const T& jsFunc, rime::Context* rimeContext) {
     auto undefined = engine.toObject(engine.undefined());
@@ -43,7 +43,7 @@ class JsWrapper<Notifier, T_JS_VALUE> {
           handleNotification(engine, duplicatedFunc, rimeContext);
         }));
 
-    auto jsConnection = engine.wrapShared(connection);
+    auto jsConnection = engine.wrap(connection);
     // attach it to the connection to free it by the js engine when disconnecting
     engine.setObjectProperty(jsConnection, JS_LISTENER_PROPERTY_NAME, duplicatedFunc);
     return jsConnection;

@@ -6,10 +6,10 @@
 
 using namespace rime;
 
-template <typename T_JS_VALUE>
-class JsWrapper<rime::ConfigItem, T_JS_VALUE> {
+template <>
+class JsWrapper<rime::ConfigItem> {
   DEFINE_CFUNCTION(getType, {
-    auto obj = engine.unwrapShared<rime::ConfigItem>(thisVal);
+    auto obj = engine.unwrap<rime::ConfigItem>(thisVal);
     const char* strType;
     switch (obj->type()) {
       case rime::ConfigItem::kNull:
@@ -27,7 +27,7 @@ class JsWrapper<rime::ConfigItem, T_JS_VALUE> {
       default:
         strType = "unknown";
     }
-    return engine.toJsBool(strType);
+    return engine.wrap(strType);
   })
 
 public:

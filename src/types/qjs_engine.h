@@ -5,14 +5,15 @@
 
 #include "engines/js_macros.h"
 #include "js_wrapper.h"
+#include "types/qjs_schema.h"
 
 using namespace rime;
 
-template <typename T_JS_VALUE>
-class JsWrapper<rime::Engine, T_JS_VALUE> {
-  DEFINE_GETTER(Engine, schema, engine.wrap(obj->schema()))
-  DEFINE_GETTER(Engine, context, engine.wrap(obj->context()))
-  DEFINE_GETTER(Engine, activeEngine, engine.wrap(obj->active_engine()))
+template <>
+class JsWrapper<rime::Engine> {
+  DEFINE_GETTER(Engine, schema, obj->schema())
+  DEFINE_GETTER(Engine, context, obj->context())
+  DEFINE_GETTER(Engine, activeEngine, obj->active_engine())
 
   DEFINE_CFUNCTION_ARGC(commitText, 1, {
     std::string text = engine.toStdString(argv[0]);
@@ -34,7 +35,7 @@ class JsWrapper<rime::Engine, T_JS_VALUE> {
   DEFINE_CFUNCTION_ARGC(processKey, 1, {
     std::string keyRepr = engine.toStdString(argv[0]);
     auto* obj = engine.unwrap<Engine>(thisVal);
-    return engine.toJsBool(obj->ProcessKey(KeyEvent(keyRepr)));
+    return engine.wrap(obj->ProcessKey(KeyEvent(keyRepr)));
   })
 
 public:

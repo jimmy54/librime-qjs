@@ -8,18 +8,18 @@
 
 using namespace rime;
 
-template <typename T_JS_VALUE>
-class JsWrapper<rime::Config, T_JS_VALUE> {
+template <>
+class JsWrapper<rime::Config> {
   DEFINE_CFUNCTION_ARGC(loadFromFile, 1, {
     std::string path = engine.toStdString(argv[0]);
     auto obj = engine.unwrap<rime::Config>(thisVal);
-    return engine.toJsBool(obj->LoadFromFile(std::filesystem::path(path.c_str())));
+    return engine.wrap(obj->LoadFromFile(std::filesystem::path(path.c_str())));
   })
 
   DEFINE_CFUNCTION_ARGC(saveToFile, 1, {
     std::string path = engine.toStdString(argv[0]);
     auto obj = engine.unwrap<rime::Config>(thisVal);
-    return engine.toJsBool(obj->SaveToFile(std::filesystem::path(path.c_str())));
+    return engine.wrap(obj->SaveToFile(std::filesystem::path(path.c_str())));
   })
 
   DEFINE_CFUNCTION_ARGC(getBool, 1, {
@@ -27,7 +27,7 @@ class JsWrapper<rime::Config, T_JS_VALUE> {
     auto obj = engine.unwrap<rime::Config>(thisVal);
     bool value = false;
     bool success = obj->GetBool(key, &value);
-    return success ? engine.toJsBool(value) : engine.null();
+    return success ? engine.wrap(value) : engine.null();
   })
 
   DEFINE_CFUNCTION_ARGC(getInt, 1, {
@@ -35,7 +35,7 @@ class JsWrapper<rime::Config, T_JS_VALUE> {
     auto obj = engine.unwrap<rime::Config>(thisVal);
     int value = 0;
     bool success = obj->GetInt(key, &value);
-    return success ? engine.toJsInt(value) : engine.null();
+    return success ? engine.wrap(value) : engine.null();
   })
 
   DEFINE_CFUNCTION_ARGC(getDouble, 1, {
@@ -43,7 +43,7 @@ class JsWrapper<rime::Config, T_JS_VALUE> {
     auto obj = engine.unwrap<rime::Config>(thisVal);
     double value = 0.0;
     bool success = obj->GetDouble(key, &value);
-    return success ? engine.toJsDouble(value) : engine.null();
+    return success ? engine.wrap(value) : engine.null();
   })
 
   DEFINE_CFUNCTION_ARGC(getString, 1, {
@@ -51,14 +51,14 @@ class JsWrapper<rime::Config, T_JS_VALUE> {
     auto obj = engine.unwrap<rime::Config>(thisVal);
     std::string value;
     bool success = obj->GetString(key, &value);
-    return success ? engine.toJsString(value.c_str()) : engine.null();
+    return success ? engine.wrap(value.c_str()) : engine.null();
   })
 
   DEFINE_CFUNCTION_ARGC(getList, 1, {
     std::string key = engine.toStdString(argv[0]);
     auto obj = engine.unwrap<rime::Config>(thisVal);
     auto list = obj->GetList(key);
-    return engine.wrapShared(list);
+    return engine.wrap(list);
   })
 
   DEFINE_CFUNCTION_ARGC(setBool, 2, {
@@ -66,7 +66,7 @@ class JsWrapper<rime::Config, T_JS_VALUE> {
     auto obj = engine.unwrap<rime::Config>(thisVal);
     bool value = engine.toBool(argv[1]);
     bool success = obj->SetBool(key, value);
-    return engine.toJsBool(success);
+    return engine.wrap(success);
   })
 
   DEFINE_CFUNCTION_ARGC(setInt, 2, {
@@ -74,7 +74,7 @@ class JsWrapper<rime::Config, T_JS_VALUE> {
     auto obj = engine.unwrap<rime::Config>(thisVal);
     int value = engine.toInt(argv[1]);
     bool success = obj->SetInt(key, value);
-    return engine.toJsBool(success);
+    return engine.wrap(success);
   })
 
   DEFINE_CFUNCTION_ARGC(setDouble, 2, {
@@ -82,7 +82,7 @@ class JsWrapper<rime::Config, T_JS_VALUE> {
     auto obj = engine.unwrap<rime::Config>(thisVal);
     double value = engine.toDouble(argv[1]);
     bool success = obj->SetDouble(key, value);
-    return engine.toJsBool(success);
+    return engine.wrap(success);
   })
 
   DEFINE_CFUNCTION_ARGC(setString, 2, {
@@ -90,7 +90,7 @@ class JsWrapper<rime::Config, T_JS_VALUE> {
     auto obj = engine.unwrap<rime::Config>(thisVal);
     std::string value = engine.toStdString(argv[1]);
     bool success = obj->SetString(key, value);
-    return engine.toJsBool(success);
+    return engine.wrap(success);
   })
 
 public:

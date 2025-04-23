@@ -145,7 +145,7 @@ void QuickJsEngineImpl::registerType(const char* typeName,
                                      int getterCount,
                                      const JSCFunctionListEntry* functions,
                                      int functionCount) {
-  // using WRAPPER = JsWrapper<T_RIME_TYPE, JSValue>;
+  // using WRAPPER = JsWrapper<T_RIME_TYPE>;
 
   if (registeredTypes_.count(typeName) > 0) {
     DLOG(INFO) << "type [" << typeName

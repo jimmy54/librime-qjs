@@ -8,11 +8,10 @@
 
 template <typename T_JS_VALUE>
 class QjsModule {
-  using T_JS_OBJECT = typename TypeMap<T_JS_VALUE>::ObjectType;
-
 protected:
   QjsModule(const std::string& nameSpace, Environment* environment, const char* mainFuncName)
       : namespace_(nameSpace) {
+    // the js engine is lazy loaded, so we need to register the types first
     registerTypesToJsEngine<T_JS_VALUE>();
     std::filesystem::path path(rime_get_api()->get_user_data_dir());
     path.append("js");
@@ -59,8 +58,8 @@ protected:
   }
 
   [[nodiscard]] bool isLoaded() const { return isLoaded_; }
-  [[nodiscard]] T_JS_OBJECT getInstance() const { return instance_; }
-  [[nodiscard]] T_JS_OBJECT getMainFunc() const { return mainFunc_; }
+  [[nodiscard]] typename JsEngine<T_JS_VALUE>::T_JS_OBJECT getInstance() const { return instance_; }
+  [[nodiscard]] typename JsEngine<T_JS_VALUE>::T_JS_OBJECT getMainFunc() const { return mainFunc_; }
   [[nodiscard]] std::string getNamespace() const { return namespace_; }
 
 private:
@@ -68,9 +67,9 @@ private:
 
   bool isLoaded_ = false;
 
-  T_JS_OBJECT instance_;
-  T_JS_OBJECT mainFunc_;
-  T_JS_OBJECT finalizer_;
+  typename JsEngine<T_JS_VALUE>::T_JS_OBJECT instance_;
+  typename JsEngine<T_JS_VALUE>::T_JS_OBJECT mainFunc_;
+  typename JsEngine<T_JS_VALUE>::T_JS_OBJECT finalizer_;
 
 public:
   QjsModule(const QjsModule&) = delete;

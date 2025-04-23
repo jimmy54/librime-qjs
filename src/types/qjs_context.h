@@ -7,27 +7,26 @@
 
 using namespace rime;
 
-template <typename T_JS_VALUE>
-class JsWrapper<rime::Context, T_JS_VALUE> {
-  DEFINE_GETTER(Context, input, engine.toJsString(obj->input()))
-  DEFINE_GETTER(Context, caretPos, engine.toJsInt(obj->caret_pos()))
+template <>
+class JsWrapper<rime::Context> {
+  DEFINE_GETTER(Context, input, obj->input())
+  DEFINE_GETTER(Context, caretPos, obj->caret_pos())
 
   DEFINE_STRING_SETTER(Context, input, obj->set_input(str);)
   DEFINE_SETTER(Context, caretPos, engine.toInt, obj->set_caret_pos(value))
 
-  DEFINE_GETTER(Context, preedit, engine.wrapShared(std::make_shared<Preedit>(obj->GetPreedit())))
+  DEFINE_GETTER(Context, preedit, std::make_shared<Preedit>(obj->GetPreedit()))
 
   DEFINE_GETTER(Context,
                 lastSegment,
-                obj->composition().empty() ? engine.null()
-                                           : engine.wrap<Segment>(&obj->composition().back()));
+                obj->composition().empty() ? nullptr : &obj->composition().back());
 
-  DEFINE_GETTER(Context, commitNotifier, engine.wrap(&obj->commit_notifier()))
-  DEFINE_GETTER(Context, selectNotifier, engine.wrap(&obj->select_notifier()))
-  DEFINE_GETTER(Context, updateNotifier, engine.wrap(&obj->update_notifier()))
-  DEFINE_GETTER(Context, deleteNotifier, engine.wrap(&obj->delete_notifier()))
+  DEFINE_GETTER(Context, commitNotifier, &obj->commit_notifier())
+  DEFINE_GETTER(Context, selectNotifier, &obj->select_notifier())
+  DEFINE_GETTER(Context, updateNotifier, &obj->update_notifier())
+  DEFINE_GETTER(Context, deleteNotifier, &obj->delete_notifier())
 
-  DEFINE_GETTER(Context, commitHistory, engine.wrap(&obj->commit_history()))
+  DEFINE_GETTER(Context, commitHistory, &obj->commit_history())
 
   DEFINE_CFUNCTION(commit, {
     auto obj = engine.unwrap<Context>(thisVal);
@@ -37,7 +36,7 @@ class JsWrapper<rime::Context, T_JS_VALUE> {
 
   DEFINE_CFUNCTION(getCommitText, {
     auto obj = engine.unwrap<Context>(thisVal);
-    return engine.toJsString(obj->GetCommitText().c_str());
+    return engine.wrap(obj->GetCommitText());
   })
 
   DEFINE_CFUNCTION(clear, {
@@ -48,7 +47,7 @@ class JsWrapper<rime::Context, T_JS_VALUE> {
 
   DEFINE_CFUNCTION(hasMenu, {
     auto obj = engine.unwrap<Context>(thisVal);
-    return engine.toJsBool(obj->HasMenu());
+    return engine.wrap(obj->HasMenu());
   })
 
 public:

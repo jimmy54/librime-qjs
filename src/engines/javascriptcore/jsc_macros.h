@@ -5,27 +5,27 @@
 #include "engines/javascriptcore/javascriptcore_engine.h"  // IWYU pragma: export
 
 // NOLINTBEGIN(cppcoreguidelines-macro-usage) function-like macro 'EXPORT_CLASS_IMPL' used; consider a 'constexpr' template function
-#define DEFINE_GETTER_IMPL(T_RIME_TYPE, propertieyName, statement, unwrap)                       \
+#define DEFINE_GETTER(T_RIME_TYPE, propertieyName, statement)                                    \
                                                                                                  \
-  DEFINE_GETTER_IMPL_QJS(T_RIME_TYPE, propertieyName, statement, unwrap);                        \
+  DEFINE_GETTER_IMPL_QJS(T_RIME_TYPE, propertieyName, statement);                                \
                                                                                                  \
   static JSValueRef get_##propertieyName##Jsc(JSContextRef ctx, JSObjectRef thisVal,             \
                                               JSStringRef functionName, JSValueRef* exception) { \
     auto& engine = JsEngine<JSValueRef>::getEngineByContext(ctx);                                \
-    if (auto obj = (unwrap)) {                                                                   \
-      return statement;                                                                          \
+    if (auto obj = engine.unwrap<T_RIME_TYPE>(thisVal)) {                                        \
+      return engine.wrap(statement);                                                             \
     }                                                                                            \
     return engine.undefined();                                                                   \
   }
 
-#define DEFINE_STRING_SETTER_IMPL(T_RIME_TYPE, name, assignment, unwrap)                        \
+#define DEFINE_STRING_SETTER(T_RIME_TYPE, name, assignment)                                     \
                                                                                                 \
-  DEFINE_STRING_SETTER_IMPL_QJS(T_RIME_TYPE, name, assignment, unwrap);                         \
+  DEFINE_STRING_SETTER_IMPL_QJS(T_RIME_TYPE, name, assignment);                                 \
                                                                                                 \
   static bool set_##name##Jsc(JSContextRef ctx, JSObjectRef thisVal, JSStringRef propertyName,  \
                               JSValueRef val, JSValueRef* exception) {                          \
     auto& engine = JsEngine<JSValueRef>::getEngineByContext(ctx);                               \
-    if (auto obj = (unwrap)) {                                                                  \
+    if (auto obj = engine.unwrap<T_RIME_TYPE>(thisVal)) {                                       \
       auto str = engine.toStdString(val);                                                       \
       if (!str.empty()) {                                                                       \
         assignment;                                                                             \
@@ -40,14 +40,14 @@
     return false;                                                                               \
   }
 
-#define DEFINE_SETTER_IMPL(T_RIME_TYPE, jsName, converter, assignment, unwrap)                   \
+#define DEFINE_SETTER(T_RIME_TYPE, jsName, converter, assignment)                                \
                                                                                                  \
-  DEFINE_SETTER_IMPL_QJS(T_RIME_TYPE, jsName, converter, assignment, unwrap);                    \
+  DEFINE_SETTER_IMPL_QJS(T_RIME_TYPE, jsName, converter, assignment);                            \
                                                                                                  \
   static bool set_##jsName##Jsc(JSContextRef ctx, JSObjectRef thisVal, JSStringRef propertyName, \
                                 JSValueRef val, JSValueRef* exception) {                         \
     auto& engine = JsEngine<JSValueRef>::getEngineByContext(ctx);                                \
-    if (auto obj = (unwrap)) {                                                                   \
+    if (auto obj = engine.unwrap<T_RIME_TYPE>(thisVal)) {                                        \
       auto value = converter(val);                                                               \
       assignment;                                                                                \
       return true;                                                                               \
@@ -122,7 +122,7 @@
 
 #define WITHOUT_FINALIZER \
   WITHOUT_FINALIZER_QJS;  \
-  inline static typename TypeMap<JSValueRef>::FinalizerFunctionPionterType finalizerJsc = nullptr;
+  inline static void (*finalizerJsc)(JSObjectRef) = nullptr;
 
 #define DEFINE_PROPERTY_JSC(name) \
   {#name, get_##name##Jsc, set_##name##Jsc, kJSPropertyAttributeNone},

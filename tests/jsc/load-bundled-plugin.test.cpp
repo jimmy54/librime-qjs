@@ -34,7 +34,7 @@ TEST_F(JscLoadBundledPluginTest, RunEsmBundledTranslator) {
   EXPECT_TRUE(engine.isFunction(translateMethod));
 
   // Execute the translate method
-  JSValueRef input = engine.toJsString("/help");
+  JSValueRef input = engine.wrap("/help");
   Segment segment;
   JSValueRef args[] = {input, engine.wrap(&segment), jsEnv};
   int size = sizeof(args) / sizeof(args[0]);
@@ -78,7 +78,7 @@ TEST_F(JscLoadBundledPluginTest, RunEsmBundledFilter) {
 
   const auto* jsCandidates = engine.newArray();
   for (size_t i = 0; i < candidates.size(); ++i) {
-    JSValueRef jsCandidate = engine.wrapShared(candidates[i]);
+    JSValueRef jsCandidate = engine.wrap(candidates[i]);
     engine.insertItemToArray(jsCandidates, i, jsCandidate);
   }
 

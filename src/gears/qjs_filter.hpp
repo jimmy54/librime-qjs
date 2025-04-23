@@ -18,7 +18,7 @@ class QuickJSFilter : public QjsModule<T_JS_VALUE> {
   inline static std::chrono::time_point<std::chrono::steady_clock, std::chrono::nanoseconds>
       beginClock = std::chrono::steady_clock::now();
 
-  typename TypeMap<T_JS_VALUE>::ObjectType funcIsApplicable_;
+  typename JsEngine<T_JS_VALUE>::T_JS_OBJECT funcIsApplicable_;
 
 public:
   QuickJSFilter(const QuickJSFilter&) = delete;

@@ -7,8 +7,8 @@
 
 using namespace rime;
 
-template <typename T_JS_VALUE>
-class JsWrapper<rime::CommitHistory, T_JS_VALUE> {
+template <>
+class JsWrapper<rime::CommitHistory> {
   DEFINE_CFUNCTION_ARGC(push, 2, {
     auto type = engine.toStdString(argv[0]);
     auto text = engine.toStdString(argv[1]);
@@ -17,11 +17,9 @@ class JsWrapper<rime::CommitHistory, T_JS_VALUE> {
     return engine.undefined();
   })
 
-  DEFINE_GETTER(CommitHistory,
-                last,
-                obj->empty() ? engine.undefined() : engine.wrap<rime::CommitRecord>(&obj->back()));
+  DEFINE_GETTER(CommitHistory, last, obj->empty() ? nullptr : &obj->back());
 
-  DEFINE_GETTER(CommitHistory, repr, engine.toJsString(obj->repr()));
+  DEFINE_GETTER(CommitHistory, repr, obj->repr());
 
 public:
   EXPORT_CLASS_WITH_RAW_POINTER(CommitHistory,

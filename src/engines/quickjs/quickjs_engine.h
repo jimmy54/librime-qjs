@@ -6,6 +6,7 @@
 
 #include "engines/js_engine.h"
 #include "engines/js_exception.h"
+#include "engines/js_traits.h"
 #include "engines/quickjs/quickjs_engine_impl.h"
 #include "types/js_wrapper.h"
 
@@ -19,6 +20,9 @@ class JsEngine<JSValue> {
   JsEngine() { isInitialized = true; };
 
 public:
+  using T_JS_OBJECT = JSValue;
+  inline static const char* engineName = "QuickJS-NG";
+
   ~JsEngine() = default;
 
   JsEngine(const JsEngine& other) = delete;
@@ -101,28 +105,15 @@ public:
     return impl_->setObjectFunction(obj, functionName, cppFunction, expectingArgc);
   }
 
-  [[nodiscard]] JSValue toJsString(const char* str) const { return impl_->toJsString(str); }
-  [[nodiscard]] JSValue toJsString(const std::string& str) const { return impl_->toJsString(str); }
-
   [[nodiscard]] std::string toStdString(const JSValue& value) const {
     return impl_->toStdString(value);
-  }
-
-  [[nodiscard]] JSValue toJsBool(bool value) const {
-    return JS_NewBool(impl_->getContext(), value);
   }
 
   [[nodiscard]] bool toBool(const JSValue& value) const {
     return JS_ToBool(impl_->getContext(), value) != 0;
   }
 
-  [[nodiscard]] JSValue toJsInt(size_t value) const {
-    return impl_->toJsNumber(static_cast<int64_t>(value));
-  }
-
   [[nodiscard]] size_t toInt(const JSValue& value) const { return impl_->toInt(value); }
-
-  [[nodiscard]] JSValue toJsDouble(double value) const { return impl_->toJsNumber(value); }
 
   [[nodiscard]] double toDouble(const JSValue& value) const { return impl_->toDouble(value); }
 
@@ -178,7 +169,7 @@ public:
 
   template <typename T_RIME_TYPE>
   void registerType() {
-    using WRAPPER = JsWrapper<T_RIME_TYPE, JSValue>;
+    using WRAPPER = JsWrapper<T_RIME_TYPE>;
     impl_->registerType(WRAPPER::TYPENAME, WRAPPER::JS_CLASS_ID, WRAPPER::JS_CLASS_DEF,
                         WRAPPER::constructorQjs, WRAPPER::CONSTRUCTOR_ARGC, WRAPPER::finalizerQjs,
                         WRAPPER::PROPERTIES_QJS, WRAPPER::PROPERTIES_SIZE, WRAPPER::GETTERS_QJS,
@@ -186,37 +177,47 @@ public:
   }
 
   template <typename T>
-  [[nodiscard]] T* unwrap(const JSValue& value) const {
-    if (auto* ptr = JS_GetOpaque(value, JsWrapper<T, JSValue>::JS_CLASS_ID)) {
-      return static_cast<T*>(ptr);
-    }
-    return nullptr;
-  }
-
-  template <typename T>
-  [[nodiscard]] std::shared_ptr<T> unwrapShared(const JSValue& value) const {
-    if (auto* ptr = JS_GetOpaque(value, JsWrapper<T, JSValue>::JS_CLASS_ID)) {
-      if (auto sharedPtr = static_cast<std::shared_ptr<T>*>(ptr)) {
-        return *sharedPtr;
+  [[nodiscard]] typename JsWrapper<T>::T_UNWRAP_TYPE unwrap(const JSValue& value) const {
+    if constexpr (is_shared_ptr_v<typename JsWrapper<T>::T_UNWRAP_TYPE>) {
+      if (auto* ptr = JS_GetOpaque(value, JsWrapper<T>::JS_CLASS_ID)) {
+        if (auto sharedPtr = static_cast<std::shared_ptr<T>*>(ptr)) {
+          return *sharedPtr;
+        }
+      }
+    } else {
+      if (auto* ptr = JS_GetOpaque(value, JsWrapper<T>::JS_CLASS_ID)) {
+        return static_cast<T*>(ptr);
       }
     }
     return nullptr;
   }
 
   template <typename T>
-  [[nodiscard]] JSValue wrap(T* ptrValue) const {
-    return impl_->wrap(JsWrapper<T, JSValue>::TYPENAME, ptrValue, "raw");
+  [[nodiscard]] std::enable_if_t<!is_shared_ptr_v<T>, JSValue> wrap(T* ptrValue) const {
+    using DereferencedType = std::decay_t<decltype(*ptrValue)>;
+    return impl_->wrap(JsWrapper<DereferencedType>::TYPENAME, ptrValue, "raw");
   }
 
   template <typename T>
-  [[nodiscard]] JSValue wrapShared(
-      std::shared_ptr<T> value) const {  // pass by value to copy the shared_ptr
-    if (value == nullptr) {
+  [[nodiscard]] std::enable_if_t<is_shared_ptr_v<T>, JSValue> wrap(T ptrValue) const {
+    if (ptrValue == nullptr) {
       return JS_NULL;
     }
-    auto ptr = std::make_unique<std::shared_ptr<T>>(value);
-    return impl_->wrap(JsWrapper<T, JSValue>::TYPENAME, ptr.release(), "shared");
+    using Inner = shared_ptr_inner_t<decltype(ptrValue)>;
+    auto ptr = std::make_unique<std::shared_ptr<Inner>>(ptrValue);
+    return impl_->wrap(JsWrapper<Inner>::TYPENAME, ptr.release(), "shared");
   }
+
+  [[nodiscard]] JSValue wrap(const char* str) const { return impl_->toJsString(str); }
+  [[nodiscard]] JSValue wrap(const std::string& str) const { return impl_->toJsString(str); }
+  [[nodiscard]] JSValue wrap(bool value) const { return JS_NewBool(impl_->getContext(), value); }
+  [[nodiscard]] JSValue wrap(size_t value) const {
+    return impl_->toJsNumber(static_cast<int64_t>(value));
+  }
+  [[nodiscard]] JSValue wrap(int value) const {
+    return impl_->toJsNumber(static_cast<int64_t>(value));
+  }
+  [[nodiscard]] JSValue wrap(double value) const { return impl_->toJsNumber(value); }
 
   [[nodiscard]] JSValue createInstanceOfModule(const char* moduleName,
                                                std::vector<JSValue>& args,

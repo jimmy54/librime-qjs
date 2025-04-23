@@ -7,8 +7,6 @@
 #include <string>
 #include <unordered_map>
 
-#include "type_map.h"
-
 // NEVER USE TEMPLATE IN THIS HEADER FILE
 class JscEngineImpl {
 public:
@@ -56,7 +54,7 @@ public:
   void registerType(const char* typeName,
                     JSClassRef& jsClass,
                     JSObjectCallAsConstructorCallback constructor,
-                    TypeMap<JSValueRef>::FinalizerFunctionPionterType finalizer,
+                    void (*finalizer)(JSObjectRef),
                     JSStaticFunction* functions,
                     int numFunctions,
                     JSStaticValue* properties,

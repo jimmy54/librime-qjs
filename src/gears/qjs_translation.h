@@ -37,8 +37,7 @@ private:
     size_t idx = 0;
     while (auto candidate = translation_->exhausted() ? nullptr : translation_->Peek()) {
       translation_->Next();
-      jsEngine.insertItemToArray(jsArray, idx++,
-                                 jsEngine.template wrapShared<Candidate>(candidate));
+      jsEngine.insertItemToArray(jsArray, idx++, jsEngine.wrap(candidate));
     }
     if (idx == 0) {
       jsEngine.freeValue(jsArray);
@@ -60,7 +59,7 @@ private:
     size_t length = jsEngine.getArrayLength(resultArray);
     for (size_t i = 0; i < length; i++) {
       T_JS_VALUE item = jsEngine.getArrayItem(resultArray, i);
-      if (auto candidate = jsEngine.template unwrapShared<Candidate>(item)) {
+      if (auto candidate = jsEngine.template unwrap<Candidate>(item)) {
         cache_.push_back(candidate);
       } else {
         LOG(ERROR) << "[qjs] Failed to unwrap candidate at index " << i;

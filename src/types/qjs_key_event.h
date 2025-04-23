@@ -6,13 +6,13 @@
 
 using namespace rime;
 
-template <typename T_JS_VALUE>
-class JsWrapper<rime::KeyEvent, T_JS_VALUE> {
-  DEFINE_GETTER(KeyEvent, shift, engine.toJsBool(obj->shift()))
-  DEFINE_GETTER(KeyEvent, ctrl, engine.toJsBool(obj->ctrl()))
-  DEFINE_GETTER(KeyEvent, alt, engine.toJsBool(obj->alt()))
-  DEFINE_GETTER(KeyEvent, release, engine.toJsBool(obj->release()))
-  DEFINE_GETTER(KeyEvent, repr, engine.toJsString(obj->repr()))
+template <>
+class JsWrapper<rime::KeyEvent> {
+  DEFINE_GETTER(KeyEvent, shift, obj->shift())
+  DEFINE_GETTER(KeyEvent, ctrl, obj->ctrl())
+  DEFINE_GETTER(KeyEvent, alt, obj->alt())
+  DEFINE_GETTER(KeyEvent, release, obj->release())
+  DEFINE_GETTER(KeyEvent, repr, obj->repr())
 
 public:
   EXPORT_CLASS_WITH_RAW_POINTER(KeyEvent,

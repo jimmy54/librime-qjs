@@ -193,7 +193,7 @@ std::string JscEngineImpl::toStdString(const JSValueRef& value) const {
 void JscEngineImpl::registerType(const char* typeName,
                                  JSClassRef& jsClass,
                                  JSObjectCallAsConstructorCallback constructor,
-                                 TypeMap<JSValueRef>::FinalizerFunctionPionterType finalizer,
+                                 void (*finalizer)(JSObjectRef),
                                  JSStaticFunction* functions,
                                  int numFunctions,
                                  JSStaticValue* properties,

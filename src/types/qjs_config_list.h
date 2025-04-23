@@ -7,18 +7,18 @@
 
 using namespace rime;
 
-template <typename T_JS_VALUE>
-class JsWrapper<rime::ConfigList, T_JS_VALUE> {
-  DEFINE_CFUNCTION(getType, { return engine.toJsString("list"); })
+template <>
+class JsWrapper<rime::ConfigList> {
+  DEFINE_CFUNCTION(getType, { return engine.wrap("list"); })
 
   DEFINE_CFUNCTION(getSize, {
-    auto obj = engine.unwrapShared<rime::ConfigList>(thisVal);
-    return engine.toJsInt(obj->size());
+    auto obj = engine.unwrap<rime::ConfigList>(thisVal);
+    return engine.wrap(obj->size());
   })
 
   DEFINE_CFUNCTION_ARGC(getItemAt, 1, {
     int index = engine.toInt(argv[0]);
-    auto obj = engine.unwrapShared<rime::ConfigList>(thisVal);
+    auto obj = engine.unwrap<rime::ConfigList>(thisVal);
 
     if (index < 0 || size_t(index) >= obj->size()) {
       return engine.null();
@@ -28,12 +28,12 @@ class JsWrapper<rime::ConfigList, T_JS_VALUE> {
     if (!item) {
       return engine.null();
     }
-    return engine.wrapShared<rime::ConfigItem>(item);
+    return engine.wrap(item);
   })
 
   DEFINE_CFUNCTION_ARGC(getValueAt, 1, {
     int index = engine.toInt(argv[0]);
-    auto obj = engine.unwrapShared<rime::ConfigList>(thisVal);
+    auto obj = engine.unwrap<rime::ConfigList>(thisVal);
 
     if (index < 0 || size_t(index) >= obj->size()) {
       return engine.null();
@@ -43,19 +43,19 @@ class JsWrapper<rime::ConfigList, T_JS_VALUE> {
     if (!value) {
       return engine.null();
     }
-    return engine.wrapShared<rime::ConfigValue>(value);
+    return engine.wrap(value);
   })
 
   DEFINE_CFUNCTION_ARGC(pushBack, 1, {
-    if (auto item = engine.unwrapShared<ConfigItem>(argv[0])) {
-      auto obj = engine.unwrapShared<rime::ConfigList>(thisVal);
+    if (auto item = engine.unwrap<ConfigItem>(argv[0])) {
+      auto obj = engine.unwrap<rime::ConfigList>(thisVal);
       obj->Append(item);
     }
     return engine.undefined();
   })
 
   DEFINE_CFUNCTION(clear, {
-    auto obj = engine.unwrapShared<rime::ConfigList>(thisVal);
+    auto obj = engine.unwrap<rime::ConfigList>(thisVal);
     obj->Clear();
     return engine.undefined();
   })

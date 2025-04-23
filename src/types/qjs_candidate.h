@@ -10,23 +10,23 @@ using namespace rime;
 
 constexpr int MIN_ARGC_NEW_CANDIDATE = 5;
 
-template <typename T_JS_VALUE>
-class JsWrapper<rime::Candidate, T_JS_VALUE> {
-  DEFINE_GETTER_2(Candidate, text, engine.toJsString(obj->text()))
-  DEFINE_GETTER_2(Candidate, comment, engine.toJsString(obj->comment()))
-  DEFINE_GETTER_2(Candidate, type, engine.toJsString(obj->type()))
-  DEFINE_GETTER_2(Candidate, start, engine.toJsInt(obj->start()))
-  DEFINE_GETTER_2(Candidate, end, engine.toJsInt(obj->end()))
-  DEFINE_GETTER_2(Candidate, quality, engine.toJsInt(obj->quality()))
-  DEFINE_GETTER_2(Candidate, preedit, engine.toJsString(obj->preedit()))
+template <>
+class JsWrapper<rime::Candidate> {
+  DEFINE_GETTER(Candidate, text, obj->text())
+  DEFINE_GETTER(Candidate, comment, obj->comment())
+  DEFINE_GETTER(Candidate, type, obj->type())
+  DEFINE_GETTER(Candidate, start, obj->start())
+  DEFINE_GETTER(Candidate, end, obj->end())
+  DEFINE_GETTER(Candidate, quality, obj->quality())
+  DEFINE_GETTER(Candidate, preedit, obj->preedit())
 
-  DEFINE_STRING_SETTER_2(Candidate, text, {
+  DEFINE_STRING_SETTER(Candidate, text, {
     if (auto simpleCandidate = dynamic_cast<rime::SimpleCandidate*>(obj.get())) {
       simpleCandidate->set_text(str);
     }
   })
 
-  DEFINE_STRING_SETTER_2(Candidate, comment, {
+  DEFINE_STRING_SETTER(Candidate, comment, {
     if (auto simpleCandidate = dynamic_cast<rime::SimpleCandidate*>(obj.get())) {
       simpleCandidate->set_comment(str);
     } else if (auto phrase = dynamic_cast<rime::Phrase*>(obj.get())) {
@@ -34,13 +34,13 @@ class JsWrapper<rime::Candidate, T_JS_VALUE> {
     }
   })
 
-  DEFINE_STRING_SETTER_2(Candidate, type, obj->set_type(str);)
+  DEFINE_STRING_SETTER(Candidate, type, obj->set_type(str);)
 
-  DEFINE_SETTER_2(Candidate, start, engine.toInt, obj->set_start(value))
-  DEFINE_SETTER_2(Candidate, quality, engine.toDouble, obj->set_quality(value))
-  DEFINE_SETTER_2(Candidate, end, engine.toInt, obj->set_end(value))
+  DEFINE_SETTER(Candidate, start, engine.toInt, obj->set_start(value))
+  DEFINE_SETTER(Candidate, quality, engine.toDouble, obj->set_quality(value))
+  DEFINE_SETTER(Candidate, end, engine.toInt, obj->set_end(value))
 
-  DEFINE_STRING_SETTER_2(Candidate, preedit, {
+  DEFINE_STRING_SETTER(Candidate, preedit, {
     if (auto simpleCandidate = dynamic_cast<rime::SimpleCandidate*>(obj.get())) {
       simpleCandidate->set_preedit(str);
     } else if (auto phrase = dynamic_cast<rime::Phrase*>(obj.get())) {
@@ -58,7 +58,7 @@ class JsWrapper<rime::Candidate, T_JS_VALUE> {
     if (argc > MIN_ARGC_NEW_CANDIDATE) {
       obj->set_quality(engine.toDouble(argv[5]));
     }
-    return engine.wrapShared<rime::Candidate>(obj);
+    return engine.wrap<an<Candidate>>(obj);
   });
 
 public:

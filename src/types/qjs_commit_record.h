@@ -7,10 +7,10 @@
 
 using namespace rime;
 
-template <typename T_JS_VALUE>
-class JsWrapper<rime::CommitRecord, T_JS_VALUE> {
-  DEFINE_GETTER(CommitRecord, type, engine.toJsString(obj->type))
-  DEFINE_GETTER(CommitRecord, text, engine.toJsString(obj->text))
+template <>
+class JsWrapper<rime::CommitRecord> {
+  DEFINE_GETTER(CommitRecord, type, obj->type)
+  DEFINE_GETTER(CommitRecord, text, obj->text)
 
   DEFINE_STRING_SETTER(CommitRecord, text, obj->text = str)
   DEFINE_STRING_SETTER(CommitRecord, type, obj->type = str)

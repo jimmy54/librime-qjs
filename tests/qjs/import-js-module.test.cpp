@@ -74,11 +74,11 @@ TEST_F(QuickJSModuleTest, ImportJsModuleFromAnotherJsFileWithEngine) {
   ASSERT_FALSE(engine.isException(myClass));
 
   constexpr int A_NAMED_INT = 10;
-  JSValue arg = engine.toJsInt(A_NAMED_INT);
+  JSValue arg = engine.wrap(A_NAMED_INT);
   JSValue obj = engine.newClassInstance(myClass, 1, &arg);
   ASSERT_FALSE(engine.isException(obj));
 
-  JSValue greetArg = engine.toJsString("QuickJS");
+  JSValue greetArg = engine.wrap("QuickJS");
   JSValue greeFunction = engine.getMethodOfClassOrInstance(myClass, obj, "greet");
   JSValue greetResult = engine.callFunction(greeFunction, obj, 1, &greetArg);
   ASSERT_FALSE(JS_IsException(greetResult));

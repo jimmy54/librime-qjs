@@ -7,36 +7,36 @@
 
 using namespace rime;
 
-template <typename T_JS_VALUE>
-class JsWrapper<rime::ConfigValue, T_JS_VALUE> {
-  DEFINE_CFUNCTION(getType, { return engine.toJsString("scalar"); })
+template <>
+class JsWrapper<rime::ConfigValue> {
+  DEFINE_CFUNCTION(getType, { return engine.wrap("scalar"); })
 
   DEFINE_CFUNCTION(getBool, {
-    auto obj = engine.unwrapShared<rime::ConfigValue>(thisVal);
+    auto obj = engine.unwrap<rime::ConfigValue>(thisVal);
     bool value = false;
     bool success = obj->GetBool(&value);
-    return success ? engine.toJsBool(value) : engine.null();
+    return success ? engine.wrap(value) : engine.null();
   })
 
   DEFINE_CFUNCTION(getInt, {
-    auto obj = engine.unwrapShared<rime::ConfigValue>(thisVal);
+    auto obj = engine.unwrap<rime::ConfigValue>(thisVal);
     int value = 0;
     bool success = obj->GetInt(&value);
-    return success ? engine.toJsInt(value) : engine.null();
+    return success ? engine.wrap(value) : engine.null();
   })
 
   DEFINE_CFUNCTION(getDouble, {
-    auto obj = engine.unwrapShared<rime::ConfigValue>(thisVal);
+    auto obj = engine.unwrap<rime::ConfigValue>(thisVal);
     double value = 0;
     bool success = obj->GetDouble(&value);
-    return success ? engine.toJsDouble(value) : engine.null();
+    return success ? engine.wrap(value) : engine.null();
   })
 
   DEFINE_CFUNCTION(getString, {
-    auto obj = engine.unwrapShared<rime::ConfigValue>(thisVal);
+    auto obj = engine.unwrap<rime::ConfigValue>(thisVal);
     std::string value;
     bool success = obj->GetString(&value);
-    return success ? engine.toJsString(value.c_str()) : engine.null();
+    return success ? engine.wrap(value.c_str()) : engine.null();
   })
 
 public:

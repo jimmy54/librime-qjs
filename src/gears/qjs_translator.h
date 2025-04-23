@@ -28,7 +28,7 @@ public:
     }
 
     auto& engine = JsEngine<T_JS_VALUE>::instance();
-    T_JS_VALUE jsInput = engine.toJsString(input.c_str());
+    T_JS_VALUE jsInput = engine.wrap(input);
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
     T_JS_VALUE jsSegment = engine.wrap(const_cast<Segment*>(&segment));
     auto jsEnvironment = engine.wrap(environment);
@@ -45,7 +45,7 @@ public:
     size_t length = engine.getArrayLength(resultArray);
     for (uint32_t i = 0; i < length; i++) {
       T_JS_VALUE item = engine.getArrayItem(resultArray, i);
-      if (an<Candidate> candidate = engine.template unwrapShared<Candidate>(item)) {
+      if (an<Candidate> candidate = engine.template unwrap<Candidate>(item)) {
         translation->Append(candidate);
       } else {
         LOG(ERROR) << "[qjs] Failed to unwrap candidate at index " << i;

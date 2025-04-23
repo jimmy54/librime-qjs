@@ -1,12 +1,15 @@
 #pragma once
 
 #include <JavaScriptCore/JavaScript.h>
+#include <JavaScriptCore/JavaScriptCore.h>
 #include <memory>
 #include <mutex>
 
 #include "engines/javascriptcore/jsc_engine_impl.h"
 #include "engines/javascriptcore/jsc_string_raii.hpp"
 #include "engines/js_engine.h"
+#include "engines/js_traits.h"
+#include "js_exception.h"
 #include "types/js_wrapper.h"
 
 template <>
@@ -18,6 +21,9 @@ class JsEngine<JSValueRef> {
   JsEngine<JSValueRef>() = default;
 
 public:
+  using T_JS_OBJECT = JSObjectRef;
+  inline static const char* engineName = "JavaScriptCore";
+
   static JsEngine<JSValueRef>& instance() {
     std::lock_guard<std::mutex> lock(instanceMutex);
     static JsEngine<JSValueRef> instance;
@@ -148,36 +154,16 @@ public:
     return JSValueToObject(impl_->getContext(), value, nullptr);
   }
 
-  [[nodiscard]] JSValueRef toJsString(const char* str) const {
-    return JSValueMakeString(impl_->getContext(), JscStringRAII(str));
-  }
-
-  [[nodiscard]] JSValueRef toJsString(const std::string& str) const {
-    return toJsString(str.c_str());
-  }
-
   [[nodiscard]] std::string toStdString(const JSValueRef& value) const {
     return impl_->toStdString(value);
-  }
-
-  [[nodiscard]] JSValueRef toJsBool(bool value) const {
-    return JSValueMakeBoolean(impl_->getContext(), value);
   }
 
   [[nodiscard]] bool toBool(const JSValueRef& value) const {
     return JSValueToBoolean(impl_->getContext(), value);
   }
 
-  [[nodiscard]] JSValueRef toJsInt(size_t value) const {
-    return JSValueMakeNumber(impl_->getContext(), static_cast<double>(value));
-  }
-
   [[nodiscard]] size_t toInt(const JSValueRef& value) const {
     return static_cast<size_t>(JSValueToNumber(impl_->getContext(), value, nullptr));
-  }
-
-  [[nodiscard]] JSValueRef toJsDouble(double value) const {
-    return JSValueMakeNumber(impl_->getContext(), value);
   }
 
   [[nodiscard]] double toDouble(const JSValueRef& value) const {
@@ -232,7 +218,7 @@ public:
 
   template <typename T_RIME_TYPE>
   void registerType() {
-    using WRAPPER = JsWrapper<T_RIME_TYPE, JSValueRef>;
+    using WRAPPER = JsWrapper<T_RIME_TYPE>;
     impl_->registerType(WRAPPER::TYPENAME, WRAPPER::classDefJsc, WRAPPER::constructorJsc,
                         WRAPPER::finalizerJsc, WRAPPER::functionsJsc, WRAPPER::FUNCTIONS_SIZE,
                         WRAPPER::propertiesJsc, WRAPPER::PROPERTIES_SIZE, WRAPPER::gettersJsc,
@@ -241,52 +227,68 @@ public:
 
   template <typename T>
   [[nodiscard]] bool isTypeRegistered() const {
-    return impl_->isTypeRegistered(JsWrapper<T, JSValueRef>::TYPENAME);
+    return impl_->isTypeRegistered(JsWrapper<T>::TYPENAME);
   }
 
   template <typename T>
-  T* unwrap(const JSValueRef& value) {
+  [[nodiscard]] typename JsWrapper<T>::T_UNWRAP_TYPE unwrap(const JSValueRef& value) const {
     if (!value || !isTypeRegistered<T>() || !isObject(value)) {
       return nullptr;
     }
-    if (auto* ptr = JSObjectGetPrivate(toObject(value))) {
-      return static_cast<T*>(ptr);
-    }
-    return nullptr;
-  }
 
-  template <typename T>
-  std::shared_ptr<T> unwrapShared(const JSValueRef& value) const {
-    if (!value || !isTypeRegistered<T>() || !isObject(value)) {
-      return nullptr;
-    }
-    if (void* ptr = isTypeRegistered<T>() ? JSObjectGetPrivate(toObject(value)) : nullptr) {
-      if (auto sharedPtr = static_cast<std::shared_ptr<T>*>(ptr)) {
-        return *sharedPtr;
+    if constexpr (is_shared_ptr_v<typename JsWrapper<T>::T_UNWRAP_TYPE>) {
+      if (void* ptr = JSObjectGetPrivate(toObject(value))) {
+        if (auto sharedPtr = static_cast<std::shared_ptr<T>*>(ptr)) {
+          return *sharedPtr;
+        }
+      }
+    } else {
+      if (auto* ptr = JSObjectGetPrivate(toObject(value))) {
+        return static_cast<T*>(ptr);
       }
     }
     return nullptr;
   }
 
   template <typename T>
-  JSObjectRef wrap(T* ptrValue) const {
-    if (!ptrValue || !isTypeRegistered<T>()) {
+  std::enable_if_t<!is_shared_ptr_v<T>, JSObjectRef> wrap(T ptrValue) const {
+    using DereferencedType = std::decay_t<decltype(*ptrValue)>;
+    if (!ptrValue || !isTypeRegistered<DereferencedType>()) {
       return nullptr;
     }
 
-    const JSClassRef& jsClass = impl_->getRegisteredClass(JsWrapper<T, JSValueRef>::TYPENAME);
+    auto typeName = JsWrapper<DereferencedType>::TYPENAME;
+    const JSClassRef& jsClass = impl_->getRegisteredClass(typeName);
     return JSObjectMake(impl_->getContext(), jsClass, ptrValue);
   }
 
   template <typename T>
-  JSObjectRef wrapShared(std::shared_ptr<T> value) const {  // pass by value to copy the shared_ptr
-    if (!value || !isTypeRegistered<T>()) {
+  std::enable_if_t<is_shared_ptr_v<T>, JSObjectRef> wrap(T ptrValue) const {
+    using Inner = shared_ptr_inner_t<decltype(ptrValue)>;
+    if (!ptrValue || !isTypeRegistered<Inner>()) {
       return nullptr;
     }
 
-    const JSClassRef& jsClass = impl_->getRegisteredClass(JsWrapper<T, JSValueRef>::TYPENAME);
-    auto ptr = std::make_unique<std::shared_ptr<T>>(value);
+    const JSClassRef& jsClass = impl_->getRegisteredClass(JsWrapper<Inner>::TYPENAME);
+    auto ptr = std::make_unique<std::shared_ptr<Inner>>(ptrValue);
     return JSObjectMake(impl_->getContext(), jsClass, ptr.release());
+  }
+
+  [[nodiscard]] JSValueRef wrap(const char* str) const {
+    return JSValueMakeString(impl_->getContext(), JscStringRAII(str));
+  }
+  [[nodiscard]] JSValueRef wrap(const std::string& str) const { return wrap(str.c_str()); }
+  [[nodiscard]] JSValueRef wrap(bool value) const {
+    return JSValueMakeBoolean(impl_->getContext(), value);
+  }
+  [[nodiscard]] JSValueRef wrap(size_t value) const {
+    return JSValueMakeNumber(impl_->getContext(), static_cast<double>(value));
+  }
+  [[nodiscard]] JSValueRef wrap(int value) const {
+    return JSValueMakeNumber(impl_->getContext(), static_cast<double>(value));
+  }
+  [[nodiscard]] JSValueRef wrap(double value) const {
+    return JSValueMakeNumber(impl_->getContext(), value);
   }
 
   void setBaseFolderPath(const char* absolutePath) { impl_->setBaseFolderPath(absolutePath); }
