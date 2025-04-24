@@ -47,7 +47,7 @@ public:
                                          JSObjectRef instance,
                                          const char* methodName);
 
-  void logErrorStackTrace(const JSValueRef* exception,
+  void logErrorStackTrace(const JSValueRef& exception,
                           const char* file = __FILE_NAME__,
                           int line = __LINE__);
 

@@ -42,8 +42,7 @@ JSObjectRef JscCodeLoader::createInstanceOfIifeBundledModule(JSContextRef ctx,
   auto [source, filePath] = loadModuleSource(ctx, baseFolderPath, moduleName);
   if (source.empty()) {
     std::string message = "Failed to open file for module: " + moduleName;
-    JSValueRef err = JSValueMakeString(ctx, JscStringRAII(message.c_str()));
-    exception = &err;
+    *exception = JSValueMakeString(ctx, JscStringRAII(message.c_str()));
     return nullptr;
   }
 
@@ -67,14 +66,14 @@ JSObjectRef JscCodeLoader::createInstanceOfIifeBundledModule(JSContextRef ctx,
 
   auto sourceUrl = JscStringRAII(filePath.generic_string().c_str());
   JSEvaluateScript(ctx, JscStringRAII(source.c_str()), nullptr, sourceUrl, 0, exception);
-  if (exception != nullptr) {
+  if (*exception != nullptr) {
     LOG(ERROR) << "[jsc] Failed to evaluate script: " << filePath.filename().string();
     return nullptr;
   }
 
   const auto* instance =
       JSObjectGetProperty(ctx, globalThis, JscStringRAII(instanceName.c_str()), exception);
-  if (exception == nullptr) {
+  if (*exception == nullptr) {
     return JSValueToObject(ctx, instance, exception);
   }
   return nullptr;
@@ -87,8 +86,7 @@ JSValueRef JscCodeLoader::loadEsmBundledModuleToGlobalThis(JSContextRef ctx,
   auto [source, filePath] = loadModuleSource(ctx, baseFolderPath, moduleName);
   if (source.empty()) {
     std::string message = "Failed to open file for module: " + moduleName;
-    JSValueRef err = JSValueMakeString(ctx, JscStringRAII(message.c_str()));
-    exception = &err;
+    *exception = JSValueMakeString(ctx, JscStringRAII(message.c_str()));
     return nullptr;
   }
 

@@ -8,8 +8,8 @@
 #include "engines/javascriptcore/jsc_engine_impl.h"
 #include "engines/javascriptcore/jsc_string_raii.hpp"
 #include "engines/js_engine.h"
+#include "engines/js_exception.h"
 #include "engines/js_traits.h"
-#include "js_exception.h"
 #include "types/js_wrapper.h"
 
 template <>
@@ -68,8 +68,6 @@ public:
   JsEngine(JsEngine&&) = delete;
   JsEngine& operator=(const JsEngine& other) = delete;
   JsEngine& operator=(JsEngine&&) = delete;
-
-  static JsEngine<JSValueRef>& getEngineByContext(JSContextRef ctx) { return instance(); }
 
   // NOLINTBEGIN(readability-convert-member-functions-to-static)
   int64_t getMemoryUsage() {
@@ -219,7 +217,7 @@ public:
   template <typename T_RIME_TYPE>
   void registerType() {
     using WRAPPER = JsWrapper<T_RIME_TYPE>;
-    impl_->registerType(WRAPPER::TYPENAME, WRAPPER::classDefJsc, WRAPPER::constructorJsc,
+    impl_->registerType(WRAPPER::typeName, WRAPPER::classDefJsc, WRAPPER::constructorJsc,
                         WRAPPER::finalizerJsc, WRAPPER::functionsJsc, WRAPPER::FUNCTIONS_SIZE,
                         WRAPPER::propertiesJsc, WRAPPER::PROPERTIES_SIZE, WRAPPER::gettersJsc,
                         WRAPPER::GETTERS_SIZE);
@@ -227,7 +225,7 @@ public:
 
   template <typename T>
   [[nodiscard]] bool isTypeRegistered() const {
-    return impl_->isTypeRegistered(JsWrapper<T>::TYPENAME);
+    return impl_->isTypeRegistered(JsWrapper<T>::typeName);
   }
 
   template <typename T>
@@ -257,7 +255,7 @@ public:
       return nullptr;
     }
 
-    auto typeName = JsWrapper<DereferencedType>::TYPENAME;
+    auto typeName = JsWrapper<DereferencedType>::typeName;
     const JSClassRef& jsClass = impl_->getRegisteredClass(typeName);
     return JSObjectMake(impl_->getContext(), jsClass, ptrValue);
   }
@@ -269,7 +267,7 @@ public:
       return nullptr;
     }
 
-    const JSClassRef& jsClass = impl_->getRegisteredClass(JsWrapper<Inner>::TYPENAME);
+    const JSClassRef& jsClass = impl_->getRegisteredClass(JsWrapper<Inner>::typeName);
     auto ptr = std::make_unique<std::shared_ptr<Inner>>(ptrValue);
     return JSObjectMake(impl_->getContext(), jsClass, ptr.release());
   }

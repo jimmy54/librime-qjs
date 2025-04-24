@@ -11,7 +11,7 @@
                                                                                                  \
   static JSValueRef get_##propertieyName##Jsc(JSContextRef ctx, JSObjectRef thisVal,             \
                                               JSStringRef functionName, JSValueRef* exception) { \
-    auto& engine = JsEngine<JSValueRef>::getEngineByContext(ctx);                                \
+    auto& engine = JsEngine<JSValueRef>::instance();                                             \
     if (auto obj = engine.unwrap<T_RIME_TYPE>(thisVal)) {                                        \
       return engine.wrap(statement);                                                             \
     }                                                                                            \
@@ -24,7 +24,7 @@
                                                                                                 \
   static bool set_##name##Jsc(JSContextRef ctx, JSObjectRef thisVal, JSStringRef propertyName,  \
                               JSValueRef val, JSValueRef* exception) {                          \
-    auto& engine = JsEngine<JSValueRef>::getEngineByContext(ctx);                               \
+    auto& engine = JsEngine<JSValueRef>::instance();                                            \
     if (auto obj = engine.unwrap<T_RIME_TYPE>(thisVal)) {                                       \
       auto str = engine.toStdString(val);                                                       \
       if (!str.empty()) {                                                                       \
@@ -36,7 +36,7 @@
       return false;                                                                             \
     }                                                                                           \
     auto msg = formatString("Failed to unwrap the js object to a cpp %s object", #T_RIME_TYPE); \
-    *exception = engine.throwError(JsErrorType::TYPE, msg);                                     \
+    *exception = JSValueMakeString(ctx, JscStringRAII(msg.c_str()));                            \
     return false;                                                                               \
   }
 
@@ -46,14 +46,14 @@
                                                                                                  \
   static bool set_##jsName##Jsc(JSContextRef ctx, JSObjectRef thisVal, JSStringRef propertyName, \
                                 JSValueRef val, JSValueRef* exception) {                         \
-    auto& engine = JsEngine<JSValueRef>::getEngineByContext(ctx);                                \
+    auto& engine = JsEngine<JSValueRef>::instance();                                             \
     if (auto obj = engine.unwrap<T_RIME_TYPE>(thisVal)) {                                        \
       auto value = converter(val);                                                               \
       assignment;                                                                                \
       return true;                                                                               \
     }                                                                                            \
     auto msg = formatString("Failed to unwrap the js object to a cpp %s object", #T_RIME_TYPE);  \
-    *exception = engine.throwError(JsErrorType::TYPE, msg);                                      \
+    *exception = JSValueMakeString(ctx, JscStringRAII(msg.c_str()));                             \
     return false;                                                                                \
   }
 
@@ -63,11 +63,11 @@
                                                                                                  \
   static JSValueRef funcName##Jsc(JSContextRef ctx, JSObjectRef function, JSObjectRef thisVal,   \
                                   size_t argc, const JSValueRef argv[], JSValueRef* exception) { \
-    auto& engine = JsEngine<JSValueRef>::getEngineByContext(ctx);                                \
+    auto& engine = JsEngine<JSValueRef>::instance();                                             \
     try {                                                                                        \
       funcBody;                                                                                  \
     } catch (const JsException& e) {                                                             \
-      *exception = engine.throwError(JsErrorType::TYPE, e.what());                               \
+      *exception = JSValueMakeString(ctx, JscStringRAII(e.what()));                              \
       return nullptr;                                                                            \
     }                                                                                            \
   }
@@ -78,16 +78,16 @@
                                                                                                  \
   static JSValueRef funcName##Jsc(JSContextRef ctx, JSObjectRef function, JSObjectRef thisVal,   \
                                   size_t argc, const JSValueRef argv[], JSValueRef* exception) { \
-    auto& engine = JsEngine<JSValueRef>::getEngineByContext(ctx);                                \
+    auto& engine = JsEngine<JSValueRef>::instance();                                             \
     if (argc < (expectingArgc)) {                                                                \
       auto msg = formatString("%s(...) expects %d arguments", #funcName, expectingArgc);         \
-      *exception = engine.throwError(JsErrorType::SYNTAX, msg);                                  \
+      *exception = JSValueMakeString(ctx, JscStringRAII(msg.c_str()));                           \
       return nullptr;                                                                            \
     }                                                                                            \
     try {                                                                                        \
       statements;                                                                                \
     } catch (const JsException& e) {                                                             \
-      *exception = engine.throwError(JsErrorType::TYPE, e.what());                               \
+      *exception = JSValueMakeString(ctx, JscStringRAII(e.what()));                              \
       return nullptr;                                                                            \
     }                                                                                            \
   }
