@@ -1,5 +1,6 @@
 #include "trie.h"
 
+#include <algorithm>
 #include <boost/interprocess/file_mapping.hpp>
 #include <boost/interprocess/mapped_region.hpp>
 #include <filesystem>
@@ -59,7 +60,10 @@ void Trie::loadBinaryFileMmap(std::string_view filePath) {
 #endif
 }
 
-void Trie::loadTextFile(const std::string& txtPath, size_t entrySize) {
+void Trie::loadTextFile(const std::string& txtPath,
+                        size_t entrySize,
+                        bool isReversed,
+                        const std::string& charsToRemove) {
   std::vector<std::pair<std::string, std::string>> items(entrySize);
   std::ifstream infile(txtPath);
   std::string line;
@@ -67,6 +71,14 @@ void Trie::loadTextFile(const std::string& txtPath, size_t entrySize) {
   while (std::getline(infile, line)) {
     if (!line.empty() && line[0] == '#') {
       continue;
+    }
+
+    if (!charsToRemove.empty()) {
+      line.erase(std::remove_if(line.begin(), line.end(),
+                                [&charsToRemove](char c) {
+                                  return charsToRemove.find(c) != std::string::npos;
+                                }),
+                 line.end());
     }
 
     size_t tabPos = line.find('\t');
@@ -77,6 +89,9 @@ void Trie::loadTextFile(const std::string& txtPath, size_t entrySize) {
 
       if (!value.empty() && value.back() == '\r') {
         value.remove_suffix(1);
+      }
+      if (isReversed) {
+        std::swap(key, value);
       }
 
       if (idx < entrySize) {

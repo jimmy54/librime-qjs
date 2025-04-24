@@ -1,5 +1,4 @@
-#ifndef MARISA_TRIES_WITH_STRING_H
-#define MARISA_TRIES_WITH_STRING_H
+#pragma once
 
 #include <marisa.h>
 
@@ -63,12 +62,8 @@ protected:
     explicit ScopedTempFile(const std::filesystem::path& base) : path_(base.string() + ".temp") {}
     ~ScopedTempFile() { std::filesystem::remove(path_); }
 
-    // Delete copy constructor and assignment operator
     ScopedTempFile(const ScopedTempFile&) = delete;
     ScopedTempFile& operator=(const ScopedTempFile&) = delete;
-
-    // Delete move constructor and assignment operator since we manage a
-    // filesystem resource
     ScopedTempFile(ScopedTempFile&&) = delete;
     ScopedTempFile& operator=(ScopedTempFile&&) = delete;
 
@@ -77,7 +72,10 @@ protected:
 
 public:
   void loadBinaryFileMmap(std::string_view filePath);
-  void loadTextFile(const std::string& txtPath, size_t entrySize);
+  void loadTextFile(const std::string& txtPath,
+                    size_t entrySize,
+                    bool isReversed = false,
+                    const std::string& charsToRemove = "");
   void saveToBinaryFile(const std::string& filePath) const;
   void add(const std::string& key, const std::string& value);
   void build(const std::vector<std::pair<std::string, std::string>>& items);
@@ -89,4 +87,3 @@ public:
 };
 
 }  // namespace rime
-#endif  // MARISA_TRIES_WITH_STRING_H

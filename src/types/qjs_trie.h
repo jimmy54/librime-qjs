@@ -11,14 +11,12 @@ template <>
 class JsWrapper<rime::Trie> {
   DEFINE_CFUNCTION_ARGC(loadTextFile, 1, {
     std::string absolutePath = engine.toStdString(argv[0]);
-    size_t size = 0;
-    if (argc > 0) {
-      size = engine.toInt(argv[1]);
-    }
+    size_t size = argc > 1 ? engine.toInt(argv[1]) : 0;
+    bool isReversed = argc > 2 ? engine.toBool(argv[2]) : false;
+    std::string charsToRemove = argc > 3 ? engine.toStdString(argv[3]) : "";
     auto obj = engine.unwrap<Trie>(thisVal);
-
     try {
-      obj->loadTextFile(absolutePath, size);
+      obj->loadTextFile(absolutePath, size, isReversed, charsToRemove);
     } catch (const std::exception& e) {
       LOG(ERROR) << "loadTextFile of " << absolutePath << " failed: " << e.what();
       return engine.throwError(JsErrorType::GENERIC, e.what());
