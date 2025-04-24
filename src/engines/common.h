@@ -1,6 +1,5 @@
 #pragma once
 
-#include "engines/js_engine.h"
 #include "engines/js_exception.h"
 
 #include "engines/js_macros.h"

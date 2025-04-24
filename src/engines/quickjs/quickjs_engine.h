@@ -4,11 +4,13 @@
 #include <memory>
 #include <mutex>
 
-#include "engines/js_engine.h"
 #include "engines/js_exception.h"
 #include "engines/js_traits.h"
 #include "engines/quickjs/quickjs_engine_impl.h"
 #include "types/js_wrapper.h"
+
+template <typename T_JS_VALUE>
+class JsEngine;
 
 template <>
 class JsEngine<JSValue> {
@@ -35,8 +37,6 @@ public:
     static JsEngine<JSValue> instance;
     return instance;
   }
-
-  static JsEngine<JSValue>& getEngineByContext(JSContext* ctx) { return instance(); }
 
   static void setup() {
     // the QuickJsEngineImpl object would be created in `instance()` or `shutdown()`
@@ -170,7 +170,7 @@ public:
   template <typename T_RIME_TYPE>
   void registerType() {
     using WRAPPER = JsWrapper<T_RIME_TYPE>;
-    impl_->registerType(WRAPPER::TYPENAME, WRAPPER::JS_CLASS_ID, WRAPPER::JS_CLASS_DEF,
+    impl_->registerType(WRAPPER::typeName, WRAPPER::jsClassId, WRAPPER::JS_CLASS_DEF,
                         WRAPPER::constructorQjs, WRAPPER::CONSTRUCTOR_ARGC, WRAPPER::finalizerQjs,
                         WRAPPER::PROPERTIES_QJS, WRAPPER::PROPERTIES_SIZE, WRAPPER::GETTERS_QJS,
                         WRAPPER::GETTERS_SIZE, WRAPPER::FUNCTIONS_QJS, WRAPPER::FUNCTIONS_SIZE);
@@ -179,13 +179,13 @@ public:
   template <typename T>
   [[nodiscard]] typename JsWrapper<T>::T_UNWRAP_TYPE unwrap(const JSValue& value) const {
     if constexpr (is_shared_ptr_v<typename JsWrapper<T>::T_UNWRAP_TYPE>) {
-      if (auto* ptr = JS_GetOpaque(value, JsWrapper<T>::JS_CLASS_ID)) {
+      if (auto* ptr = JS_GetOpaque(value, JsWrapper<T>::jsClassId)) {
         if (auto sharedPtr = static_cast<std::shared_ptr<T>*>(ptr)) {
           return *sharedPtr;
         }
       }
     } else {
-      if (auto* ptr = JS_GetOpaque(value, JsWrapper<T>::JS_CLASS_ID)) {
+      if (auto* ptr = JS_GetOpaque(value, JsWrapper<T>::jsClassId)) {
         return static_cast<T*>(ptr);
       }
     }
@@ -195,7 +195,7 @@ public:
   template <typename T>
   [[nodiscard]] std::enable_if_t<!is_shared_ptr_v<T>, JSValue> wrap(T* ptrValue) const {
     using DereferencedType = std::decay_t<decltype(*ptrValue)>;
-    return impl_->wrap(JsWrapper<DereferencedType>::TYPENAME, ptrValue, "raw");
+    return impl_->wrap(JsWrapper<DereferencedType>::typeName, ptrValue, "raw");
   }
 
   template <typename T>
@@ -205,7 +205,7 @@ public:
     }
     using Inner = shared_ptr_inner_t<decltype(ptrValue)>;
     auto ptr = std::make_unique<std::shared_ptr<Inner>>(ptrValue);
-    return impl_->wrap(JsWrapper<Inner>::TYPENAME, ptr.release(), "shared");
+    return impl_->wrap(JsWrapper<Inner>::typeName, ptr.release(), "shared");
   }
 
   [[nodiscard]] JSValue wrap(const char* str) const { return impl_->toJsString(str); }

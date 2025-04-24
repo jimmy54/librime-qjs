@@ -4,6 +4,8 @@
 #include <JavaScriptCore/JavaScriptCore.h>
 #include "engines/javascriptcore/javascriptcore_engine.h"  // IWYU pragma: export
 
+#include <sstream>
+
 // NOLINTBEGIN(cppcoreguidelines-macro-usage) function-like macro 'EXPORT_CLASS_IMPL' used; consider a 'constexpr' template function
 #define DEFINE_GETTER(T_RIME_TYPE, propertieyName, statement)                                    \
                                                                                                  \
@@ -18,26 +20,28 @@
     return engine.undefined();                                                                   \
   }
 
-#define DEFINE_STRING_SETTER(T_RIME_TYPE, name, assignment)                                     \
-                                                                                                \
-  DEFINE_STRING_SETTER_IMPL_QJS(T_RIME_TYPE, name, assignment);                                 \
-                                                                                                \
-  static bool set_##name##Jsc(JSContextRef ctx, JSObjectRef thisVal, JSStringRef propertyName,  \
-                              JSValueRef val, JSValueRef* exception) {                          \
-    auto& engine = JsEngine<JSValueRef>::instance();                                            \
-    if (auto obj = engine.unwrap<T_RIME_TYPE>(thisVal)) {                                       \
-      auto str = engine.toStdString(val);                                                       \
-      if (!str.empty()) {                                                                       \
-        assignment;                                                                             \
-        return true;                                                                            \
-      }                                                                                         \
-      auto msg = formatString(" %s.%s = rvalue: rvalue is not a string", #T_RIME_TYPE, #name);  \
-      *exception = engine.throwError(JsErrorType::TYPE, msg);                                   \
-      return false;                                                                             \
-    }                                                                                           \
-    auto msg = formatString("Failed to unwrap the js object to a cpp %s object", #T_RIME_TYPE); \
-    *exception = JSValueMakeString(ctx, JscStringRAII(msg.c_str()));                            \
-    return false;                                                                               \
+#define DEFINE_STRING_SETTER(T_RIME_TYPE, name, assignment)                                    \
+                                                                                               \
+  DEFINE_STRING_SETTER_IMPL_QJS(T_RIME_TYPE, name, assignment);                                \
+                                                                                               \
+  static bool set_##name##Jsc(JSContextRef ctx, JSObjectRef thisVal, JSStringRef propertyName, \
+                              JSValueRef val, JSValueRef* exception) {                         \
+    auto& engine = JsEngine<JSValueRef>::instance();                                           \
+    if (auto obj = engine.unwrap<T_RIME_TYPE>(thisVal)) {                                      \
+      auto str = engine.toStdString(val);                                                      \
+      if (!str.empty()) {                                                                      \
+        assignment;                                                                            \
+        return true;                                                                           \
+      }                                                                                        \
+      std::stringstream msg;                                                                   \
+      msg << #T_RIME_TYPE << '.' << #name << "rvalue: rvalue is not a string";                 \
+      *exception = JSValueMakeString(ctx, JscStringRAII(msg.str().c_str()));                   \
+      return false;                                                                            \
+    }                                                                                          \
+    std::stringstream msg;                                                                     \
+    msg << "Failed to unwrap the js object to a cpp " << #T_RIME_TYPE << " object";            \
+    *exception = JSValueMakeString(ctx, JscStringRAII(msg.str().c_str()));                     \
+    return false;                                                                              \
   }
 
 #define DEFINE_SETTER(T_RIME_TYPE, jsName, converter, assignment)                                \
@@ -52,8 +56,9 @@
       assignment;                                                                                \
       return true;                                                                               \
     }                                                                                            \
-    auto msg = formatString("Failed to unwrap the js object to a cpp %s object", #T_RIME_TYPE);  \
-    *exception = JSValueMakeString(ctx, JscStringRAII(msg.c_str()));                             \
+    std::stringstream msg;                                                                       \
+    msg << "Failed to unwrap the js object to a cpp " << #T_RIME_TYPE << " object";              \
+    *exception = JSValueMakeString(ctx, JscStringRAII(msg.str().c_str()));                       \
     return false;                                                                                \
   }
 
@@ -80,8 +85,9 @@
                                   size_t argc, const JSValueRef argv[], JSValueRef* exception) { \
     auto& engine = JsEngine<JSValueRef>::instance();                                             \
     if (argc < (expectingArgc)) {                                                                \
-      auto msg = formatString("%s(...) expects %d arguments", #funcName, expectingArgc);         \
-      *exception = JSValueMakeString(ctx, JscStringRAII(msg.c_str()));                           \
+      std::stringstream msg;                                                                     \
+      msg << #funcName << "(...) expects " << (expectingArgc) << " arguments";                   \
+      *exception = JSValueMakeString(ctx, JscStringRAII(msg.str().c_str()));                     \
       return nullptr;                                                                            \
     }                                                                                            \
     try {                                                                                        \

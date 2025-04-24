@@ -1,11 +1,8 @@
 #pragma once
 
-#include <quickjs.h>
-#include "types/qjs_types.h"
+#include "engines/common.h"
 
 #ifdef _ENABLE_JAVASCRIPTCORE
-
-#include <JavaScriptCore/JavaScript.h>
 
 #define SETUP_JS_ENGINES(testSuite)                      \
   using JsTypes = ::testing::Types<JSValue, JSValueRef>; \

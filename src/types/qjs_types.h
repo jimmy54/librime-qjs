@@ -1,6 +1,6 @@
 #pragma once
 
-#include "engines/js_engine.h"
+#include "engines/common.h"
 #include "qjs_candidate.h"
 #include "qjs_commit_history.h"
 #include "qjs_commit_record.h"

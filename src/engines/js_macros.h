@@ -116,9 +116,9 @@ constexpr std::size_t countof(const T (& /*unused*/)[N]) noexcept {
                                                                          \
   using T_RIME_TYPE = className;                                         \
                                                                          \
-  inline static const char* TYPENAME = #className;                       \
+  inline static const char* typeName = #className;                       \
                                                                          \
-  inline static JSClassID JS_CLASS_ID = 0;                               \
+  inline static JSClassID jsClassId = 0;                                 \
                                                                          \
   inline static JSClassDef JS_CLASS_DEF = {                              \
       .class_name = #className,                                          \
@@ -152,7 +152,7 @@ constexpr std::size_t countof(const T (& /*unused*/)[N]) noexcept {
 
 #define WITH_FINALIZER_QJS                                                        \
   inline static JSClassFinalizer* finalizerQjs = [](JSRuntime* rt, JSValue val) { \
-    if (void* ptr = JS_GetOpaque(val, JS_CLASS_ID)) {                             \
+    if (void* ptr = JS_GetOpaque(val, jsClassId)) {                               \
       if (auto* ppObj = static_cast<std::shared_ptr<T_RIME_TYPE>*>(ptr)) {        \
         delete ppObj;                                                             \
         JS_SetOpaque(val, nullptr);                                               \

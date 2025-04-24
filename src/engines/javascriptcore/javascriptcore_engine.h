@@ -7,10 +7,11 @@
 
 #include "engines/javascriptcore/jsc_engine_impl.h"
 #include "engines/javascriptcore/jsc_string_raii.hpp"
-#include "engines/js_engine.h"
 #include "engines/js_exception.h"
 #include "engines/js_traits.h"
 #include "types/js_wrapper.h"
+
+#include "engines/quickjs/quickjs_engine.h"
 
 template <>
 class JsEngine<JSValueRef> {

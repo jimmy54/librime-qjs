@@ -35,12 +35,13 @@ options="-p ${root}/build \
     -extra-arg=-isystem${root}/thirdparty/quickjs \
     -extra-arg=-isystem/usr/local/include \
     -extra-arg=-stdlib=libc++ \
+    -extra-arg=-D_ENABLE_JAVASCRIPTCORE \
     -extra-arg=-D_GNU_SOURCE \
     -extra-arg=-DGLOG_EXPORT=__attribute__((visibility(\"default\"))) \
     -extra-arg=-DGLOG_NO_EXPORT=__attribute__((visibility(\"default\"))) \
     -extra-arg=-DGLOG_DEPRECATED=__attribute__((deprecated))"
 
-ignore_files="qjs_macros.h"
+ignore_files="test_switch.h"
 
 process_file() {
     if [[ $1 =~ $ignore_files ]]; then

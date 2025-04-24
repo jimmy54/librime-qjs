@@ -1,7 +1,6 @@
 #pragma once
 
 #include <glog/logging.h>
-#include "engines/js_engine.h"
 #include "engines/js_macros.h"
 #include "js_wrapper.h"
 #include "trie.h"
