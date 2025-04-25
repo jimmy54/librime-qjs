@@ -8,6 +8,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 #include <vector>
 
 #include "dicts/dictionary.h"
@@ -18,6 +19,7 @@ class Trie : public Dictionary {
 private:
   marisa::Trie trie_;
   std::vector<std::string> data_;
+  std::string concatSeparator_;
 
 protected:
   marisa::Trie& getTrie() { return trie_; }
@@ -81,7 +83,7 @@ public:
       const std::string& prefix) const override;
 
   void add(const std::string& key, const std::string& value);
-  void build(const std::vector<std::pair<std::string, std::string>>& items);
+  void build(const std::unordered_map<std::string, std::string>& map);
   [[nodiscard]] bool contains(std::string_view key) const;
 };
 

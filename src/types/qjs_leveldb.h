@@ -2,7 +2,7 @@
 
 #include <glog/logging.h>
 
-#include "dicts/leveldb.hpp"
+#include "dicts/leveldb.h"
 #include "engines/js_macros.h"
 #include "js_wrapper.h"
 
@@ -34,6 +34,21 @@ static ParseTextFileOptions parseTextFileOptions(const JsEngine<T>& engine, T js
   auto jsComment = engine.getObjectProperty(objOptions, "comment");
   if (!engine.isUndefined(jsComment)) {
     result.comment = engine.toStdString(jsComment);
+  }
+  auto jsOnDuplicatedKey = engine.getObjectProperty(objOptions, "onDuplicatedKey");
+  if (!engine.isUndefined(jsOnDuplicatedKey)) {
+    auto onDuplicatedKey = engine.toStdString(jsOnDuplicatedKey);
+    if (onDuplicatedKey == "Skip") {
+      result.onDuplicatedKey = OnDuplicatedKey::Skip;
+    } else if (onDuplicatedKey == "Concat") {
+      result.onDuplicatedKey = OnDuplicatedKey::Concat;
+    } else {  // default to overwrite
+      result.onDuplicatedKey = OnDuplicatedKey::Overwrite;
+    }
+  }
+  auto jsConcatSeparator = engine.getObjectProperty(objOptions, "concatSeparator");
+  if (!engine.isUndefined(jsConcatSeparator)) {
+    result.concatSeparator = engine.toStdString(jsConcatSeparator);
   }
   return result;
 }

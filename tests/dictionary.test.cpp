@@ -2,7 +2,7 @@
 #include <memory>
 
 #include "dict_data_helper.hpp"
-#include "dicts/leveldb.hpp"
+#include "dicts/leveldb.h"
 #include "dicts/trie.h"
 
 #include "test_helper.hpp"

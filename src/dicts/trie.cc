@@ -4,6 +4,7 @@
 #include <boost/interprocess/mapped_region.hpp>
 #include <filesystem>
 #include <fstream>
+#include <unordered_map>
 #ifdef _WIN32
 #include <fcntl.h>
 #include <io.h>
@@ -57,20 +58,18 @@ void Trie::loadBinaryFile(const std::string& filePath) {
   ::lseek(mapping.get_mapping_handle().handle, offset, SEEK_SET);
   trie_.read(mapping.get_mapping_handle().handle);
 #endif
+
+  auto optSeparator = find(MAGIC_KEY_TO_STORE_CONCAT_SEPARATOR);
+  concatSeparator_ = optSeparator.has_value() ? optSeparator.value() : "";
 }
 
 void Trie::loadTextFile(const std::string& txtPath, const ParseTextFileOptions& options) {
-  std::vector<std::pair<std::string, std::string>> items(options.lines);
-  size_t idx = 0;
-  parseTextFile(txtPath, options,
-                [&items, &idx, &options](const std::string& key, const std::string& value) {
-                  if (idx < options.lines) {
-                    items[idx++] = std::make_pair(key, value);
-                  } else {
-                    items.emplace_back(key, value);
-                  }
-                });
-  build(items);
+  std::unordered_map<std::string, std::string> map = parseTextFile(txtPath, options);
+  if (options.onDuplicatedKey == OnDuplicatedKey::Concat) {
+    map[MAGIC_KEY_TO_STORE_CONCAT_SEPARATOR] = options.concatSeparator;
+    concatSeparator_ = options.concatSeparator;
+  }
+  build(map);
 }
 
 void Trie::saveToBinaryFile(const std::string& filePath) {
@@ -120,11 +119,11 @@ void Trie::add(const std::string& key, const std::string& value) {
   }
 }
 
-void Trie::build(const std::vector<std::pair<std::string, std::string>>& items) {
+void Trie::build(const std::unordered_map<std::string, std::string>& map) {
   marisa::Keyset keyset;
 
   // First, add all keys to the keyset
-  for (const auto& [key, _] : items) {
+  for (const auto& [key, _] : map) {
     keyset.push_back(key.c_str(), key.length());
   }
 
@@ -132,10 +131,10 @@ void Trie::build(const std::vector<std::pair<std::string, std::string>>& items) 
   trie_.build(keyset, MARISA_BINARY_TAIL);  // UTF-8 support
 
   // Resize data vector to accommodate all values
-  data_.resize(items.size());
+  data_.resize(map.size());
 
   // Store all values
-  for (const auto& [key, value] : items) {
+  for (const auto& [key, value] : map) {
     marisa::Agent agent;
     agent.set_query(key.c_str(), key.length());
 
@@ -176,7 +175,15 @@ std::vector<std::pair<std::string, std::string>> Trie::prefixSearch(
     std::string key(agent.key().ptr(), agent.key().length());
     std::size_t id = agent.key().id();
     if (id < data_.size()) {
-      results.emplace_back(key, data_[id]);
+      auto value = data_[id];
+      if (!concatSeparator_.empty()) {
+        auto arr = split(value, concatSeparator_);
+        for (auto& item : arr) {
+          results.emplace_back(key, item);
+        }
+      } else {
+        results.emplace_back(key, value);
+      }
     }
   }
   return results;

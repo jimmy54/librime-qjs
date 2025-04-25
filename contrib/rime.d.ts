@@ -529,6 +529,18 @@ interface ParseTextFileOptions {
    * @default "#"
    */
   comment?: string
+
+  /**
+   * strategy to handle duplicated keys
+   * @default "Overwrite"
+   */
+  onDuplicatedKey?: 'Overwrite' | 'Skip' | 'Concat'
+
+  /**
+   * The separator to use when concatenating values for duplicated keys
+   * @default "$|$"
+   */
+  concatSeparator?: string
 }
 
 /**
