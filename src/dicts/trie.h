@@ -10,9 +10,11 @@
 #include <string_view>
 #include <vector>
 
+#include "dicts/dictionary.h"
+
 namespace rime {
 
-class Trie {
+class Trie : public Dictionary {
 private:
   marisa::Trie trie_;
   std::vector<std::string> data_;
@@ -71,19 +73,16 @@ protected:
   };
 
 public:
-  void loadBinaryFileMmap(std::string_view filePath);
-  void loadTextFile(const std::string& txtPath,
-                    size_t entrySize,
-                    bool isReversed = false,
-                    const std::string& charsToRemove = "");
-  void saveToBinaryFile(const std::string& filePath) const;
+  void loadBinaryFile(const std::string& filePath) override;
+  void loadTextFile(const std::string& txtPath, const ParseTextFileOptions& options) override;
+  void saveToBinaryFile(const std::string& filePath) override;
+  [[nodiscard]] std::optional<std::string> find(const std::string& key) const override;
+  [[nodiscard]] std::vector<std::pair<std::string, std::string>> prefixSearch(
+      const std::string& prefix) const override;
+
   void add(const std::string& key, const std::string& value);
   void build(const std::vector<std::pair<std::string, std::string>>& items);
-
-  [[nodiscard]] std::optional<std::string> find(std::string_view key) const;
   [[nodiscard]] bool contains(std::string_view key) const;
-  [[nodiscard]] std::vector<std::pair<std::string, std::string>> prefixSearch(
-      std::string_view prefix) const;
 };
 
 }  // namespace rime

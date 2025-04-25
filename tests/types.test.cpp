@@ -6,26 +6,28 @@
 #include <rime/schema.h>
 #include <memory>
 
+#include "dict_data_helper.hpp"
 #include "environment.h"
 #include "qjs_types.h"
 #include "test_helper.hpp"
 #include "test_switch.h"
-#include "trie_data_helper.hpp"
 
 using namespace rime;
 
 template <typename T>
 class QuickJSTypesTest : public ::testing::Test {
 private:
-  TrieDataHelper trieDataHelper_ =
-      TrieDataHelper(getFolderPath(__FILE__).c_str(), "dummy_dict.txt");
+  DictionaryDataHelper trieDataHelper_ =
+      DictionaryDataHelper(getFolderPath(__FILE__).c_str(), "dummy_dict.txt");
 
 protected:
   void SetUp() override { trieDataHelper_.createDummyTextFile(); }
 
   void TearDown() override {
+    auto folder = getFolderPath(__FILE__);
     trieDataHelper_.cleanupDummyFiles();
-    std::remove((getFolderPath(__FILE__) + "/dumm.bin").c_str());  // the file generated in js
+    std::remove((folder + "/dumm.bin").c_str());        // the file generated in js
+    std::filesystem::remove_all(folder + "/dumm.ldb");  // the leveldb folder generated in js
   }
 };
 

@@ -1,6 +1,5 @@
-#include "trie.h"
+#include "dicts/trie.h"
 
-#include <algorithm>
 #include <boost/interprocess/file_mapping.hpp>
 #include <boost/interprocess/mapped_region.hpp>
 #include <filesystem>
@@ -13,7 +12,7 @@
 
 namespace rime {
 
-void Trie::loadBinaryFileMmap(std::string_view filePath) {
+void Trie::loadBinaryFile(const std::string& filePath) {
   boost::interprocess::file_mapping mapping(std::string(filePath).c_str(),
                                             boost::interprocess::read_only);
   boost::interprocess::mapped_region region(mapping, boost::interprocess::read_only);
@@ -60,51 +59,22 @@ void Trie::loadBinaryFileMmap(std::string_view filePath) {
 #endif
 }
 
-void Trie::loadTextFile(const std::string& txtPath,
-                        size_t entrySize,
-                        bool isReversed,
-                        const std::string& charsToRemove) {
-  std::vector<std::pair<std::string, std::string>> items(entrySize);
-  std::ifstream infile(txtPath);
-  std::string line;
+void Trie::loadTextFile(const std::string& txtPath, const ParseTextFileOptions& options) {
+  std::vector<std::pair<std::string, std::string>> items(options.lines);
   size_t idx = 0;
-  while (std::getline(infile, line)) {
-    if (!line.empty() && line[0] == '#') {
-      continue;
-    }
-
-    if (!charsToRemove.empty()) {
-      line.erase(std::remove_if(line.begin(), line.end(),
-                                [&charsToRemove](char c) {
-                                  return charsToRemove.find(c) != std::string::npos;
-                                }),
-                 line.end());
-    }
-
-    size_t tabPos = line.find('\t');
-    if (tabPos != std::string::npos) {
-      auto lineView = std::string_view(line);
-      std::string_view key = lineView.substr(0, tabPos);
-      std::string_view value = lineView.substr(tabPos + 1);
-
-      if (!value.empty() && value.back() == '\r') {
-        value.remove_suffix(1);
-      }
-      if (isReversed) {
-        std::swap(key, value);
-      }
-
-      if (idx < entrySize) {
-        items[idx++] = std::make_pair(std::string(key), std::string(value));
-      } else {
-        items.emplace_back(std::string(key), std::string(value));
-      }
-    }
-  }
+  parseTextFile(txtPath, options,
+                [&items, &idx, &options](const std::string& key, const std::string& value) {
+                  if (idx < options.lines) {
+                    items[idx++] = std::make_pair(key, value);
+                  } else {
+                    items.emplace_back(key, value);
+                  }
+                });
   build(items);
 }
 
-void Trie::saveToBinaryFile(const std::string& filePath) const {
+void Trie::saveToBinaryFile(const std::string& filePath) {
+  std::cout << "Saving trie to file: " << filePath << '\n';
   std::ofstream file(filePath, std::ios::binary);
   if (!file) {
     throw std::runtime_error("Failed to open file for writing");
@@ -177,7 +147,7 @@ void Trie::build(const std::vector<std::pair<std::string, std::string>>& items) 
   }
 }
 
-std::optional<std::string> Trie::find(std::string_view key) const {
+std::optional<std::string> Trie::find(const std::string& key) const {
   marisa::Agent agent;
   agent.set_query(key.data(), key.length());
 
@@ -196,7 +166,8 @@ bool Trie::contains(std::string_view key) const {
   return trie_.lookup(agent);
 }
 
-std::vector<std::pair<std::string, std::string>> Trie::prefixSearch(std::string_view prefix) const {
+std::vector<std::pair<std::string, std::string>> Trie::prefixSearch(
+    const std::string& prefix) const {
   std::vector<std::pair<std::string, std::string>> results;
   marisa::Agent agent;
   agent.set_query(prefix.data(), prefix.length());

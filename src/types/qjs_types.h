@@ -13,6 +13,7 @@
 #include "qjs_engine.h"
 #include "qjs_environment.h"
 #include "qjs_key_event.h"
+#include "qjs_leveldb.h"
 #include "qjs_notifier.h"
 #include "qjs_notifier_connection.h"
 #include "qjs_os_info.h"
@@ -29,6 +30,7 @@ void registerTypesToJsEngine() {
   // expose all types
   engine.template registerType<rime::Candidate>();
   engine.template registerType<rime::Trie>();
+  engine.template registerType<LevelDb>();
   engine.template registerType<rime::Segment>();
   engine.template registerType<rime::KeyEvent>();
   engine.template registerType<rime::Context>();

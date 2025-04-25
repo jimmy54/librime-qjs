@@ -1,9 +1,10 @@
 #pragma once
 
 #include <glog/logging.h>
+#include "dicts/trie.h"
 #include "engines/js_macros.h"
 #include "js_wrapper.h"
-#include "trie.h"
+#include "types/qjs_leveldb.h"
 
 using namespace rime;
 
@@ -11,12 +12,14 @@ template <>
 class JsWrapper<rime::Trie> {
   DEFINE_CFUNCTION_ARGC(loadTextFile, 1, {
     std::string absolutePath = engine.toStdString(argv[0]);
-    size_t size = argc > 1 ? engine.toInt(argv[1]) : 0;
-    bool isReversed = argc > 2 ? engine.toBool(argv[2]) : false;
-    std::string charsToRemove = argc > 3 ? engine.toStdString(argv[3]) : "";
+    ParseTextFileOptions options;
+    if (argc > 1) {
+      options = parseTextFileOptions(engine, argv[1]);
+    }
+
     auto obj = engine.unwrap<Trie>(thisVal);
     try {
-      obj->loadTextFile(absolutePath, size, isReversed, charsToRemove);
+      obj->loadTextFile(absolutePath, options);
     } catch (const std::exception& e) {
       LOG(ERROR) << "loadTextFile of " << absolutePath << " failed: " << e.what();
       return engine.throwError(JsErrorType::GENERIC, e.what());
@@ -29,7 +32,7 @@ class JsWrapper<rime::Trie> {
     std::string absolutePath = engine.toStdString(argv[0]);
     auto obj = engine.unwrap<Trie>(thisVal);
     try {
-      obj->loadBinaryFileMmap(absolutePath);
+      obj->loadBinaryFile(absolutePath);
     } catch (const std::exception& e) {
       LOG(ERROR) << "loadBinaryFileMmap of " << absolutePath << " failed: " << e.what();
       return engine.throwError(JsErrorType::GENERIC, e.what());

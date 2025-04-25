@@ -43,6 +43,7 @@ function checkArgument(env) {
 
   testEnvUtilities(env)
   testTrie(env)
+  testLevelDb(env)
 
   return env
 }
@@ -76,13 +77,26 @@ function testEnvUtilities(env) {
 
 function testTrie(env) {
   const trie = new Trie()
-  trie.loadTextFile(env.currentFolder + '/dummy_dict.txt', 6)
+  trie.loadTextFile(env.currentFolder + '/dummy_dict.txt', {lines: 6})
   checkTrieData(trie)
 
   trie.saveToBinaryFile(env.currentFolder + '/dumm.bin')
   const trie2 = new Trie()
   trie2.loadBinaryFile(env.currentFolder + '/dumm.bin')
   checkTrieData(trie2)
+}
+
+function testLevelDb(env) {
+  console.log('testLevelDb')
+  const levelDb = new LevelDb()
+  levelDb.loadTextFile(env.currentFolder + '/dummy_dict.txt', {lines: 6})
+  levelDb.saveToBinaryFile(env.currentFolder + '/dumm.ldb')
+  checkTrieData(levelDb)
+  levelDb.close()
+
+  const levelDb2 = new LevelDb()
+  levelDb2.loadBinaryFile(env.currentFolder + '/dumm.ldb')
+  checkTrieData(levelDb2)
 }
 
 function checkTrieData(trie) {

@@ -1,13 +1,11 @@
 #include <marisa.h>
 
-#include <cstdint>
 #include <filesystem>
 #include <fstream>
 #include <ios>
 #include <iostream>
 #include <stdexcept>
 #include <string>
-#include <string_view>
 #include <vector>
 // mmap headers
 #include <fcntl.h>
@@ -15,7 +13,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include "trie.h"
+#include "dicts/trie.h"
 
 class TrieWithStringExt : public rime::Trie {
 public:

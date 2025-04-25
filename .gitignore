@@ -15,6 +15,11 @@ tests/**/*.trie
 tests/**/*.yas
 tests/**/node_modules
 
+
+benchmark/**/*.bin
+benchmark/**/*.trie
+benchmark/**/*.yas
+
 thirdparty
 src/types/others
 

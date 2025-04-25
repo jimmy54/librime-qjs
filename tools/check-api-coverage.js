@@ -152,7 +152,11 @@ const interfacesOutsideTypes = [
   },
   {
     name: 'Filter',
-    methods: ['filter'],
+    methods: ['filter', 'isApplicable'],
+  },
+  {
+    name: 'ParseTextFileOptions',
+    props: ['delimiter', 'comment', 'lines', 'isReversed', 'charsToRemove'],
   },
 ]
 

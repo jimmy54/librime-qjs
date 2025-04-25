@@ -3,18 +3,19 @@
 #include <string>
 
 #include "benchmark_helper.h"
-#include "trie_data_helper.hpp"
+#include "dict_data_helper.hpp"
 #include "trie_ext.hpp"
 
 // #define RUN_BENCHMARK_WITH_REAL_DATA
 
 #ifdef RUN_BENCHMARK_WITH_REAL_DATA
 
-TrieDataHelper trieDataHelper_ = TrieDataHelper("./tests/benchmark/dict", nullptr);
+DictionaryDataHelper trieDataHelper_ = DictionaryDataHelper("./tests/benchmark/dict", nullptr);
 
 #else
 
-const TrieDataHelper TRIE_DATA_HELPER = TrieDataHelper("./tests/benchmark/dict", "dummy_dict.txt");
+DictionaryDataHelper TRIE_DATA_HELPER =
+    DictionaryDataHelper("./tests/benchmark/dict", "dummy_dict.txt");
 
 class GlobalEnvironment : public testing::Environment {
 public:
@@ -54,7 +55,7 @@ TEST(LoadTrieDictBenchmark, LoadTextFileAndLookup) {
   TrieWithStringExt trie;
   PRINT_DURATION(MAGENTA, "Plain text file: \t\t\t",
                  trie.loadTextFile(TRIE_DATA_HELPER.txtPath_, TRIE_DATA_HELPER.entrySize_));
-  TrieDataHelper::testSearchItems(trie);
+  DictionaryDataHelper::testSearchItems(trie);
 
   RESAVE_FILE(TRIE_DATA_HELPER.binaryPath_,
               PRINT_DURATION(YELLOW, "mmap trie + r/w data as string: \t",
@@ -68,22 +69,22 @@ TEST(LoadTrieDictBenchmark, LoadTextFileAndLookup) {
 TEST(LoadTrieDictBenchmark, LoadSingleBinaryFileWithMmapAndLookup) {
   TrieWithStringExt trie;
   PRINT_DURATION(MAGENTA, "mmap (trie + data): \t\t\t",
-                 trie.loadBinaryFileMmap(TRIE_DATA_HELPER.mergedBinaryPath_));
-  TrieDataHelper::testSearchItems(trie);
+                 trie.loadBinaryFile(TRIE_DATA_HELPER.mergedBinaryPath_));
+  DictionaryDataHelper::testSearchItems(trie);
 }
 
 TEST(LoadTrieDictBenchmark, LoadSingleBinaryFileAndLookup) {
   TrieWithStringExt trie;
   PRINT_DURATION(MAGENTA, "mmap trie + r/w data as vector: \t",
                  trie.loadFromSingleFile(TRIE_DATA_HELPER.mergedBinaryPath_));
-  TrieDataHelper::testSearchItems(trie);
+  DictionaryDataHelper::testSearchItems(trie);
 }
 
 TEST(LoadTrieDictBenchmark, LoadBinaryFilesAndLookup) {
   TrieWithStringExt trie;
   PRINT_DURATION(MAGENTA, "mmap trie + r/w data as string: \t",
                  trie.loadFromFiles(TRIE_DATA_HELPER.binaryPath_));
-  TrieDataHelper::testSearchItems(trie);
+  DictionaryDataHelper::testSearchItems(trie);
 }
 
 int main(int argc, char** argv) {

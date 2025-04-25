@@ -7,11 +7,11 @@
 #include <iostream>
 #include <string>
 
-#include "trie.h"
+#include "dicts/dictionary.h"
 
-class TrieDataHelper {
+class DictionaryDataHelper {
 public:
-  TrieDataHelper(const char* folder, const char* dummyFileName) {
+  DictionaryDataHelper(const char* folder, const char* dummyFileName) {
     if (dummyFileName == nullptr) {
       return;
     }
@@ -19,35 +19,36 @@ public:
     txtPath_ = std::string(folder) + "/" + dummyFileName;
     binaryPath_ = std::string(folder) + "/" + "dummy.bin";
     mergedBinaryPath_ = std::string(folder) + "/" + "merged-dummy.bin";
+    levelDbFolderPath_ = std::string(folder) + "/" + "leveldb";
   }
 
-  static void testSearchItems(rime::Trie& trie) {
-    testExistingWords(trie);
-    testNonExistingWords(trie);
-    testPrefixSearch(trie);
+  static void testSearchItems(const Dictionary& dict) {
+    testExistingWords(dict);
+    testNonExistingWords(dict);
+    testPrefixSearch(dict);
   }
 
-  static void testExistingWords(rime::Trie& trie) {
-    auto result1 = trie.find("accord");
+  static void testExistingWords(const Dictionary& dict) {
+    auto result1 = dict.find("accord");
     ASSERT_TRUE(result1.has_value());
     if (result1.has_value()) {
       EXPECT_EQ(result1.value(), "[ә'kɒ:d]; n. 一致, 调和, 协定\\n vt. 给与, 使一致\\n vi. 相符合");
     }
 
-    auto result2 = trie.find("accordion");
+    auto result2 = dict.find("accordion");
     ASSERT_TRUE(result2.has_value());
     if (result2.has_value()) {
       EXPECT_EQ(result2.value(), "[ә'kɒ:djәn]; n. 手风琴\\n a. 可折叠的");
     }
   }
 
-  static void testNonExistingWords(rime::Trie& trie) {
-    auto result = trie.find("nonexistent-word");
+  static void testNonExistingWords(const Dictionary& dict) {
+    auto result = dict.find("nonexistent-word");
     ASSERT_FALSE(result.has_value());
   }
 
-  static void testPrefixSearch(rime::Trie& trie) {
-    auto prefixResults = trie.prefixSearch("accord");
+  static void testPrefixSearch(const Dictionary& dict) {
+    auto prefixResults = dict.prefixSearch("accord");
     ASSERT_FALSE(prefixResults.empty());
     EXPECT_EQ(prefixResults.size(), 6);
   }
@@ -55,6 +56,7 @@ public:
   std::string txtPath_;
   std::string binaryPath_;
   std::string mergedBinaryPath_;
+  std::string levelDbFolderPath_;
 
   static constexpr size_t ENTRY_SIZE = 6;
   size_t entrySize_ = ENTRY_SIZE;
@@ -80,6 +82,7 @@ public:
     std::remove(binaryPath_.c_str());
     std::remove((binaryPath_ + ".trie").c_str());
     std::remove(mergedBinaryPath_.c_str());
+    std::filesystem::remove_all(levelDbFolderPath_);
   }
 };
 
