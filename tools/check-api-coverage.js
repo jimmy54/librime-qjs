@@ -156,7 +156,7 @@ const interfacesOutsideTypes = [
   },
   {
     name: 'ParseTextFileOptions',
-    props: ['delimiter', 'comment', 'lines', 'isReversed', 'charsToRemove'],
+    props: ['delimiter', 'comment', 'lines', 'isReversed', 'charsToRemove', 'onDuplicatedKey', 'concatSeparator'],
   },
 ]
 
