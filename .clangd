@@ -24,6 +24,7 @@ CompileFlags:
     - "-I../../include/**"
     - "-I../../include/glog"
     - "-I../../deps/boost-1.84.0"
+    - "-I../../build/_deps/googlebenchmark-src/include"
     - "-I/usr/local/include"
 
 Diagnostics:

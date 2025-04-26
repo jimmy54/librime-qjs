@@ -34,10 +34,11 @@ public:
   [[nodiscard]] virtual std::vector<std::pair<std::string, std::string>> prefixSearch(
       const std::string& prefix) const = 0;
 
-protected:
   static std::unordered_map<std::string, std::string> parseTextFile(
       const std::string& path,
       const ParseTextFileOptions& options);
+
+protected:
   static std::vector<std::string> split(const std::string& str, const std::string& delimiters);
 
 private:

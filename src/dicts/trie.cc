@@ -73,10 +73,9 @@ void Trie::loadTextFile(const std::string& txtPath, const ParseTextFileOptions& 
 }
 
 void Trie::saveToBinaryFile(const std::string& filePath) {
-  std::cout << "Saving trie to file: " << filePath << '\n';
   std::ofstream file(filePath, std::ios::binary);
   if (!file) {
-    throw std::runtime_error("Failed to open file for writing");
+    throw std::runtime_error("Failed to open file for writing " + filePath);
   }
 
   IOUtil::writeVectorData(file, data_);

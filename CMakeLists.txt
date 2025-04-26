@@ -6,6 +6,7 @@ cmake_minimum_required(VERSION 3.12)
 project(LibrimeQjs VERSION 1.1.0)
 
 option(BUILD_TOOLS "Build tools" ON)
+option(BUILD_BENCHMARKS "Run benchmarks" OFF)
 
 option(ENABLE_JAVASCRIPTCORE "Enable JavaScriptCore" OFF)
 if(APPLE)
@@ -170,6 +171,12 @@ if(BUILD_SHARED_LIBS)
   if(BUILD_TEST)
     add_subdirectory(tests)
   endif()
+endif()
+
+# cmake -S . -B build -DBUILD_BENCHMARKS=ON
+# make && ./plugins/qjs/build/qjs-benchmark
+if(BUILD_BENCHMARKS)
+  add_subdirectory(benchmark)
 endif()
 
 set(plugin_name "rime-qjs" PARENT_SCOPE)
