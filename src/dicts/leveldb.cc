@@ -1,5 +1,7 @@
 #include "dicts/leveldb.h"
+
 #include <leveldb/write_batch.h>
+#include <stdexcept>
 
 LevelDb::~LevelDb() {
   if (ptr_ != nullptr) {

@@ -129,6 +129,7 @@ JSValue QuickJsEngineImpl::throwError(JsErrorType errorType, const std::string& 
       return JS_ThrowInternalError(context_, "%s", message.c_str());
     case JsErrorType::GENERIC:
     case JsErrorType::UNKNOWN:
+    default:
       return JS_ThrowPlainError(context_, "%s", message.c_str());
   }
 }

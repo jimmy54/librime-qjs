@@ -1,5 +1,6 @@
 #include "dictionary.h"
 
+#include <algorithm>
 #include <fstream>
 
 std::unordered_map<std::string, std::string> Dictionary::parseTextFile(
