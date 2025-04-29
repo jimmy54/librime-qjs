@@ -556,8 +556,7 @@ interface Trie {
    * Loads a trie from a text file.
    *    - Each line in the file should contain a key-value pair separated by a tab character.
    *    - The key and value should be separated by a tab character: `key\tvalue`.
-   *    - The key should be the string to search for, and the value should be the string to return.
-   *    - If the file contains multiple lines for the same key, only the last line will be used.
+   *    - Modify the parse text file options for customized format.
    * @param path - The path to the text file containing trie data
    * @param options - Options for parsing the text file
    * @throws {Error} If the file cannot be read or the format is invalid

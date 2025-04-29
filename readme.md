@@ -11,14 +11,14 @@
   - ✨ 还在为编写代码调试程序绞尽脑汁？ NPM 仓库群星荟萃，应有尽有。
   - 👀 看看我们的实力！[白霜拼音](https://github.com/gaboolic/rime-frost) 的所有 Lua 插件都已完美重写为 [JavaScript 版本](https://github.com/HuangJian/rime-frost/tree/hj/js)。
   - 📝 贴心提供 [JavaScript 类型定义](./contrib/rime.d.ts)，让插件开发体验如丝般顺滑。
-  - 🔄 简单灵活的[类型绑定模板](./src/helpers/qjs_macros.h)，让 JavaScript 和 Rime 引擎完美配合。
+  - 🔄 简单灵活的[类型绑定模板](./src/engines/js_macros.h)，让 JavaScript 和 Rime 引擎完美配合。
 - 🚀 基于 [QuickJS-NG](https://github.com/quickjs-ng/quickjs) 打造的轻量级 JavaScript 引擎。
   - 💪 畅享最新 ECMAScript 特性：正则表达式、Unicode、ESM、big number，应有尽有！
   - 🚄 运行速度快得惊人：所有插件均毫秒级响应。
   - 🪶 内存占用小得不可思议：<20MB！
   - 🍎 macOS/iOS 尊享极致性能：脚本引擎升级为 JavaScriptCore，速度翻番再翻番！
-- 📚 为大型词典量身打造的 Trie 结构。
-  - 💥 词典加载快如闪电：11 万词条的[汉译英词典](https://www.mdbg.net/chinese/dictionary?page=cc-cedict)，转为二进制格式后，加载完成仅需 20ms。
+- 📚 为大型词典量身打造的 LevelDB / Trie 结构。
+  - 💥 词典加载快如闪电：11 万词条的[汉译英词典](https://www.mdbg.net/chinese/dictionary?page=cc-cedict)，转为二进制格式后，加载完成仅需 1ms。
   - 🎯 精确查找速如箭矢：11 万词条的汉译英词典，精确查找 200 个汉语词语的英文释义不到 5ms。
   - 🌪️ 前缀搜索迅如疾风：6 万词条的[英译汉词典](https://github.com/skywind3000/ECDICT)，搜索前缀匹配的英文单词及其汉语翻译仅需 1~3ms。
 - 🗡️ 所有 JavaScript 插件一次加载到处可用，让输入法会话切换轻松洒脱。
