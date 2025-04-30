@@ -1,6 +1,7 @@
 #include "environment.h"
 
 #include <glog/logging.h>
+#include <stdexcept>
 #include "process_memory.hpp"
 
 #ifdef _WIN32
@@ -68,13 +69,12 @@ std::string Environment::getRimeInfo() {
 
 std::string Environment::popen(const std::string& command) {
   if (command.empty()) {
-    return "";
+    throw std::runtime_error("Command is empty");
   }
 
   FILE* pipe = popenx(command);
   if (pipe == nullptr) {
-    LOG(ERROR) << "Failed to run command: " << command;
-    return "";
+    throw std::runtime_error("Failed to run command: " + command);
   }
 
   // Read the output
@@ -88,8 +88,7 @@ std::string Environment::popen(const std::string& command) {
 
   int status = pclosex(pipe);
   if (status != 0) {
-    LOG(ERROR) << "[qjs] Command failed with status: " << status;
-    return "";
+    throw std::runtime_error("Command failed with status: " + std::to_string(status));
   }
 
   return result;

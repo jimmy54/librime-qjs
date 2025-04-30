@@ -69,7 +69,11 @@ JSValue QuickJsEngineImpl::callFunction(const JSValue& func,
                                         const JSValue& thisArg,
                                         int argc,
                                         JSValue* argv) const {
-  return JS_Call(context_, func, thisArg, argc, argv);
+  auto ret = JS_Call(context_, func, thisArg, argc, argv);
+  if (JS_IsException(ret)) {
+    logErrorStackTrace(ret, __FILE_NAME__, __LINE__);
+  }
+  return ret;
 }
 
 JSValue QuickJsEngineImpl::newClassInstance(const JSValue& clazz, int argc, JSValue* argv) const {

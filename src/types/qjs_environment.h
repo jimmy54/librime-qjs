@@ -2,6 +2,7 @@
 
 #include <rime/engine.h>
 #include <rime/schema.h>
+#include <exception>
 
 #include "engines/js_exception.h"
 #include "engines/js_macros.h"
@@ -49,11 +50,12 @@ class JsWrapper<Environment> {
     if (command.empty()) {
       return engine.throwError(JsErrorType::SYNTAX, "The command argument should be a string");
     }
-    std::string result = Environment::popen(command);
-    if (result.empty()) {
-      return engine.throwError(JsErrorType::GENERIC, "Command execution failed");
+    try {
+      std::string result = Environment::popen(command);
+      return engine.wrap(result);
+    } catch (const std::exception& e) {
+      return engine.throwError(JsErrorType::GENERIC, e.what());
     }
-    return engine.wrap(result);
   })
 
 public:

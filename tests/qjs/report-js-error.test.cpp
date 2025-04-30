@@ -30,16 +30,9 @@ TYPED_TEST(QuickJSErrorTest, TestJsRuntimeError) {
   auto result = jsEngine.callFunction(func, JS_UNDEFINED, 0, nullptr);
   ASSERT_TRUE(jsEngine.isException(result));
 
+  // The exception is alredy captured in the js engine logger. The log should be:
   // ReferenceError: abcdefg is not defined
   //      at <anonymous> (runtime-error.js:7:21)
 
-  auto exception = jsEngine.getLatestException();
-  auto message = jsEngine.toStdString(exception);
-  ASSERT_STREQ(message.c_str(), "ReferenceError: abcdefg is not defined");
-
-  auto stack = jsEngine.getObjectProperty(exception, "stack");
-  auto stackTrace = trim(jsEngine.toStdString(stack));
-  ASSERT_STREQ(stackTrace.c_str(), "at <anonymous> (runtime-error.js:7:19)");
-
-  jsEngine.freeValue(module, globalObj, func, result, exception, stack);
+  jsEngine.freeValue(module, globalObj, func, result);
 }

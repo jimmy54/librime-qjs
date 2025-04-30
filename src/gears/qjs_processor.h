@@ -27,6 +27,8 @@ public:
     engine.freeValue(jsKeyEvt, jsEnvironment);
 
     if (engine.isException(jsResult)) {
+      LOG(ERROR) << "[qjs] " << this->getNamespace()
+                 << " failed to process keyEvent = " << keyEvent.repr();
       return rime::kNoop;
     }
 
