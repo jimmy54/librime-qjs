@@ -2,6 +2,7 @@
 
 #include "engines/common.h"
 #include "qjs_candidate.h"
+#include "qjs_candidate_iterator.h"
 #include "qjs_commit_history.h"
 #include "qjs_commit_record.h"
 #include "qjs_config.h"
@@ -29,6 +30,7 @@ void registerTypesToJsEngine() {
 
   // expose all types
   engine.template registerType<rime::Candidate>();
+  engine.template registerType<rime::Translation>();
   engine.template registerType<rime::Trie>();
   engine.template registerType<LevelDb>();
   engine.template registerType<rime::Segment>();

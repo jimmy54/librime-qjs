@@ -169,7 +169,10 @@ public:
     return JSValueToNumber(impl_->getContext(), value, nullptr);
   }
 
-  JSValueRef callFunction(JSObjectRef func, JSObjectRef thisArg, int argc, JSValueRef* argv) const {
+  JSValueRef callFunction(const JSObjectRef& func,
+                          const JSObjectRef& thisArg,
+                          int argc,
+                          JSValueRef* argv) const {
     return impl_->callFunction(func, thisArg, argc, argv);
   }
 

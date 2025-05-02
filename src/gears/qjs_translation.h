@@ -73,3 +73,83 @@ private:
 
   bool replenished_ = false;
 };
+
+template <typename T_JS_VALUE>
+class QuickJSLazyTranslation : public rime::Translation {
+  using T_JS_OBJECT = typename JsEngine<T_JS_VALUE>::T_JS_OBJECT;
+
+  bool isNextFunctionCalled_ = false;
+  T_JS_OBJECT generator_;
+  T_JS_OBJECT nextFunction_;
+  T_JS_OBJECT nextResult_;
+
+public:
+  QuickJSLazyTranslation(const QuickJSLazyTranslation&) = delete;
+  QuickJSLazyTranslation(QuickJSLazyTranslation&&) = delete;
+  QuickJSLazyTranslation& operator=(const QuickJSLazyTranslation&) = delete;
+  QuickJSLazyTranslation& operator=(QuickJSLazyTranslation&&) = delete;
+
+  QuickJSLazyTranslation(const rime::an<rime::Translation>& translation,
+                         const T_JS_OBJECT& filterObj,
+                         const T_JS_OBJECT& filterFunc,
+                         Environment* environment) {
+    auto& jsEngine = JsEngine<T_JS_VALUE>::instance();
+    auto iterator = jsEngine.wrap(translation);
+    auto jsEnv = jsEngine.wrap(environment);
+    T_JS_VALUE args[2] = {iterator, jsEnv};
+    generator_ = jsEngine.toObject(jsEngine.callFunction(filterFunc, filterObj, 2, args));
+    jsEngine.freeValue(jsEnv, iterator);
+    nextFunction_ = jsEngine.toObject(jsEngine.getObjectProperty(generator_, "next"));
+    jsEngine.protectFromGC(generator_, nextFunction_);
+  }
+
+  ~QuickJSLazyTranslation() override {
+    auto& jsEngine = JsEngine<T_JS_VALUE>::instance();
+    jsEngine.unprotectFromGC(generator_, nextFunction_);
+    jsEngine.freeValue(generator_, nextFunction_);
+
+    if (isNextFunctionCalled_) {
+      jsEngine.unprotectFromGC(nextResult_);
+      jsEngine.freeValue(nextResult_);
+    }
+  }
+
+  bool Next() override {
+    if (this->exhausted()) {
+      return false;
+    }
+
+    auto& jsEngine = JsEngine<T_JS_VALUE>::instance();
+    if (isNextFunctionCalled_) {
+      jsEngine.unprotectFromGC(nextResult_);
+      jsEngine.freeValue(nextResult_);
+    }
+
+    nextResult_ = jsEngine.toObject(jsEngine.callFunction(nextFunction_, generator_, 0, nullptr));
+    jsEngine.protectFromGC(nextResult_);
+    isNextFunctionCalled_ = true;
+
+    auto jsDone = jsEngine.getObjectProperty(nextResult_, "done");
+    bool isDone = jsEngine.isBool(jsDone) && jsEngine.toBool(jsDone);
+    jsEngine.freeValue(jsDone);
+    if (isDone) {
+      set_exhausted(true);
+    }
+    return !isDone;
+  }
+
+  an<rime::Candidate> Peek() override {
+    auto& jsEngine = JsEngine<T_JS_VALUE>::instance();
+    if (!isNextFunctionCalled_) {
+      this->Next();
+    }
+    if (this->exhausted()) {
+      return nullptr;
+    }
+
+    auto jsValue = jsEngine.getObjectProperty(nextResult_, "value");
+    auto ret = jsEngine.template unwrap<rime::Candidate>(jsValue);
+    jsEngine.freeValue(jsValue);
+    return ret;
+  }
+};

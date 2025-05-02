@@ -93,8 +93,8 @@ int JscEngineImpl::setObjectFunction(JSObjectRef obj,
   return 0;
 }
 
-JSValueRef JscEngineImpl::callFunction(JSObjectRef func,
-                                       JSObjectRef thisArg,
+JSValueRef JscEngineImpl::callFunction(const JSObjectRef& func,
+                                       const JSObjectRef& thisArg,
                                        int argc,
                                        JSValueRef* argv) {
   JSValueRef exception = nullptr;

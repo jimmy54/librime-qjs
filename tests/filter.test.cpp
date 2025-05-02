@@ -87,3 +87,15 @@ TYPED_TEST(QuickJSFilterTest, CheckAppblicable) {
   }
   ASSERT_TRUE(filtered->exhausted());
 }
+
+TYPED_TEST(QuickJSFilterTest, TestLazyFilter) {
+  auto filtered = doFilterInJs<TypeParam>("lazy_filter");
+
+  ASSERT_FALSE(filtered->exhausted());
+  ASSERT_STREQ(filtered->Peek()->text().c_str(), "text1");
+  ASSERT_TRUE(filtered->Next());
+  ASSERT_STREQ(filtered->Peek()->text().c_str(), "text3");
+  ASSERT_FALSE(filtered->Next());
+  ASSERT_TRUE(filtered->exhausted());
+  ASSERT_TRUE(filtered->Peek() == nullptr);
+}

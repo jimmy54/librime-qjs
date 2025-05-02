@@ -39,7 +39,10 @@ public:
                         JSObjectCallAsFunctionCallback cppFunction,
                         int expectingArgc);
 
-  JSValueRef callFunction(JSObjectRef func, JSObjectRef thisArg, int argc, JSValueRef* argv);
+  JSValueRef callFunction(const JSObjectRef& func,
+                          const JSObjectRef& thisArg,
+                          int argc,
+                          JSValueRef* argv);
   JSObjectRef newClassInstance(const JSObjectRef& clazz, int argc, JSValueRef* argv);
 
   JSValueRef getJsClassHavingMethod(const JSValueRef& module, const char* methodName) const;

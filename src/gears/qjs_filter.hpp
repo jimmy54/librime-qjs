@@ -19,6 +19,7 @@ class QuickJSFilter : public QjsModule<T_JS_VALUE> {
       beginClock = std::chrono::steady_clock::now();
 
   typename JsEngine<T_JS_VALUE>::T_JS_OBJECT funcIsApplicable_;
+  bool isFilterFuncGenerator_ = false;
 
 public:
   QuickJSFilter(const QuickJSFilter&) = delete;
@@ -35,6 +36,8 @@ public:
     funcIsApplicable_ =
         jsEngine.toObject(jsEngine.getObjectProperty(this->getInstance(), "isApplicable"));
     jsEngine.protectFromGC(funcIsApplicable_);
+
+    isFilterFuncGenerator_ = isFilterFuncGenerator();
   }
 
   ~QuickJSFilter() {
@@ -49,21 +52,38 @@ public:
     }
   }
 
+  [[nodiscard]] bool isFilterFuncGenerator() const {
+    auto& jsEngine = JsEngine<T_JS_VALUE>::instance();
+    const auto& filterFunc = this->getMainFunc();
+    if (jsEngine.isFunction(filterFunc)) {
+      auto proto = jsEngine.getObjectProperty(filterFunc, "constructor");
+      if (jsEngine.isObject(proto)) {
+        auto jsName = jsEngine.getObjectProperty(jsEngine.toObject(proto), "name");
+        auto name = jsEngine.toStdString(jsName);
+        jsEngine.freeValue(jsName, proto);
+        return name == "GeneratorFunction";
+      }
+
+      jsEngine.freeValue(proto);
+    }
+    return false;
+  }
+
   std::shared_ptr<rime::Translation> apply(std::shared_ptr<rime::Translation> translation,
                                            Environment* environment) {
     if (this->getNamespace().find("benchmark_begin") != std::string::npos) {
       beginClock = std::chrono::steady_clock::now();
     } else if (this->getNamespace().find("benchmark_end") != std::string::npos) {
       auto endClock = std::chrono::steady_clock::now();
-      auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endClock - beginClock);
+      auto duration = std::chrono::duration_cast<std::chrono::microseconds>(endClock - beginClock);
       std::string engine = "jsc";
       if constexpr (std::is_same_v<T_JS_VALUE, JSValue>) {
         engine = "qjs";
       }
-      constexpr int PADDING = 3;
+      constexpr int PADDING = 6;
       LOG(INFO) << "[benchmark] all " << engine << " filters run for " << std::setw(PADDING)
                 << duration.count()
-                << " ms, with input = " << environment->getEngine()->context()->input();
+                << " us, with input = " << environment->getEngine()->context()->input();
     }
 
     if (!this->isLoaded()) {
@@ -80,6 +100,11 @@ public:
       if (!isApplicable) {
         return translation;
       }
+    }
+
+    if (isFilterFuncGenerator_) {
+      return std::make_shared<QuickJSLazyTranslation<T_JS_VALUE>>(translation, this->getInstance(),
+                                                                  this->getMainFunc(), environment);
     }
 
     return std::make_shared<QuickJSTranslation<T_JS_VALUE>>(translation, this->getInstance(),
