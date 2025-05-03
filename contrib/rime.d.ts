@@ -501,10 +501,9 @@ interface Candidate {
  */
 interface CandidateIterator {
   /**
-   * Get the current candidate or null if at the end
-   * @readonly
+   * Get the next candidate or null if at the end
    */
-  readonly next: Candidate | null
+  next(): Candidate | null
 }
 
 /**
@@ -802,9 +801,9 @@ declare class FastFilter extends Module {
    * Apply filtering to the candidates accessible through the iterator
    * @param iterator - The candidate iterator
    * @param env - The runtime environment
-   * @returns {Generator<Candidate>} Generator yielding filtered candidates
+   * @returns {Generator<Candidate, CandidateIterator | void>} Generator yielding filtered candidates
    */
-  filter(iterator: CandidateIterator, env: Environment): Generator<Candidate, void>
+  *filter(iterator: CandidateIterator, env: Environment): Generator<Candidate, CandidateIterator | void>
 }
 
 /**

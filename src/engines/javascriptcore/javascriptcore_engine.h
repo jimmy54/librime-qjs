@@ -150,6 +150,9 @@ public:
   }
 
   [[nodiscard]] JSObjectRef toObject(const JSValueRef& value) const {
+    if (value == nullptr) {
+      return nullptr;
+    }
     return JSValueToObject(impl_->getContext(), value, nullptr);
   }
 

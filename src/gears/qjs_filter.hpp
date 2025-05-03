@@ -103,7 +103,7 @@ public:
     }
 
     if (isFilterFuncGenerator_) {
-      return std::make_shared<QuickJSLazyTranslation<T_JS_VALUE>>(translation, this->getInstance(),
+      return std::make_shared<QuickJSFastTranslation<T_JS_VALUE>>(translation, this->getInstance(),
                                                                   this->getMainFunc(), environment);
     }
 

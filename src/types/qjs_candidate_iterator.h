@@ -12,21 +12,20 @@ using CandidateIterator = rime::Translation;
 
 template <>
 class JsWrapper<rime::Translation> {
-  DEFINE_GETTER(CandidateIterator, next, peekAndNext(obj))
-
-  static an<Candidate> peekAndNext(const an<CandidateIterator>& obj) {
+  DEFINE_CFUNCTION(next, {
+    auto obj = engine.unwrap<CandidateIterator>(thisVal);
     if (obj->exhausted()) {
-      return nullptr;
+      return engine.null();
     }
     auto candidate = obj->Peek();
     obj->Next();
-    return candidate;
-  }
+    return engine.wrap(candidate);
+  })
 
 public:
   EXPORT_CLASS_WITH_SHARED_POINTER(CandidateIterator,
                                    WITHOUT_CONSTRUCTOR,
                                    WITHOUT_PROPERTIES,
-                                   WITH_GETTERS(next),
-                                   WITHOUT_FUNCTIONS);
+                                   WITHOUT_GETTERS,
+                                   WITH_FUNCTIONS(next, 0));
 };

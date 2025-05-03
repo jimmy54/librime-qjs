@@ -75,21 +75,23 @@ private:
 };
 
 template <typename T_JS_VALUE>
-class QuickJSLazyTranslation : public rime::Translation {
+class QuickJSFastTranslation : public rime::Translation {
   using T_JS_OBJECT = typename JsEngine<T_JS_VALUE>::T_JS_OBJECT;
 
-  bool isNextFunctionCalled_ = false;
+  bool isGeneratorEverInvoked_ = false;
   T_JS_OBJECT generator_;
   T_JS_OBJECT nextFunction_;
   T_JS_OBJECT nextResult_;
 
-public:
-  QuickJSLazyTranslation(const QuickJSLazyTranslation&) = delete;
-  QuickJSLazyTranslation(QuickJSLazyTranslation&&) = delete;
-  QuickJSLazyTranslation& operator=(const QuickJSLazyTranslation&) = delete;
-  QuickJSLazyTranslation& operator=(QuickJSLazyTranslation&&) = delete;
+  an<Translation> upstream_{nullptr};
 
-  QuickJSLazyTranslation(const rime::an<rime::Translation>& translation,
+public:
+  QuickJSFastTranslation(const QuickJSFastTranslation&) = delete;
+  QuickJSFastTranslation(QuickJSFastTranslation&&) = delete;
+  QuickJSFastTranslation& operator=(const QuickJSFastTranslation&) = delete;
+  QuickJSFastTranslation& operator=(QuickJSFastTranslation&&) = delete;
+
+  QuickJSFastTranslation(const rime::an<rime::Translation>& translation,
                          const T_JS_OBJECT& filterObj,
                          const T_JS_OBJECT& filterFunc,
                          Environment* environment) {
@@ -103,12 +105,12 @@ public:
     jsEngine.protectFromGC(generator_, nextFunction_);
   }
 
-  ~QuickJSLazyTranslation() override {
+  ~QuickJSFastTranslation() override {
     auto& jsEngine = JsEngine<T_JS_VALUE>::instance();
     jsEngine.unprotectFromGC(generator_, nextFunction_);
     jsEngine.freeValue(generator_, nextFunction_);
 
-    if (isNextFunctionCalled_) {
+    if (isGeneratorEverInvoked_ && jsEngine.isObject(nextResult_)) {
       jsEngine.unprotectFromGC(nextResult_);
       jsEngine.freeValue(nextResult_);
     }
@@ -119,37 +121,73 @@ public:
       return false;
     }
 
+    invokeGenerator();
+
+    if (upstream_ != nullptr) {
+      // `return iter;` was called in js side, return the upstream data
+      auto ret = upstream_->Next();
+      this->set_exhausted(upstream_->exhausted());
+      return ret;
+    }
+
+    return !this->exhausted();
+  }
+
+  an<rime::Candidate> Peek() override {
+    if (!isGeneratorEverInvoked_) {
+      invokeGenerator();
+    }
+    if (this->exhausted()) {
+      return nullptr;
+    }
+    if (upstream_ != nullptr) {
+      // `return iter;` was called in js side, return the upstream data
+      return upstream_->exhausted() ? nullptr : upstream_->Peek();
+    }
+
     auto& jsEngine = JsEngine<T_JS_VALUE>::instance();
-    if (isNextFunctionCalled_) {
+    auto jsValue = jsEngine.getObjectProperty(nextResult_, "value");
+    auto ret = jsEngine.template unwrap<rime::Candidate>(jsValue);
+    jsEngine.freeValue(jsValue);
+    return ret;
+  }
+
+private:
+  void invokeGenerator() {
+    if (upstream_ != nullptr) {
+      return;
+    }
+
+    auto& jsEngine = JsEngine<T_JS_VALUE>::instance();
+    if (isGeneratorEverInvoked_) {
       jsEngine.unprotectFromGC(nextResult_);
       jsEngine.freeValue(nextResult_);
     }
 
     nextResult_ = jsEngine.toObject(jsEngine.callFunction(nextFunction_, generator_, 0, nullptr));
+    isGeneratorEverInvoked_ = true;
+    if (jsEngine.isException(nextResult_)) {
+      LOG(ERROR) << "[qjs] Exception thrown while filtering candidates with iterator";
+      set_exhausted(true);
+      return;
+    }
     jsEngine.protectFromGC(nextResult_);
-    isNextFunctionCalled_ = true;
 
     auto jsDone = jsEngine.getObjectProperty(nextResult_, "done");
     bool isDone = jsEngine.isBool(jsDone) && jsEngine.toBool(jsDone);
     jsEngine.freeValue(jsDone);
     if (isDone) {
-      set_exhausted(true);
+      // check the return value of the generator,
+      auto jsValue = jsEngine.getObjectProperty(nextResult_, "value");
+      if (auto upstream = jsEngine.template unwrap<Translation>(jsValue)) {
+        // it returned the upstream translation with `return iter;` in js side
+        upstream_ = upstream;
+        set_exhausted(upstream->exhausted());
+      } else {
+        // it returned undefined with `return;` in js side
+        set_exhausted(true);
+      }
+      jsEngine.freeValue(jsValue);
     }
-    return !isDone;
-  }
-
-  an<rime::Candidate> Peek() override {
-    auto& jsEngine = JsEngine<T_JS_VALUE>::instance();
-    if (!isNextFunctionCalled_) {
-      this->Next();
-    }
-    if (this->exhausted()) {
-      return nullptr;
-    }
-
-    auto jsValue = jsEngine.getObjectProperty(nextResult_, "value");
-    auto ret = jsEngine.template unwrap<rime::Candidate>(jsValue);
-    jsEngine.freeValue(jsValue);
-    return ret;
   }
 };
