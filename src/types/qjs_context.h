@@ -28,6 +28,10 @@ class JsWrapper<rime::Context> {
 
   DEFINE_GETTER(Context, commitHistory, &obj->commit_history())
 
+  // External context getters
+  DEFINE_GETTER(Context, externalPrecedingText, obj->external_preceding_text())
+  DEFINE_GETTER(Context, externalFollowingText, obj->external_following_text())
+
   DEFINE_CFUNCTION(commit, {
     auto obj = engine.unwrap<Context>(thisVal);
     obj->Commit();
@@ -50,6 +54,12 @@ class JsWrapper<rime::Context> {
     return engine.wrap(obj->HasMenu());
   })
 
+  DEFINE_CFUNCTION(clearExternalContext, {
+    auto obj = engine.unwrap<Context>(thisVal);
+    obj->clear_external_context();
+    return engine.undefined();
+  })
+
 public:
   EXPORT_CLASS_WITH_RAW_POINTER(Context,
                                 WITHOUT_CONSTRUCTOR,
@@ -60,6 +70,8 @@ public:
                                              selectNotifier,
                                              updateNotifier,
                                              deleteNotifier,
-                                             commitHistory),
-                                WITH_FUNCTIONS(commit, 0, getCommitText, 0, clear, 0, hasMenu, 0));
+                                             commitHistory,
+                                             externalPrecedingText,
+                                             externalFollowingText),
+                                WITH_FUNCTIONS(commit, 0, getCommitText, 0, clear, 0, hasMenu, 0, clearExternalContext, 0));
 };
