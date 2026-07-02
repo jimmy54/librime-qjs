@@ -19,7 +19,12 @@ add_definitions(-DRIME_QJS_VERSION="${PROJECT_VERSION}")
 message(STATUS "LibrimeQjs version: ${PROJECT_VERSION}") # to update the version in releases
 
 # Specify C++17 standard
-set(CMAKE_CXX_STANDARD 17)
+# MSVC 对 designated initializers 要求 /std:c++20（clang/gcc 在 17 下作为扩展放行）
+if(MSVC)
+  set(CMAKE_CXX_STANDARD 20)
+else()
+  set(CMAKE_CXX_STANDARD 17)
+endif()
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # Specify C11 standard for QuickJS
