@@ -19,9 +19,12 @@ add_definitions(-DRIME_QJS_VERSION="${PROJECT_VERSION}")
 message(STATUS "LibrimeQjs version: ${PROJECT_VERSION}") # to update the version in releases
 
 # Specify C++17 standard
-# MSVC 对 designated initializers 要求 /std:c++20（clang/gcc 在 17 下作为扩展放行）
+# MSVC 对 designated initializers 要求 /std:c++20（clang/gcc 在 17 下作为扩展放行）；
+# /Zc:preprocessor：qjs 的宏（GETTERS/SETTERS 族）依赖符合标准的预处理器；
+# /Zc:char8_t-：回退 char8_t，保持 u8string 在 rime 头中的 C++17 语义。
 if(MSVC)
   set(CMAKE_CXX_STANDARD 20)
+  add_compile_options(/Zc:preprocessor /Zc:char8_t-)
 else()
   set(CMAKE_CXX_STANDARD 17)
 endif()
