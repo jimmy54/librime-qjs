@@ -27,7 +27,7 @@ void setQjsBaseFolder(const char* path) {
 
 #ifdef _WIN32
 #include <windows.h>
-__attribute__((constructor)) void initBaseFolder() {
+static void initBaseFolderImpl(void) {
   char path[PATH_MAX];
   GetModuleFileNameA(NULL, path, PATH_MAX);
   char* last_slash = strrchr(path, '\\');
@@ -36,6 +36,20 @@ __attribute__((constructor)) void initBaseFolder() {
     setQjsBaseFolder(path);
   }
 }
+#if defined(_MSC_VER)
+// MSVC 无 __attribute__((constructor))；经 CRT 初始化段注册启动回调
+static void __cdecl initBaseFolderCtor(void);
+#pragma section(".CRT$XCU", read)
+__declspec(allocate(".CRT$XCU")) static void(__cdecl* initBaseFolderCtor_)(
+    void) = initBaseFolderCtor;
+static void __cdecl initBaseFolderCtor(void) {
+  initBaseFolderImpl();
+}
+#else
+__attribute__((constructor)) void initBaseFolder(void) {
+  initBaseFolderImpl();
+}
+#endif
 #endif
 
 #ifdef __APPLE__
