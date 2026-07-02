@@ -19,10 +19,10 @@ add_definitions(-DRIME_QJS_VERSION="${PROJECT_VERSION}")
 message(STATUS "LibrimeQjs version: ${PROJECT_VERSION}") # to update the version in releases
 
 # Specify C++17 standard
-# MSVC 对 designated initializers 要求 /std:c++20（clang/gcc 在 17 下作为扩展放行）；
-# /Zc:preprocessor：qjs 的宏（GETTERS/SETTERS 族）依赖符合标准的预处理器；
-# /Zc:char8_t-：回退 char8_t，保持 u8string 在 rime 头中的 C++17 语义。
-if(MSVC)
+# 真 MSVC（cl.exe）编不动本插件的 GNU 扩展（零长数组等）；Windows 构建请用
+# clang-cl（MSVC ABI 兼容）。此处仅为真 MSVC 保留缓解旗标（designated
+# initializers 需 /std:c++20 + 符合标准预处理器 + char8_t 回退）。
+if(MSVC AND CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
   set(CMAKE_CXX_STANDARD 20)
   add_compile_options(/Zc:preprocessor /Zc:char8_t-)
 else()
@@ -175,7 +175,8 @@ endif()
 # Link QuickJS to librime-qjs
 target_link_libraries(librime-qjs-objs PRIVATE qjs)
 
-if(BUILD_SHARED_LIBS)
+# Windows 下 rime.dll 未导出测试所需的内部符号（Menu/Config 等），无法链接
+if(BUILD_SHARED_LIBS AND NOT WIN32)
   if(BUILD_TEST)
     add_subdirectory(tests)
   endif()
