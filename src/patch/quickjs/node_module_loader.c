@@ -14,7 +14,9 @@
   logError(format, __VA_ARGS__); \
   JS_ThrowReferenceError(ctx, format, __VA_ARGS__);
 
+#ifndef PATH_MAX
 enum { PATH_MAX = 1024 };
+#endif
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 static char qjsBaseFolder[PATH_MAX] = {0};
